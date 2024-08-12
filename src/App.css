@@ -1,4 +1,164 @@
 .App {
+  min-height: 100vh;
+  background-color: black;
+  color: white;
+  font-family: monospace;
+  font-size: 16px;
+}
+
+header {
+  height: 64px;
+  max-height: 80px;
+  border-bottom: 1px solid white;
+  box-shadow: 0px 0px 12px 1px white;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.header-content {
+  width: 970px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.logo {
+  max-height: 64px;
+  display: inline;
+  opacity: 100%;
+  z-index: 1;
+}
+
+.logo:hover {
+  opacity: 85%;
+  cursor: pointer;
+}
+
+header button {
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 16px;
+  min-width: 128px;
+  min-height: 32px;
+  border: none;
+  background: black;
+  color: white;
+}
+
+header button:hover {
+  opacity: 85%;
+  cursor: pointer;
+}
+
+.content-wrapper {
+  min-width: 100vw;
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  flex-shrink: 0;
+  min-height: calc(100vh - 100px);
+  max-height: calc(100vh - 100px);
+  min-width: 744px;
+  line-height: 1.5;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-width: 4px;
+  border-style: solid;
+  border-image: linear-gradient(black, white, black) 1 100%;
+  overflow-y: auto;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: black;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(black, 20%, white, 80%, black);
+  border-right: 2px solid black;  
+  width: 4px;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(black, 10%, white, 90%, black);
+}
+
+::-webkit-scrollbar-button {
+  height: none;
+}
+
+ul {
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+li {
+  padding-left: 1em;
+  text-indent: -1em;
+  max-width: 744px;
+  word-wrap: break-word;
+}
+
+li:before {
+  content: ">";
+  padding-right: 8px;
+}
+
+li form {
+  display: inline;
+}
+
+li form input {
+  height: 100%;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  color: white;
+  font-family: monospace;
+  font-size: 16px;
+  width: 99%;
+  padding: 0px;
+  margin: 0px;
+  text-overflow: ellipsis;
+}
+
+li input:placeholder-shown {
+  animation: blinker 2.1s step-start infinite;
+}
+
+li input:placeholder-shown:focus {
+  animation: none;
+}
+
+@keyframes blinker {
+  50%{ opacity: 0% }
+}
+
+li input::placeholder {
+  color: white;
+  animation: blinker 1.05s step-start infinite;
+}
+
+li input:focus::placeholder {
+  opacity: 0%;
+}
+
+li form button {
+  display: none;
+}
+
+
+
+/*
+.App {
   text-align: center;
 }
 
@@ -36,3 +196,4 @@
     transform: rotate(360deg);
   }
 }
+*/
