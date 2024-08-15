@@ -2,12 +2,27 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>WebGPU Triangle</title>
+		<title>Adrian Koziskie</title>
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
+		<header>
+			<p>Adrian Koziskie</p>
+			<div id="socials">
+				<a href="https://www.linkedin.com/in/adrian-koziskie/">
+					<img id="header-linkedin" src="media/socials/linkedin.png" alt="Linkedin logo"/>
+				</a>
+				<a href="https://www.x.com/amkoz__">
+					<img src="media/socials/x.png" alt="X logo"/>
+				</a>
+			</div>
+		</header>
 		<div class="canvas-wrapper">
 			<canvas></canvas>
+			<div id="no-webgpu" style="display: none">
+				<p>> Your browser does not support WebGPU</p>
+				<p>> View a screenshot of the graphic on <a href="https://www.x.com/amkoz__">x.com</a></p>
+			</div>
 		</div>
 		<script type="module" src="main.js"></script>
 	</body>

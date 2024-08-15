@@ -1,7 +1,16 @@
+// NO GPU SUPPORT
+function noWGPU() {
+	const canvas = document.querySelector("canvas");
+	const dialogue = document.getElementById("no-webgpu");
+	canvas.style.display = "none";
+	dialogue.style.display = "block";
+}
+
 // BOILERPLATE AND SETUP
 // check for browser WebGPU compatibility
 if (!navigator.gpu) {
-	alert("Your browser does not support WebGPU");
+	//alert("Your browser does not support WebGPU");
+	noWGPU();
 	throw new Error("WebGPU is not supported in this browser");
 }
 

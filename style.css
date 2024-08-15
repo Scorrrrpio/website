@@ -1,9 +1,48 @@
+* {
+	font-size: 16px;
+	font-family: monospace;
+	color: white;
+}
+
 body {
 	background-color: black;
 	width: 100vw;
 	height: 100vh;
 	padding: 0;
 	margin: 0;
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
+
+header {
+	padding: 0;
+	display: flex;
+	justify-content: space-between;
+}
+
+header p {
+	font-size: 1em;
+	margin: 1em;
+}
+
+#socials {
+	margin: 0.75em 1em;
+	vertical-align: middle;
+}
+
+#socials a {
+	height: 2em;
+	margin-left: 0.5em;
+	text-decoration: none;
+}
+
+#socials img {
+	height: 2em;
+}
+
+#header-linkedin {
+	height: 1.2rem;
+	margin: 0.2rem;
 }
 
 canvas {
@@ -13,8 +52,13 @@ canvas {
 
 .canvas-wrapper {
 	width: 100vw;
-	height: 100vh;
+	height: 80vh;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}
+
+#no-webgpu p {
+	margin: 0;
+	padding: 0;
 }
