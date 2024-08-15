@@ -6,10 +6,10 @@ function noWGPU() {
 	dialogue.style.display = "block";
 }
 
+
 // BOILERPLATE AND SETUP
 // check for browser WebGPU compatibility
 if (!navigator.gpu) {
-	//alert("Your browser does not support WebGPU");
 	noWGPU();
 	throw new Error("WebGPU is not supported in this browser");
 }
@@ -17,7 +17,7 @@ if (!navigator.gpu) {
 // request GPUAdapter
 const adapter = await navigator.gpu.requestAdapter();
 if (!adapter) {
-	alert("Failed to find GPUAdapter");
+	noWGPU();
 	throw new Error("No appropriate GPUAdapter found");
 }
 
