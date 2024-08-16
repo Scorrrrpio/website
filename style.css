@@ -50,12 +50,25 @@ canvas {
 	height: 180px;
 }
 
-.canvas-wrapper {
+.content-wrapper-vertical {
 	width: 100vw;
 	height: 80vh;
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+}
+
+#home-splash {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+#home-splash p {
+	margin: 0;
+	padding: 0;
+	text-align: center;
 }
 
 #no-webgpu p {

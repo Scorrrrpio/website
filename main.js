@@ -1,8 +1,8 @@
 // NO GPU SUPPORT
 function noWGPU() {
-	const canvas = document.querySelector("canvas");
+	const splash = document.getElementById("home-splash");
 	const dialogue = document.getElementById("no-webgpu");
-	canvas.style.display = "none";
+	splash.style.display = "none";
 	dialogue.style.display = "block";
 }
 
@@ -40,6 +40,28 @@ const vertices = new Float32Array([
 	 0.0,  1.0,  1.0, 0.0, 0.0, 1.0,
 	 1.0, -0.73, 0.0, 1.0, 0.0, 1.0,
 	-1.0, -0.73, 0.0, 0.0, 1.0, 1.0
+]);
+
+// arrays for lerping
+const triangleRBG = new Float32Array([
+	// X,  Y,    R    G    B    A
+	 0.0,  1.0,  1.0, 0.0, 0.0, 1.0,
+	 1.0, -0.73, 0.0, 1.0, 0.0, 1.0,
+	-1.0, -0.73, 0.0, 0.0, 1.0, 1.0
+]);
+
+const triangleGRB = new Float32Array([
+	// X,  Y,    R    G    B    A
+	 0.0,  1.0,  0.0, 0.0, 1.0, 1.0,
+	 1.0, -0.73, 1.0, 0.0, 0.0, 1.0,
+	-1.0, -0.73, 0.0, 1.0, 0.0, 1.0
+]);
+
+const triangleBGR = new Float32Array([
+	// X,  Y,    R    G    B    A
+	 0.0,  1.0,  0.0, 1.0, 0.0, 1.0,
+	 1.0, -0.73, 0.0, 0.0, 1.0, 1.0,
+	-1.0, -0.73, 1.0, 0.0, 0.0, 1.0
 ]);
 
 // create vertex buffer
@@ -140,9 +162,37 @@ const pipeline = device.createRenderPipeline({
 });
 
 
+// LERP FUNCTIONS
+function lerpVector(vOut, v1, v2, t) {
+	if (vOut.length != v1.length || vOut.length != v2.length) {
+		return;
+	}
+	for (let i = 0; i < v1.length; i++) {
+		vOut[i] = v1[i] * (1-t) + v2[i] * t;
+	}
+}
+
+
 // RENDER LOOP
-let t = 0;
+let frames = 0;
 function renderLoop() {
+	// lerp
+	frames %= 300;
+	if (frames < 100) {
+		// RBG to BRG
+		lerpVector(vertices, triangleRBG, triangleBGR, frames / 100);  // normalize
+	}
+	else if (frames < 200) {
+		// BGR to GBR
+		lerpVector(vertices, triangleBGR, triangleGRB, (frames-100) / 100);
+	}
+	else {
+		// GBR to RGB
+		lerpVector(vertices, triangleGRB, triangleRBG, (frames-200) / 100);
+	}
+	// copy data to vertices buffer
+	device.queue.writeBuffer(vertexBuffer, 0, vertices);
+
 	// create GPUCommandEncoder
 	const encoder = device.createCommandEncoder();
 
@@ -166,8 +216,33 @@ function renderLoop() {
 
 	// create and submit GPUCommandBuffer
 	device.queue.submit([encoder.finish()]);
+
+	frames++;
 }
 
 // schedule renderLoop()
-const UPDATE_INTERVAL = 200;  // 5 fps
+renderLoop();
+const UPDATE_INTERVAL = 100;  // 10 fps
 setInterval(renderLoop, UPDATE_INTERVAL);
+
+
+// SPLASH QUOTE
+const quotes = [
+	"I use arch btw",
+	"The future narrows narrows narrows narrows",
+	"We live in a twilight world",
+	"Within cells interlinked"
+];
+const quoteElement = document.getElementById("splash-quote");
+let quoteId = Math.floor(Math.random() * quotes.length);
+
+function cycleQuote() {
+	quoteId = ++quoteId % quotes.length;
+	quoteElement.textContent = quotes[quoteId];
+}
+
+if (quoteElement) {
+	// TODO not happy with this feature
+	//cycleQuote();
+	//setInterval(cycleQuote, 10000);
+}
