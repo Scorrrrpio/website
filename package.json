@@ -2,14 +2,18 @@
   "name": "amkoz",
   "version": "1.0.0",
   "description": "personal website",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
-    "start": "http-server -S -C server.crt -K server.key",
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "start": "npm run watch & http-server -S -C server.crt -K server.key",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Adrian Koziskie",
   "license": "ISC",
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
   }
 }

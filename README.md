@@ -4,4 +4,4 @@ working on some cool WebGPU stuff
 
 # TODO
 - favicon
-- make js modular
+- multiple canvases on one page (html-webpack-plugin)
