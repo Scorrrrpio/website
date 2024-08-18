@@ -1,7 +1,7 @@
 // NO GPU SUPPORT
 function noWGPU() {
-	const splash = document.getElementById("home-splash");
-	const dialogue = document.getElementById("no-webgpu");
+	const splash = document.querySelector("canvas");
+	const dialogue = document.querySelector(".no-webgpu");
 	splash.style.display = "none";
 	dialogue.style.display = "block";
 }
@@ -227,6 +227,8 @@ setInterval(renderLoop, UPDATE_INTERVAL);
 
 
 // SPLASH QUOTE
+// TODO not happy with this feature
+/*
 const quotes = [
 	"I use arch btw",
 	"The future narrows narrows narrows narrows",
@@ -242,7 +244,7 @@ function cycleQuote() {
 }
 
 if (quoteElement) {
-	// TODO not happy with this feature
 	//cycleQuote();
 	//setInterval(cycleQuote, 10000);
 }
+*/

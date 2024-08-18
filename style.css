@@ -18,33 +18,22 @@ header {
 	padding: 0;
 	display: flex;
 	justify-content: space-between;
+	background-color: black;
 }
 
-header p {
+header p, header a {
 	font-size: 1em;
 	margin: 1em;
-}
-
-#socials {
-	margin: 0.75em 1em;
-	vertical-align: middle;
-}
-
-#socials a {
-	height: 2em;
-	margin-left: 0.5em;
 	text-decoration: none;
 }
 
-#socials img {
-	height: 2em;
+#projects-link {
+	margin-left: auto;
+	margin-right: 0;
 }
 
-#header-linkedin {
-	height: 1.2rem;
-	margin: 0.2rem;
-}
 
+/* home splash */
 canvas {
 	width: 180px;
 	height: 180px;
@@ -59,19 +48,82 @@ canvas {
 	justify-content: center;
 }
 
-#home-splash {
+.no-webgpu p {
+	margin: 0;
+	padding: 0;
+}
+
+
+/* info */
+#bio {
+	text-align: left;
+}
+
+#bio ul {
+	list-style-type: "> ";
+	margin-left: 1.2em;
+	padding-left: 0;
+}
+
+#bio ul li a {
+	width: 0%;
+}
+
+#bio p, #bio b, #bio a {
+	display: block;
+	margin: 0;
+	text-decoration: none;
+}
+
+#bio a:hover {
+	text-decoration: underline;
+}
+
+#bio b {
+	margin-top: 1em;
+}
+
+
+/* projects */
+.project-grid {
+	width: 90%;
+	height: 90%;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	grid-auto-rows: 16em;
+	gap: 1em;
+}
+
+.project {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: space-between;
+	overflow: hidden;
+	text-decoration: none;
 }
 
-#home-splash p {
-	margin: 0;
-	padding: 0;
-	text-align: center;
+.project-visual {
+	background-color: black;
+	height: 12em;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
 }
 
-#no-webgpu p {
-	margin: 0;
+.project-visual img {
+	height: 100%;
+}
+
+.project-info {
+	min-width: 100%;
+}
+
+.project b, .project p {
+	width: 100%;
+	margin: 0 0.5em;
 	padding: 0;
 }
