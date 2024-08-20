@@ -1,6 +1,6 @@
 // NO GPU SUPPORT
 export function noWGPU(hide) {
-    const dialogue = document.querySelector(".no-webgpu");
     hide.style.display = "none";
-    dialogue.style.display = "block";
+    const dialogues = document.getElementsByClassName("no-webgpu");
+    for (const dialogue of dialogues) { dialogue.style.display = "block"; }
 }

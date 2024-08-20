@@ -118,6 +118,11 @@ canvas {
 	height: 100%;
 }
 
+.project-visual .no-webgpu {
+	margin-right: auto;
+	align-self: baseline;
+}
+
 .project-info {
 	min-width: 100%;
 }
