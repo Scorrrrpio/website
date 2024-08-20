@@ -23,54 +23,54 @@ export async function cube() {
     const vertices = new Float32Array([
         // X,    Y,    Z,   R,   G,   B,   A
         // FRONT
-        -0.5, -0.5, -0.5, 1.0, 1.0, 1.0, 1.0,  // 8
-         0.5, -0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 4
-        -0.5,  0.5, -0.5, 1.0, 0.0, 1.0, 1.0,  // 6
+        -0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 8
+         0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 4
+        -0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 6
          0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 2
-        -0.5,  0.5, -0.5, 1.0, 0.0, 1.0, 1.0,  // 6
-         0.5, -0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 4
+        -0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 6
+         0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 4
         // RIGHT
-         0.5, -0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 4
+         0.5, -0.5, -0.5, 0.0, 1.0, 0.0, 1.0,  // 4
          0.5, -0.5,  0.5, 0.0, 1.0, 0.0, 1.0,  // 3
-         0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 2
-         0.5,  0.5,  0.5, 1.0, 1.0, 1.0, 1.0,  // 1
-         0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 2
+         0.5,  0.5, -0.5, 0.0, 1.0, 0.0, 1.0,  // 2
+         0.5,  0.5,  0.5, 0.0, 1.0, 0.0, 1.0,  // 1
+         0.5,  0.5, -0.5, 0.0, 1.0, 0.0, 1.0,  // 2
          0.5, -0.5,  0.5, 0.0, 1.0, 0.0, 1.0,  // 3
         // BACK
-         0.5, -0.5,  0.5, 0.0, 1.0, 0.0, 1.0,  // 3
+         0.5, -0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 3
         -0.5, -0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 7
-         0.5,  0.5,  0.5, 1.0, 1.0, 1.0, 1.0,  // 1
-        -0.5,  0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 5
-         0.5,  0.5,  0.5, 1.0, 1.0, 1.0, 1.0,  // 1
+         0.5,  0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 1
+        -0.5,  0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 5
+         0.5,  0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 1
         -0.5, -0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 7
         // LEFT
-        -0.5, -0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 7
-        -0.5, -0.5, -0.5, 1.0, 1.0, 1.0, 1.0,  // 8
-        -0.5,  0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 5
+        -0.5, -0.5,  0.5, 1.0, 0.0, 1.0, 1.0,  // 7
+        -0.5, -0.5, -0.5, 1.0, 0.0, 1.0, 1.0,  // 8
+        -0.5,  0.5,  0.5, 1.0, 0.0, 1.0, 1.0,  // 5
         -0.5,  0.5, -0.5, 1.0, 0.0, 1.0, 1.0,  // 6
-        -0.5,  0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 5
-        -0.5, -0.5, -0.5, 1.0, 1.0, 1.0, 1.0,  // 8
+        -0.5,  0.5,  0.5, 1.0, 0.0, 1.0, 1.0,  // 5
+        -0.5, -0.5, -0.5, 1.0, 0.0, 1.0, 1.0,  // 8
         // TOP
-        -0.5,  0.5, -0.5, 1.0, 0.0, 1.0, 1.0,  // 6
-         0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 2
-        -0.5,  0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 5
-         0.5,  0.5,  0.5, 1.0, 1.0, 1.0, 1.0,  // 1
-        -0.5,  0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 5
-         0.5,  0.5, -0.5, 1.0, 0.0, 0.0, 1.0,  // 2
+        -0.5,  0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 6
+         0.5,  0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 2
+        -0.5,  0.5,  0.5, 0.0, 0.0, 1.0, 1.0,  // 5
+         0.5,  0.5,  0.5, 0.0, 0.0, 1.0, 1.0,  // 1
+        -0.5,  0.5,  0.5, 0.0, 0.0, 1.0, 1.0,  // 5
+         0.5,  0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 2
         // BOTTOM
-        -0.5, -0.5,  0.5, 0.0, 1.0, 1.0, 1.0,  // 7
-         0.5, -0.5,  0.5, 0.0, 1.0, 0.0, 1.0,  // 3
-        -0.5, -0.5, -0.5, 1.0, 1.0, 1.0, 1.0,  // 8
-         0.5, -0.5, -0.5, 0.0, 0.0, 1.0, 1.0,  // 4
-        -0.5, -0.5, -0.5, 1.0, 1.0, 1.0, 1.0,  // 8
-         0.5, -0.5,  0.5, 0.0, 1.0, 0.0, 1.0,  // 3
+        -0.5, -0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 7
+         0.5, -0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 3
+        -0.5, -0.5, -0.5, 1.0, 1.0, 0.0, 1.0,  // 8
+         0.5, -0.5, -0.5, 1.0, 1.0, 0.0, 1.0,  // 4
+        -0.5, -0.5, -0.5, 1.0, 1.0, 0.0, 1.0,  // 8
+         0.5, -0.5,  0.5, 1.0, 1.0, 0.0, 1.0,  // 3
     ]);
 
     // create vertex buffer
 	const vertexBuffer = device.createBuffer({
 		label: "Cube Vertices",
 		size: vertices.byteLength,
-		usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+		usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 	});
 
     // copy vertex data into vertex buffer
@@ -82,12 +82,12 @@ export async function cube() {
 		attributes: [{
 			format: "float32x3",
 			offset: 0,
-			shaderLocation: 0
+			shaderLocation: 0,
 		}, {
 			format: "float32x4",
 			offset: 4 * 3 /*bytes*/ ,
-			shaderLocation: 1
-		}]
+			shaderLocation: 1,
+		}],
 	};
 
     // SHADERS
@@ -132,7 +132,42 @@ export async function cube() {
 	});
 
 
+    // UNIFORM BUFFER AND BIND GROUP
+    // create uniform buffer for MVP matrix
+    const uniformBuffer = device.createBuffer({
+        label: "MVP Uniform",
+        size: 64,  // for 4x4 matrix (8 * 16 bytes)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // create bind group layout
+    const bindGroupLayout = device.createBindGroupLayout({
+        label: "MVP bind group Layout",
+        entries: [{
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },  // can omit type param
+        }]
+    });
+
+    // create bind group
+    const bindGroup = device.createBindGroup({
+        label: "Cube bind group",
+        layout: bindGroupLayout,
+        entries: [{
+            binding: 0,
+            resource: { buffer: uniformBuffer },
+        }],
+    });
+
+
     // CAMERA SETUP
+    function createRotationMatrix(angle) {
+        const rotationMatrix = mat4.create();
+        mat4.fromRotation(rotationMatrix, angle, [0, 1, 0]);
+        return rotationMatrix;
+    }
+
     // view matrix
     const view = mat4.create();
     mat4.lookAt(view,
@@ -150,38 +185,7 @@ export async function cube() {
     // projection matrix
     const projection = mat4.create();
     mat4.perspective(projection, fov, aspect, near, far);
-
-    // (m)vp matrix
-    const mvp = mat4.create();
-    mat4.multiply(mvp, projection, view);
-
-    // create uniform buffer with MVP matrix
-    const uniformBuffer = device.createBuffer({
-        label: "MVP Uniform",
-        size: 64,  // for 4x4 matrix (8 * 16 bytes)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-    device.queue.writeBuffer(uniformBuffer, 0, mvp);
-
-    // create bind group layout
-    const bindGroupLayout = device.createBindGroupLayout({
-        label: "MVP bind group Layout",
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" }  // TODO can I omit type
-        }]
-    });
-
-    // create bind group
-    const bindGroup = device.createBindGroup({
-        label: "Cube bind group",
-        layout: bindGroupLayout,
-        entries: [{
-            binding: 0,
-            resource: { buffer: uniformBuffer }
-        }]
-    });
+    // MVP computed in render loop
 
 
     // PIPELINE
@@ -189,7 +193,7 @@ export async function cube() {
 		label: "Cube Pipeline",
 		layout: device.createPipelineLayout({
             label: "Cube Pipeline Layout",
-            bindGroupLayouts: [bindGroupLayout]
+            bindGroupLayouts: [bindGroupLayout],
         }),
 		vertex: {
 			module: vertexShaderModule,
@@ -204,24 +208,40 @@ export async function cube() {
 					format: "float32x4",
 					offset: 4 * 3 /*bytes*/ ,
 					shaderLocation: 1
-				}]
-			}]
+				}],
+			}],
 		},
 		fragment: {
 			module: fragmentShaderModule,
 			entryPoint: "fragmentMain",
 			targets: [{
 				format: format,
-			}]
+			}],
 		},
 		primitive: {
-			topology: "triangle-list"
-		}
+            topology: "triangle-list",
+            frontFace: "cw",
+            cullMode: "back",
+        },
 	});
 
 
     // RENDER LOOP
+    let angle = 0;
 	function renderLoop() {
+        angle += 0.1;
+
+        // create model matrix
+        const model = createRotationMatrix(angle);
+
+        // mvp matrix
+        const mvp = mat4.create();
+        mat4.multiply(mvp, projection, view);
+        mat4.multiply(mvp, mvp, model);
+
+        // write mvp matrix to uniform buffer
+        device.queue.writeBuffer(uniformBuffer, 0, mvp);
+
 		// create GPUCommandEncoder
 		const encoder = device.createCommandEncoder();
 
@@ -231,8 +251,8 @@ export async function cube() {
 				view: context.getCurrentTexture().createView(),
 				loadOp: "clear",
 				clearValue: { r: 0, g: 0, b: 0, a: 1 },
-				storeOp: "store"
-			}]
+				storeOp: "store",
+			}],
 		});
 
 		// render triangle
