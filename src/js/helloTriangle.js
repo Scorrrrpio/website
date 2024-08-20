@@ -1,6 +1,6 @@
 // imports
 import { lerpVector } from "./lerp";
-import { noWGPU } from "./noWGPU";
+import { wgpuSetup } from "./wgpuSetup";
 
 
 export async function helloTriangle() {
@@ -8,29 +8,8 @@ export async function helloTriangle() {
 	// locate canvas
 	const canvas = document.querySelector("canvas");
 
-	// check for browser WebGPU compatibility
-	if (!navigator.gpu) {
-		noWGPU(canvas);
-		throw new Error("WebGPU is not supported in this browser");
-	}
-
-	// request GPUAdapter
-	const adapter = await navigator.gpu.requestAdapter();
-	if (!adapter) {
-		noWGPU(canvas);
-		throw new Error("No appropriate GPUAdapter found");
-	}
-
-	// request device
-	const device = await adapter.requestDevice();
-
-	// configure canvas
-	const context = canvas.getContext("webgpu");
-	const format = navigator.gpu.getPreferredCanvasFormat();
-	context.configure({
-		device: device,
-		format: format
-	});
+	// set up WebGPU
+    const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
 	// GEOMETRY

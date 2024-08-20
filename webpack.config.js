@@ -3,9 +3,9 @@ const htmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
 	entry: {
-		index: "./src/index.js",
-		projects: "./src/projects.js",
-		triangle: "./src/triangle.js"
+		projects: "./src/js/projects.js",
+		triangle: "./src/js/triangle.js",
+		wip: "./src/js/wip.js"
 	},
 	output: {
 		filename: "[name].bundle.js",
@@ -16,7 +16,7 @@ module.exports = {
 		new htmlWebpackPlugin({
 			template: "./src/index.html",
 			filename: "index.html",
-			chunks: ["index"]
+			chunks: ["triangle"]
 		}),
 		new htmlWebpackPlugin({
 			template: "./src/projects.html",
@@ -32,6 +32,11 @@ module.exports = {
 			template: "./src/triangle.html",
 			filename: "triangle.html",
 			chunks: ["triangle"]
+		}),
+		new htmlWebpackPlugin({
+			template: "./src/wip.html",
+			filename: "wip.html",
+			chunks: ["wip"]
 		})
 	],
 	mode: "development"  // or production
