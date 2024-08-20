@@ -22,7 +22,8 @@ export async function wgpuSetup(canvas) {
 	const format = navigator.gpu.getPreferredCanvasFormat();
 	context.configure({
 		device: device,
-		format: format
+		format: format,
+		usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 	});
 
     return { adapter, device, context, format };

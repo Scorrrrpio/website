@@ -1,5 +1,6 @@
 const path = require("path");
 const htmlWebpackPlugin = require("html-webpack-plugin");
+const copyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
 	entry: {
@@ -10,7 +11,7 @@ module.exports = {
 	output: {
 		filename: "[name].bundle.js",
 		path: path.resolve(__dirname, "public"),
-		//clean: true
+		clean: true,
 	},
 	plugins: [
 		new htmlWebpackPlugin({
@@ -29,15 +30,15 @@ module.exports = {
 			chunks: []
 		}),
 		new htmlWebpackPlugin({
-			template: "./src/triangle.html",
-			filename: "triangle.html",
-			chunks: ["triangle"]
-		}),
-		new htmlWebpackPlugin({
 			template: "./src/wip.html",
 			filename: "wip.html",
 			chunks: ["wip"]
-		})
+		}),
+		new copyWebpackPlugin({
+			patterns: [
+				{ from: "src/styles", to: "" },
+			],
+		}),
 	],
 	mode: "development"  // or production
 };

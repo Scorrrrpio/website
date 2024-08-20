@@ -3,10 +3,10 @@ import { lerpVector } from "./lerp";
 import { wgpuSetup } from "./wgpuSetup";
 
 
-export async function helloTriangle() {
+export async function helloTriangle(canvasID) {
 	// BOILERPLATE AND SETUP
 	// locate canvas
-	const canvas = document.querySelector("canvas");
+	const canvas = document.getElementById(canvasID);
 
 	// set up WebGPU
     const { adapter, device, context, format } = await wgpuSetup(canvas);

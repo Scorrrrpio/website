@@ -3,9 +3,9 @@ import { lerpVector } from "./lerp";
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
 
-export async function cube() {
+export async function cube(canvasID) {
     // WEBGPU SETUP
-	const canvas = document.querySelector("canvas");
+	const canvas = document.getElementById(canvasID);
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
@@ -253,7 +253,7 @@ export async function cube() {
         });
 
         // spinning cube
-        angle += 0.1;
+        angle += 0.02;
 
         // create model matrix
         const model = createRotationMatrix(angle);
@@ -294,10 +294,10 @@ export async function cube() {
 
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
+
+        requestAnimationFrame(renderLoop);
 	}
 
-	// schedule renderLoop()
+	// schedule renderLoop
 	renderLoop();
-	const UPDATE_INTERVAL = 100;  // 10 fps
-	setInterval(renderLoop, UPDATE_INTERVAL);
 }
