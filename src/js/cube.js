@@ -233,12 +233,26 @@ export async function cube() {
             frontFace: "ccw",
             cullMode: "back",
         },
+        multisample: {
+            count: 4,
+        },
 	});
 
 
     // RENDER LOOP
     let angle = 0;
 	function renderLoop() {
+        // create texture the size of canvas
+        const canvasTexture = context.getCurrentTexture();
+        // create multisample texture
+        const msaaTexture = device.createTexture({
+            format: canvasTexture.format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            size: [canvas.width, canvas.height],
+            sampleCount: 4,
+        });
+
+        // spinning cube
         angle += 0.1;
 
         // create model matrix
@@ -258,12 +272,16 @@ export async function cube() {
 		// begin render pass
 		const pass = encoder.beginRenderPass({
 			colorAttachments: [{
-				view: context.getCurrentTexture().createView(),
+				//view: context.getCurrentTexture().createView(),
+                view: msaaTexture.createView(),  // render to MSAA texture
 				loadOp: "clear",
 				clearValue: { r: 0, g: 0, b: 0, a: 1 },
 				storeOp: "store",
+                resolveTarget: canvasTexture.createView(),  // converts msaaTexture to size of canvas
 			}],
 		});
+
+        pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// render triangle
 		pass.setPipeline(pipeline);
