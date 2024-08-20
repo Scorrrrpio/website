@@ -100,14 +100,16 @@ export async function cube() {
 
     @group(0) @binding(0) var<uniform> mvp: mat4x4<f32>;
 
+    // nightmare code using color to store position
     @vertex
     fn vertexMain(@location(0) pos: vec3f, @location(1) color: vec4f) -> vertexOut {
         var output: vertexOut;
         output.position = mvp * vec4f(pos, 1);
-        output.color = color;
+        output.color = vec4f(pos, 1);
         return output;
     }`;
 
+    // TODO figure out how to use position
     // fragment shader
     const fragmentShaderCode = `
         struct vertexOut {
@@ -117,7 +119,15 @@ export async function cube() {
 
         @fragment
         fn fragmentMain(fragData: vertexOut) -> @location(0) vec4f {
-            return fragData.color;
+            if ((fragData.color.x >= 0 && fragData.color.y >= 0 && fragData.color.z >= 0) ||
+                (fragData.color.x >= 0 && fragData.color.y < 0  && fragData.color.z < 0 ) ||
+                (fragData.color.x < 0  && fragData.color.y < 0  && fragData.color.z >= 0) ||
+                (fragData.color.x < 0  && fragData.color.y >= 0 && fragData.color.z < 0 )) {
+                return vec4f(1.0, 1.0, 1.0, 1.0);
+            }
+            else {
+                return vec4f(1, 0, 0, 1);
+            }
         }
     `;
 
