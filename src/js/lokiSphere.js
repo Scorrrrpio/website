@@ -19,6 +19,13 @@ export async function lokiSphere(canvasID) {
     //const vertices = await plyToLineList("geometry/lokiSphereTris.ply");
     const vertices = await plyToTriangleList("geometry/lokiSphereTris.ply");
 
+    // rotate 90 degrees around X because I messed up the export somehow
+    for (let i = 0; i < vertices.length; i += 3) {
+        const temp = vertices[i+1];
+        vertices[i+1] = vertices[i+2] * -1;
+        vertices[i+2] = temp;
+    }
+
     // create vertex buffer
 	const vertexBuffer = device.createBuffer({
 		label: "Cube Vertices",
@@ -109,7 +116,7 @@ export async function lokiSphere(canvasID) {
     // TODO 3D rotation
     function createRotationMatrix(angle) {
         const rotationMatrix = mat4.create();
-        mat4.fromRotation(rotationMatrix, angle, [0, 1, 0]);
+        mat4.fromRotation(rotationMatrix, 0.5 * angle, [1, -0.2, -0.1]);
         return rotationMatrix;
     }
 
@@ -121,7 +128,7 @@ export async function lokiSphere(canvasID) {
         [0, 1, 0],  // positive y vector
     );
 
-    const fov = Math.PI / 8;  // pi/4 radians
+    const fov = Math.PI / 6;  // pi/4 radians
     const aspect = canvas.width / canvas.height;
     // clipping planes
     const near = 0.1;
@@ -184,7 +191,7 @@ export async function lokiSphere(canvasID) {
     // RENDER LOOP
     let angle = 0;
 	function renderLoop() {
-        angle += 0.01;
+        angle -= 0.01;
         // create model matrix
         const model = createRotationMatrix(angle);
 
@@ -210,7 +217,7 @@ export async function lokiSphere(canvasID) {
 		});
 
         // TODO what is this?
-        //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
+        pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// render triangle
 		pass.setPipeline(pipeline);

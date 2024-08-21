@@ -147,18 +147,18 @@ export async function helloTriangle(canvasID) {
 	let frames = 0;
 	function renderLoop() {
 		// lerp
-		frames %= 300;
-		if (frames < 100) {
+		frames %= 1800;
+		if (frames < 600) {
 			// RBG to BRG
-			lerpVector(vertices, triangleRBG, triangleBGR, frames / 100);  // normalize
+			lerpVector(vertices, triangleRBG, triangleBGR, frames / 600);  // normalize
 		}
-		else if (frames < 200) {
+		else if (frames < 1200) {
 			// BGR to GBR
-			lerpVector(vertices, triangleBGR, triangleGRB, (frames-100) / 100);
+			lerpVector(vertices, triangleBGR, triangleGRB, (frames-600) / 600);
 		}
 		else {
 			// GBR to RGB
-			lerpVector(vertices, triangleGRB, triangleRBG, (frames-200) / 100);
+			lerpVector(vertices, triangleGRB, triangleRBG, (frames-1200) / 600);
 		}
 		// copy data to vertices buffer
 		device.queue.writeBuffer(vertexBuffer, 0, vertices);
@@ -188,10 +188,10 @@ export async function helloTriangle(canvasID) {
 		device.queue.submit([encoder.finish()]);
 
 		frames++;
+
+		// schedule renderLoop()
+		requestAnimationFrame(renderLoop);
 	}
 
-	// schedule renderLoop()
 	renderLoop();
-	const UPDATE_INTERVAL = 100;  // 10 fps
-	setInterval(renderLoop, UPDATE_INTERVAL);
 }
