@@ -4,7 +4,7 @@ import { wgpuSetup } from "./wgpuSetup";
 import { plyToLineList, plyToTriangleList } from "./plyReader";
 
 // inspired by the sphere graphic from lokinet.org
-export async function lokiSphere(canvasID) {
+export async function lokiSphere(canvasID, autoplay) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -190,6 +190,7 @@ export async function lokiSphere(canvasID) {
 
     // RENDER LOOP
     let angle = 0;
+    let animating = false;
 	function renderLoop() {
         angle -= 0.01;
         // create model matrix
@@ -231,9 +232,27 @@ export async function lokiSphere(canvasID) {
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
 
-        requestAnimationFrame(renderLoop);
+        if (animating || autoplay) {
+            requestAnimationFrame(renderLoop);
+        }
 	}
 
-	// schedule renderLoop
-	renderLoop();
+
+    // ANIMATION CONTROL
+    function startRenderLoop() {
+        if (!animating) {
+            animating = true;
+            renderLoop();
+        }
+    }
+
+    function stopRenderLoop() {
+        animating = false;
+    }
+
+    renderLoop();
+    if (!autoplay) {
+	    canvas.addEventListener("mouseenter", startRenderLoop);
+        canvas.addEventListener("mouseleave", stopRenderLoop);
+    }
 }

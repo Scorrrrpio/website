@@ -3,7 +3,7 @@ import { lerpVector } from "./lerp";
 import { wgpuSetup } from "./wgpuSetup";
 
 
-export async function helloTriangle(canvasID) {
+export async function helloTriangle(canvasID, autoplay) {
 	// BOILERPLATE AND SETUP
 	// locate canvas
 	const canvas = document.getElementById(canvasID);
@@ -145,6 +145,7 @@ export async function helloTriangle(canvasID) {
 
 	// RENDER LOOP
 	let frames = 0;
+	let animating = false;
 	function renderLoop() {
 		// lerp
 		frames %= 1800;
@@ -189,8 +190,29 @@ export async function helloTriangle(canvasID) {
 
 		frames++;
 
-		// schedule renderLoop()
-		requestAnimationFrame(renderLoop);
+		if (autoplay || animating) {
+            requestAnimationFrame(renderLoop);
+        }
+	}
+
+
+	// ANIMATION CONTROL
+    function startRenderLoop() {
+        console.log("in");
+        if (!animating) {
+            animating = true;
+            renderLoop();
+        }
+    }
+
+    function stopRenderLoop() {
+        console.log("out");
+        animating = false;
+    }
+
+	if (!autoplay) {
+		canvas.addEventListener("mouseenter", startRenderLoop);
+		canvas.addEventListener("mouseleave", stopRenderLoop);
 	}
 
 	renderLoop();

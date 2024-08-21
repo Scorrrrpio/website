@@ -1,4 +1,4 @@
 import { lokiSphere } from "./lokiSphere";
 
 console.log("WIP workspace");
-lokiSphere("wip-workspace").catch((error) => { console.log(error.message); });
+lokiSphere("wip-workspace", true).catch((error) => { console.log(error.message); });

@@ -2,7 +2,7 @@
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
 
-export async function cube(canvasID) {
+export async function cube(canvasID, autoplay) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -230,6 +230,7 @@ export async function cube(canvasID) {
 
     // RENDER LOOP
     let angle = 0;
+    let animating = false;
 	function renderLoop() {
         // create texture the size of canvas
         const canvasTexture = context.getCurrentTexture();
@@ -284,9 +285,30 @@ export async function cube(canvasID) {
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
 
-        requestAnimationFrame(renderLoop);
+        if (autoplay || animating) {
+            requestAnimationFrame(renderLoop);
+        }
 	}
 
-	// schedule renderLoop
-	renderLoop();
+
+    // ANIMATION CONTROL
+    function startRenderLoop() {
+        console.log("in");
+        if (!animating) {
+            animating = true;
+            renderLoop();
+        }
+    }
+
+    function stopRenderLoop() {
+        console.log("out");
+        animating = false;
+    }
+
+    if (!autoplay) {
+        canvas.addEventListener("mouseenter", startRenderLoop);
+        canvas.addEventListener("mouseleave", stopRenderLoop);
+    }
+
+    renderLoop();
 }
