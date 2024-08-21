@@ -228,19 +228,24 @@ export async function cube(canvasID, autoplay) {
 	});
 
 
+    // 4xMSAA TEXTURES
+    // create texture the size of canvas
+    let canvasTexture = context.getCurrentTexture();
+    // create multisample texture
+    const msaaTexture = device.createTexture({
+        format: canvasTexture.format,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        size: [canvas.width, canvas.height],
+        sampleCount: 4,
+    });
+
+
     // RENDER LOOP
     let angle = 0;
     let animating = false;
 	function renderLoop() {
-        // create texture the size of canvas
-        const canvasTexture = context.getCurrentTexture();
-        // create multisample texture
-        const msaaTexture = device.createTexture({
-            format: canvasTexture.format,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-            size: [canvas.width, canvas.height],
-            sampleCount: 4,
-        });
+        // update canvasTexture
+        canvasTexture = context.getCurrentTexture();
 
         // spinning cube
         angle += 0.02;

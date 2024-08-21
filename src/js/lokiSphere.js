@@ -113,7 +113,6 @@ export async function lokiSphere(canvasID, autoplay) {
 
 
     // CAMERA SETUP
-    // TODO 3D rotation
     function createRotationMatrix(angle) {
         const rotationMatrix = mat4.create();
         mat4.fromRotation(rotationMatrix, 0.5 * angle, [1, -0.2, -0.1]);
@@ -123,7 +122,7 @@ export async function lokiSphere(canvasID, autoplay) {
     // view matrix
     const view = mat4.create();
     mat4.lookAt(view,
-        [0, 0, -6],  // camera position
+        [0, 0, -4],  // camera position
         [0, 0, 0],  // look at
         [0, 1, 0],  // positive y vector
     );
@@ -141,7 +140,6 @@ export async function lokiSphere(canvasID, autoplay) {
 
 
     // PIPELINE
-    // TODO multisampling
 	const pipeline = device.createRenderPipeline({
 		label: "Sphere Pipeline",
 		layout: device.createPipelineLayout({
@@ -185,13 +183,29 @@ export async function lokiSphere(canvasID, autoplay) {
             frontFace: "ccw",
             cullMode: "none",
         },
+        multisample: {
+            count: 4,
+        },
 	});
 
 
+    // 4xMSAA TEXTURES
+    let canvasTexture = context.getCurrentTexture();
+    const msaaTexture = device.createTexture({
+        format: canvasTexture.format,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        size: [canvas.width, canvas.height],
+        sampleCount: 4,
+    });
+
+
     // RENDER LOOP
-    let angle = 0;
+    let angle = -1;
     let animating = false;
 	function renderLoop() {
+        // create input texture the size of canvas
+        canvasTexture = context.getCurrentTexture();
+
         angle -= 0.01;
         // create model matrix
         const model = createRotationMatrix(angle);
@@ -210,15 +224,17 @@ export async function lokiSphere(canvasID, autoplay) {
 		// begin render pass
 		const pass = encoder.beginRenderPass({
 			colorAttachments: [{
-				view: context.getCurrentTexture().createView(),
+                view: msaaTexture.createView(),  // render to MSAA texture
+				//view: context.getCurrentTexture().createView(),
 				loadOp: "clear",
 				clearValue: { r: 0, g: 0, b: 0, a: 1 },
 				storeOp: "store",
+                resolveTarget: canvasTexture.createView(),
 			}],
 		});
 
         // TODO what is this?
-        pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
+        //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// render triangle
 		pass.setPipeline(pipeline);
