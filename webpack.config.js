@@ -37,6 +37,7 @@ module.exports = {
 		new copyWebpackPlugin({
 			patterns: [
 				{ from: "src/styles", to: "" },
+				{ from: "src/geometry", to: "geometry" },
 			],
 		}),
 	],

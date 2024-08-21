@@ -1,6 +1,7 @@
 // imports
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
+import { readPly } from "./plyReader";
 
 // inspired by the sphere graphic from lokinet.org
 export async function lokiSphere(canvasID) {
@@ -8,13 +9,13 @@ export async function lokiSphere(canvasID) {
 	const canvas = document.getElementById(canvasID);
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
-    console.log("lokiSphere");
-    console.log(format);
-
 
     // GEOMETRY
-    // TODO ply reader
-    /**/
+    //const vertices = await readPly("pyramid.ply");
+    //for (let i = 0; i < vertices.length; i+=3) {
+    //    console.log(vertices[i] + ", " + vertices[i+1] + ", " + vertices[i+2]);
+    //}
+    /*
     const vertices = new Float32Array([
         // X, Y, Z
          0.0, 1.0,  0.0,
@@ -35,7 +36,7 @@ export async function lokiSphere(canvasID) {
          1.0, 0.0,  1.0,
     ]);
 
-    /*
+    /**/
     const vertices = new Float32Array([
         // X, Y, Z
         0, 1, 0,
@@ -50,7 +51,7 @@ export async function lokiSphere(canvasID) {
         0, 1, 0,
         1, 0, 1,
         1, 0, -1,
-    ])*/
+    ])
 
     // create vertex buffer
 	const vertexBuffer = device.createBuffer({
@@ -207,7 +208,7 @@ export async function lokiSphere(canvasID) {
 			}],
 		},
 		primitive: {
-            topology: "line-list",
+            topology: "triangle-list",
             frontFace: "ccw",
             cullMode: "none",
         },
