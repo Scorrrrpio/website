@@ -1,4 +1,4 @@
-import { cube } from "./cube.js";
+import { lokiSphere } from "./lokiSphere";
 
 console.log("WIP workspace");
-cube("spinning-cube").catch((error) => { console.log(error.message); });
+lokiSphere("wip-workspace").catch((error) => { console.log(error.message); });

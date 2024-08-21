@@ -1,5 +1,4 @@
 // imports
-import { lerpVector } from "./lerp";
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
 
@@ -75,20 +74,7 @@ export async function cube(canvasID) {
 
     // copy vertex data into vertex buffer
 	device.queue.writeBuffer(vertexBuffer, 0, vertices);
-
-    // define vertex layout
-	const vertexBufferLayout = {
-		arrayStride: 4 * 7 /*bytes*/,
-		attributes: [{
-			format: "float32x3",
-			offset: 0,
-			shaderLocation: 0,
-		}, {
-			format: "float32x4",
-			offset: 4 * 3 /*bytes*/ ,
-			shaderLocation: 1,
-		}],
-	};
+    
 
     // SHADERS
 	// vertex shader

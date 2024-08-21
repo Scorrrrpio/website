@@ -1,0 +1,265 @@
+// imports
+import { mat4 } from "gl-matrix";
+import { wgpuSetup } from "./wgpuSetup";
+
+// inspired by the sphere graphic from lokinet.org
+export async function lokiSphere(canvasID) {
+    // WEBGPU SETUP
+	const canvas = document.getElementById(canvasID);
+    const { adapter, device, context, format } = await wgpuSetup(canvas);
+
+    console.log("lokiSphere");
+    console.log(format);
+
+
+    // GEOMETRY
+    // TODO ply reader
+    /**/
+    const vertices = new Float32Array([
+        // X, Y, Z
+         0.0, 1.0,  0.0,
+         1.0, 0.0,  1.0,
+         0.0, 1.0,  0.0,
+         1.0, 0.0, -1.0,
+         0.0, 1.0,  0.0,
+        -1.0, 0.0, -1.0,
+         0.0, 1.0,  0.0,
+        -1.0, 0.0,  1.0,
+         1.0, 0.0,  1.0,
+         1.0, 0.0, -1.0,
+         1.0, 0.0, -1.0,
+        -1.0, 0.0, -1.0,
+        -1.0, 0.0, -1.0,
+        -1.0, 0.0,  1.0,
+        -1.0, 0.0,  1.0,
+         1.0, 0.0,  1.0,
+    ]);
+
+    /*
+    const vertices = new Float32Array([
+        // X, Y, Z
+        0, 1, 0,
+        -1, 0, 1,
+        1, 0, 1,
+        0, 1, 0,
+        -1, 0, -1,
+        -1, 0, 1,
+        0, 1, 0,
+        1, 0, -1,
+        -1, 0, -1,
+        0, 1, 0,
+        1, 0, 1,
+        1, 0, -1,
+    ])*/
+
+    // create vertex buffer
+	const vertexBuffer = device.createBuffer({
+		label: "Cube Vertices",
+		size: vertices.byteLength,
+		usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+	});
+
+    // copy vertex data into vertex buffer
+	device.queue.writeBuffer(vertexBuffer, 0, vertices);
+
+
+    // SHADERS
+	// vertex shader
+	const vertexShaderCode = `
+        struct VertexOutput {
+            @location(0) barycentric: vec3f,
+            @builtin(position) position: vec4f
+        };
+
+        @group(0) @binding(0) var<uniform> mvp: mat4x4<f32>;
+
+        @vertex
+        fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
+            var barycentrics = array<vec3f, 3> (
+                vec3(1, 0, 0),
+                vec3(0, 1, 0),
+                vec3(0, 0, 1)
+            );
+            var output: VertexOutput;
+            output.position = mvp * vec4f(pos * 0.5, 1);
+            output.barycentric = barycentrics[vertexIndex % 3];
+            return output;
+    }`;
+
+    // fragment shader
+    const fragmentShaderCode = `
+        @fragment
+        fn fragmentMain(@location(0) bary: vec3f) -> @location(0) vec4f {
+            let threshold = 0.02;
+            if (min(min(bary.x, bary.y), bary.z) >= threshold) {
+                return vec4f(0, 0, 0, 0);
+            }
+            return vec4f(1, 1, 1, 1);
+        }
+    `;
+
+    // create shader modules
+	const vertexShaderModule = device.createShaderModule({
+		label: "Sphere Vertex Shader",
+		code: vertexShaderCode
+	});
+	const fragmentShaderModule = device.createShaderModule({
+		label: "Sphere Fragment Shader",
+		code: fragmentShaderCode
+	});
+
+
+    // UNIFORM BUFFER AND BIND GROUP
+    // create uniform buffer for MVP matrix
+    const uniformBuffer = device.createBuffer({
+        label: "MVP Uniform",
+        size: 64,  // for 4x4 matrix (8 * 16 bytes)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // create bind group layout
+    const bindGroupLayout = device.createBindGroupLayout({
+        label: "MVP Bind Group Layout",
+        entries: [{
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },  // can omit type param
+        }]
+    });
+
+    // create bind group
+    const bindGroup = device.createBindGroup({
+        label: "Sphere bind group",
+        layout: bindGroupLayout,
+        entries: [{
+            binding: 0,
+            resource: { buffer: uniformBuffer },
+        }],
+    });
+
+
+    // CAMERA SETUP
+    // TODO 3D rotation
+    function createRotationMatrix(angle) {
+        const rotationMatrix = mat4.create();
+        mat4.fromRotation(rotationMatrix, angle, [0, 1, 0]);
+        return rotationMatrix;
+    }
+
+    // view matrix
+    const view = mat4.create();
+    mat4.lookAt(view,
+        [1.5, 1.5, 1.5],  // camera position
+        [0, 0, 0],  // look at
+        [0, 1, 0],  // positive y vector
+    );
+
+    const fov = Math.PI / 4;  // pi/4 radians
+    const aspect = canvas.width / canvas.height;
+    // clipping planes
+    const near = 0.1;
+    const far = 100.0;
+
+    // projection matrix
+    const projection = mat4.create();
+    mat4.perspective(projection, fov, aspect, near, far);
+    // MVP computed in render loop
+
+
+    // PIPELINE
+    // TODO multisampling
+	const pipeline = device.createRenderPipeline({
+		label: "Sphere Pipeline",
+		layout: device.createPipelineLayout({
+            label: "Sphere Pipeline Layout",
+            bindGroupLayouts: [bindGroupLayout],
+        }),
+		vertex: {
+			module: vertexShaderModule,
+			entryPoint: "vertexMain",
+			buffers: [{
+				arrayStride: 4 * 3 /*bytes*/,
+				attributes: [{
+					format: "float32x3",
+					offset: 0,
+					shaderLocation: 0
+				}],
+			}],
+		},
+		fragment: {
+			module: fragmentShaderModule,
+			entryPoint: "fragmentMain",
+			targets: [{
+				format: format,
+                blend: {
+                    color: {
+                        srcFactor: "src-alpha",
+                        dstFactor: "one-minus-src-alpha",
+                        operation: "add",
+                    },
+                    alpha: {
+                        srcFactor: "one",
+                        dstFactor: "one-minus-src-alpha",
+                        operation: "add",
+                    },
+                },
+                writeMask: GPUColorWrite.ALL,
+			}],
+		},
+		primitive: {
+            topology: "line-list",
+            frontFace: "ccw",
+            cullMode: "none",
+        },
+	});
+
+
+    // RENDER LOOP
+    let angle = 0;
+	function renderLoop() {
+        angle += 0.02;
+        // create model matrix
+        const model = createRotationMatrix(angle);
+
+        // mvp matrix
+        const mvp = mat4.create();
+        mat4.multiply(mvp, projection, view);
+        mat4.multiply(mvp, mvp, model);
+
+        // write mvp matrix to uniform buffer
+        device.queue.writeBuffer(uniformBuffer, 0, mvp);
+
+		// create GPUCommandEncoder
+		const encoder = device.createCommandEncoder();
+
+		// begin render pass
+		const pass = encoder.beginRenderPass({
+			colorAttachments: [{
+				view: context.getCurrentTexture().createView(),
+				loadOp: "clear",
+				clearValue: { r: 0, g: 0, b: 0, a: 1 },
+				storeOp: "store",
+			}],
+		});
+
+        // TODO what is this?
+        //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
+
+		// render triangle
+		pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bindGroup);
+		pass.setVertexBuffer(0, vertexBuffer);
+		pass.draw(vertices.length / 3);
+
+		// end render pass
+		pass.end();
+
+		// create and submit GPUCommandBuffer
+		device.queue.submit([encoder.finish()]);
+
+        requestAnimationFrame(renderLoop);
+	}
+
+	// schedule renderLoop
+	renderLoop();
+}
