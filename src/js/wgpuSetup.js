@@ -23,6 +23,7 @@ export async function wgpuSetup(canvas) {
 	context.configure({
 		device: device,
 		format: format,
+		size: [canvas.width, canvas.height],
 		usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 	});
 

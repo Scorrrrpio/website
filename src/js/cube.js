@@ -5,6 +5,9 @@ import { wgpuSetup } from "./wgpuSetup";
 export async function cube(canvasID) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = 512 * devicePixelRatio;
+    canvas.height = 512 * devicePixelRatio;
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 

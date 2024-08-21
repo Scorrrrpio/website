@@ -1,57 +1,23 @@
 // imports
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
-import { readPly } from "./plyReader";
+import { plyToLineList, plyToTriangleList } from "./plyReader";
 
 // inspired by the sphere graphic from lokinet.org
 export async function lokiSphere(canvasID) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = 512 * devicePixelRatio;
+    canvas.height = 512 * devicePixelRatio;
+
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
     // GEOMETRY
-    //const vertices = await readPly("pyramid.ply");
-    //for (let i = 0; i < vertices.length; i+=3) {
-    //    console.log(vertices[i] + ", " + vertices[i+1] + ", " + vertices[i+2]);
-    //}
-    /*
-    const vertices = new Float32Array([
-        // X, Y, Z
-         0.0, 1.0,  0.0,
-         1.0, 0.0,  1.0,
-         0.0, 1.0,  0.0,
-         1.0, 0.0, -1.0,
-         0.0, 1.0,  0.0,
-        -1.0, 0.0, -1.0,
-         0.0, 1.0,  0.0,
-        -1.0, 0.0,  1.0,
-         1.0, 0.0,  1.0,
-         1.0, 0.0, -1.0,
-         1.0, 0.0, -1.0,
-        -1.0, 0.0, -1.0,
-        -1.0, 0.0, -1.0,
-        -1.0, 0.0,  1.0,
-        -1.0, 0.0,  1.0,
-         1.0, 0.0,  1.0,
-    ]);
-
-    /**/
-    const vertices = new Float32Array([
-        // X, Y, Z
-        0, 1, 0,
-        -1, 0, 1,
-        1, 0, 1,
-        0, 1, 0,
-        -1, 0, -1,
-        -1, 0, 1,
-        0, 1, 0,
-        1, 0, -1,
-        -1, 0, -1,
-        0, 1, 0,
-        1, 0, 1,
-        1, 0, -1,
-    ])
+    const TOPOLOGY = "triangle-list";
+    //const vertices = await plyToLineList("geometry/lokiSphereTris.ply");
+    const vertices = await plyToTriangleList("geometry/lokiSphereTris.ply");
 
     // create vertex buffer
 	const vertexBuffer = device.createBuffer({
@@ -82,7 +48,7 @@ export async function lokiSphere(canvasID) {
                 vec3(0, 0, 1)
             );
             var output: VertexOutput;
-            output.position = mvp * vec4f(pos * 0.5, 1);
+            output.position = mvp * vec4f(pos, 1);
             output.barycentric = barycentrics[vertexIndex % 3];
             return output;
     }`;
@@ -150,12 +116,12 @@ export async function lokiSphere(canvasID) {
     // view matrix
     const view = mat4.create();
     mat4.lookAt(view,
-        [1.5, 1.5, 1.5],  // camera position
+        [0, 0, -6],  // camera position
         [0, 0, 0],  // look at
         [0, 1, 0],  // positive y vector
     );
 
-    const fov = Math.PI / 4;  // pi/4 radians
+    const fov = Math.PI / 8;  // pi/4 radians
     const aspect = canvas.width / canvas.height;
     // clipping planes
     const near = 0.1;
@@ -208,7 +174,7 @@ export async function lokiSphere(canvasID) {
 			}],
 		},
 		primitive: {
-            topology: "triangle-list",
+            topology: TOPOLOGY,
             frontFace: "ccw",
             cullMode: "none",
         },
@@ -218,7 +184,7 @@ export async function lokiSphere(canvasID) {
     // RENDER LOOP
     let angle = 0;
 	function renderLoop() {
-        angle += 0.02;
+        angle += 0.01;
         // create model matrix
         const model = createRotationMatrix(angle);
 

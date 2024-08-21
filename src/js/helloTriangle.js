@@ -7,6 +7,9 @@ export async function helloTriangle(canvasID) {
 	// BOILERPLATE AND SETUP
 	// locate canvas
 	const canvas = document.getElementById(canvasID);
+	const devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = 512 * devicePixelRatio;
+    canvas.height = 512 * devicePixelRatio;
 
 	// set up WebGPU
     const { adapter, device, context, format } = await wgpuSetup(canvas);

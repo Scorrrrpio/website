@@ -1,6 +1,5 @@
-export async function readPly(filename) {
-    // fetch ply file from server
-    const url = "geometry/" + filename;
+async function readPly(url) {
+    // fetch ply file from server;
     const response = await fetch(url);
     const text = await response.text();
 
@@ -35,24 +34,53 @@ export async function readPly(filename) {
 
     // read faces
     // assuming all faces are triangles
+    // TODO handle quads
     let faces = [];
     for (let i = 0; i < faceCount; i++) {
         const triVerts = lines[++lineIndex].split(" ");
-        faces.push(Number(triVerts[0]));
         faces.push(Number(triVerts[1]));
         faces.push(Number(triVerts[2]));
+        faces.push(Number(triVerts[3]));
     }
 
-    console.log(vertices);
-    console.log(faces);
+    return { vertices, faces };
+}
 
+export async function plyToTriangleList(url) {
+    const { vertices, faces } = await readPly(url);
     // generate Float32Array
-    const floatVerts = new Float32Array(faceCount * 9);
+    const floatVerts = new Float32Array(faces.length * 3);
     let verticesIndex = 0;
     for (let vert of faces) {
-        floatVerts[verticesIndex++] = vertices[Math.floor(vert) * 3];
-        floatVerts[verticesIndex++] = vertices[Math.floor(vert) * 3 + 1];
-        floatVerts[verticesIndex++] = vertices[Math.floor(vert) * 3 + 2];
+        floatVerts[verticesIndex++] = vertices[vert * 3];
+        floatVerts[verticesIndex++] = vertices[vert * 3 + 1];
+        floatVerts[verticesIndex++] = vertices[vert * 3 + 2];
+    }
+    return floatVerts;
+}
+
+export async function plyToLineList(url) {
+    const { vertices, faces } = await readPly(url);
+    // generate Float32Array
+    const floatVerts = new Float32Array(faces.length * 9);
+    let verticesIndex = 0;
+    for (let i = 0; i < faces.length; i++) {
+        // vert
+        floatVerts[verticesIndex++] = vertices[faces[i] * 3];
+        floatVerts[verticesIndex++] = vertices[faces[i] * 3 + 1];
+        floatVerts[verticesIndex++] = vertices[faces[i] * 3 + 2];
+        if (i % 3 === 2) {
+            // back
+            floatVerts[verticesIndex++] = vertices[faces[i-2] * 3];
+            floatVerts[verticesIndex++] = vertices[faces[i-2] * 3 + 1];
+            floatVerts[verticesIndex++] = vertices[faces[i-2] * 3 + 2];
+        }
+        else {
+            // next
+            floatVerts[verticesIndex++] = vertices[faces[i+1] * 3];
+            floatVerts[verticesIndex++] = vertices[faces[i+1] * 3 + 1];
+            floatVerts[verticesIndex++] = vertices[faces[i+1] * 3 + 2];
+        }
     }
     return floatVerts;
 }
