@@ -15,11 +15,10 @@ export async function lokiSphere(canvasID, autoplay) {
 
 
     // GEOMETRY
-    const TOPOLOGY = "triangle-list";
-    //const vertices = await plyToLineList("geometry/lokiSphereTris.ply");
-    const vertices = await plyToTriangleList("geometry/lokiSphereTris.ply");
+    //const TOPOLOGY = "triangle-list"; const vertices = await plyToTriangleList("geometry/lokiSphere.ply");
+    const TOPOLOGY = "line-list"; const vertices = await plyToLineList("geometry/lokiSphere.ply");
 
-    // rotate 90 degrees around X because I messed up the export somehow
+    // rotate 90 degrees around X because I messed up the sphere export somehow
     for (let i = 0; i < vertices.length; i += 3) {
         const temp = vertices[i+1];
         vertices[i+1] = vertices[i+2] * -1;
@@ -64,7 +63,7 @@ export async function lokiSphere(canvasID, autoplay) {
     const fragmentShaderCode = `
         @fragment
         fn fragmentMain(@location(0) bary: vec3f) -> @location(0) vec4f {
-            let threshold = 0.02;
+            let threshold = 0.01;
             if (min(min(bary.x, bary.y), bary.z) >= threshold) {
                 return vec4f(0, 0, 0, 0);
             }
@@ -190,6 +189,7 @@ export async function lokiSphere(canvasID, autoplay) {
 
 
     // 4xMSAA TEXTURES
+    // TODO resizing with window
     let canvasTexture = context.getCurrentTexture();
     const msaaTexture = device.createTexture({
         format: canvasTexture.format,

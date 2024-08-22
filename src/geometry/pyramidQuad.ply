@@ -4,7 +4,7 @@ element vertex 5
 property float x
 property float y
 property float z
-element face 4
+element face 5
 property list uchar uint vertex_indices
 end_header
 0 1 0
@@ -16,3 +16,4 @@ end_header
 3 0 3 4
 3 0 2 3
 3 0 1 2
+4 1 2 3 4
