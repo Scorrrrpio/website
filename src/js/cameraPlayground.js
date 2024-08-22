@@ -89,12 +89,18 @@ export async function cameraPlayground(canvasID, autoplay) {
 
     // CAMERA SETUP
     // view matrix
-    function createViewMatrix(pos, rot, positiveY) {
+    function createViewMatrix(pos, rot) {
         const view = mat4.create();
         mat4.rotateX(view, view, rot[0]);
         mat4.rotateY(view, view, rot[1]);
         mat4.rotateZ(view, view, rot[2]);
         mat4.translate(view, view, [-pos[0], -pos[1], -pos[2]]);
+        return view;
+    }
+
+    function createOrbitalViewMatrix(pos, target, up) {
+        const view = mat4.create();
+        mat4.lookAt(view, pos, target, up);
         return view;
     }
 
@@ -111,10 +117,25 @@ export async function cameraPlayground(canvasID, autoplay) {
 
 
     // CAMERA CONTROLS
+    //const CAMTYPE = "TANK";
+    const CAMTYPE = "ORBITAL";
+    //const CAMTYPE = "FPS";
+
     let cameraPosition = [0, 0, 7];
     let cameraRotation = [0, 0, 0];
+    // TANK, ORBITAL
     const camSpeed = 0.1;
     const camRotationSpeed = 0.01;
+    // ORBITAL
+    let radius = 7.0;
+    let azimuth = 0.0;  // horizontal
+    let elevation = Math.PI / 4;  // vertical
+    const maxElevation = Math.PI / 2 - 0.1;
+    const minElevation = -maxElevation;
+    const minRadius = 0.1;
+
+    // input handling
+    // keyboard input
     const keysPressed = {
         w: false,
         a: false,
@@ -123,37 +144,7 @@ export async function cameraPlayground(canvasID, autoplay) {
         r: false,  // rise
         f: false,  // fall
     }
-
-    let view;
-    function updateCamera() {
-        const forwardX = Math.sin(cameraRotation[1]);
-        const forwardZ = Math.cos(cameraRotation[1]);
-
-        if (keysPressed.w) {
-            cameraPosition[0] += camSpeed * forwardX;
-            cameraPosition[2] -= camSpeed * forwardZ;
-        }
-        if (keysPressed.a) {
-            cameraRotation[1] -= camRotationSpeed;
-        }
-        if (keysPressed.s) {
-            cameraPosition[0] -= camSpeed * forwardX;
-            cameraPosition[2] += camSpeed * forwardZ;
-        }
-        if (keysPressed.d) {
-            cameraRotation[1] += camRotationSpeed;
-        }
-        if (keysPressed.r) {
-            cameraPosition[1] += camSpeed;
-        }
-        if (keysPressed.f) {
-            cameraPosition[1] -= camSpeed;
-        }
-        view = createViewMatrix(cameraPosition, cameraRotation, [0, 1, 0]);
-    }
-    updateCamera();
-    
-    // listen for key presses and releases
+    // listen for keyboard
     document.addEventListener("keydown", (event) => {
         switch(event.code) {
             case "KeyW":
@@ -198,6 +189,93 @@ export async function cameraPlayground(canvasID, autoplay) {
                 break;
         }
     });
+
+    // mouse input
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    // listen for mouse
+    document.addEventListener("mousedown", (event) => {
+        isDragging = true;
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+    });
+    document.addEventListener("mouseup", (event) => { isDragging = false; });
+    document.addEventListener("mousemove", (event) => {
+        if (isDragging) {
+            const deltaX = event.clientX - lastMouseX;
+            const deltaY = event.clientY - lastMouseY;
+
+            // TODO update if sluggish
+            // update spherical coordinates
+            azimuth -= deltaX * camRotationSpeed;
+            elevation += deltaY * camRotationSpeed;
+
+            elevation = Math.max(minElevation, Math.min(elevation, maxElevation));
+
+            // update previous mouse positions
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+        }
+    });
+
+
+    // update camera
+    let view;
+    function updateCamera() {
+        if (CAMTYPE === "TANK") {
+            updateTankCamera();
+        }
+        else if (CAMTYPE === "ORBITAL") {
+            updateOrbitalCamera();
+        }
+        else if (CAMTYPE === "FPS") {
+            updateFPSCamera();
+        }
+    }
+
+    function updateTankCamera() {
+        const forwardX = Math.sin(cameraRotation[1]);
+        const forwardZ = Math.cos(cameraRotation[1]);
+
+        if (keysPressed.w) {
+            cameraPosition[0] += camSpeed * forwardX;
+            cameraPosition[2] -= camSpeed * forwardZ;
+        }
+        if (keysPressed.a) {
+            cameraRotation[1] -= camRotationSpeed;
+        }
+        if (keysPressed.s) {
+            cameraPosition[0] -= camSpeed * forwardX;
+            cameraPosition[2] += camSpeed * forwardZ;
+        }
+        if (keysPressed.d) {
+            cameraRotation[1] += camRotationSpeed;
+        }
+        if (keysPressed.r) {
+            cameraPosition[1] += camSpeed;
+        }
+        if (keysPressed.f) {
+            cameraPosition[1] -= camSpeed;
+        }
+        view = createViewMatrix(cameraPosition, cameraRotation, [0, 1, 0]);
+    }
+
+    function updateOrbitalCamera() {
+        // zoom
+        if (keysPressed.w) {
+            radius = Math.max(minRadius, radius - camSpeed);
+        }
+        if (keysPressed.s) {
+            radius += camSpeed;
+        }
+        // convert spherical coordinates to cartesian
+        cameraPosition[0] = radius * Math.cos(elevation) * Math.sin(azimuth);
+        cameraPosition[1] = radius * Math.sin(elevation);
+        cameraPosition[2] = radius * Math.cos(elevation) * Math.cos(azimuth);
+        view = createOrbitalViewMatrix(cameraPosition, [0, 0, 0], [0, 1, 0]);
+    }
+    function updateFPSCamera() {}
 
 
     // PIPELINE
