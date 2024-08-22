@@ -1,4 +1,4 @@
-import { lokiSphere } from "./lokiSphere";
+import { cameraPlayground } from "./cameraPlayground";
 
 console.log("WIP workspace");
-lokiSphere("wip-workspace", true).catch((error) => { console.log(error.message); });
+cameraPlayground("wip-workspace", true).catch((error) => { console.log(error.message); });

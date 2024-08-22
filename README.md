@@ -6,3 +6,4 @@ working on some cool WebGPU stuff
 - favicon
 - better mobile support
 - WebGL fallback
+- better error handling in webpack entry files
