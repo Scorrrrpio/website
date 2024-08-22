@@ -1,10 +1,12 @@
 const path = require("path");
 const htmlWebpackPlugin = require("html-webpack-plugin");
 const copyWebpackPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
 	entry: {
 		projects: "./src/js/projects.js",
+		playground: "./src/js/playground.js",
 		triangle: "./src/js/triangle.js",
 		wip: "./src/js/wip.js"
 	},
@@ -28,6 +30,11 @@ module.exports = {
 			template: "./src/info.html",
 			filename: "info.html",
 			chunks: []
+		}),
+		new HtmlWebpackPlugin({
+			template: "./src/playground.html",
+			filename: "playground.html",
+			chunks: ["playground"]
 		}),
 		new htmlWebpackPlugin({
 			template: "./src/wip.html",

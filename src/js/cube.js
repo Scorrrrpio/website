@@ -6,8 +6,8 @@ export async function cube(canvasID, autoplay) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
     const devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = 512 * devicePixelRatio;
-    canvas.height = 512 * devicePixelRatio;
+    canvas.width = canvas.clientWidth * devicePixelRatio;
+    canvas.height = canvas.clientHeight * devicePixelRatio;
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
