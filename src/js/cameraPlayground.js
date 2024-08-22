@@ -118,8 +118,8 @@ export async function cameraPlayground(canvasID, autoplay) {
 
     // CAMERA CONTROLS
     //const CAMTYPE = "TANK";
-    const CAMTYPE = "ORBITAL";
-    //const CAMTYPE = "FPS";
+    //const CAMTYPE = "ORBITAL";
+    const CAMTYPE = "FPS";
 
     let cameraPosition = [0, 0, 7];
     let cameraRotation = [0, 0, 0];
@@ -133,6 +133,8 @@ export async function cameraPlayground(canvasID, autoplay) {
     const maxElevation = Math.PI / 2 - 0.1;
     const minElevation = -maxElevation;
     const minRadius = 0.1;
+    const maxLook = Math.PI / 2
+    const minLook = -maxLook;
 
     // input handling
     // keyboard input
@@ -192,32 +194,74 @@ export async function cameraPlayground(canvasID, autoplay) {
 
     // mouse input
     let isDragging = false;
-    let lastMouseX = 0;
-    let lastMouseY = 0;
+    let lastMouseX;
+    let lastMouseY;
     // listen for mouse
-    document.addEventListener("mousedown", (event) => {
-        isDragging = true;
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
-    });
-    document.addEventListener("mouseup", (event) => { isDragging = false; });
-    document.addEventListener("mousemove", (event) => {
-        if (isDragging) {
-            const deltaX = event.clientX - lastMouseX;
-            const deltaY = event.clientY - lastMouseY;
-
-            // TODO update if sluggish
-            // update spherical coordinates
-            azimuth -= deltaX * camRotationSpeed;
-            elevation += deltaY * camRotationSpeed;
-
-            elevation = Math.max(minElevation, Math.min(elevation, maxElevation));
-
-            // update previous mouse positions
+    if (CAMTYPE === "ORBITAL") {
+        document.addEventListener("mousedown", (event) => {
+            isDragging = true;
             lastMouseX = event.clientX;
             lastMouseY = event.clientY;
-        }
-    });
+        });
+        document.addEventListener("mouseup", (event) => { isDragging = false; });
+        document.addEventListener("mousemove", (event) => {
+            if (isDragging) {
+                const deltaX = event.clientX - lastMouseX;
+                const deltaY = event.clientY - lastMouseY;
+
+                // TODO update if sluggish
+                // update spherical coordinates
+                azimuth -= deltaX * camRotationSpeed;
+                elevation += deltaY * camRotationSpeed;
+
+                elevation = Math.max(minElevation, Math.min(elevation, maxElevation));
+
+                // update previous mouse positions
+                lastMouseX = event.clientX;
+                lastMouseY = event.clientY;
+            }
+        });
+    }
+    else if (CAMTYPE === "FPS") {
+        document.addEventListener("mousemove", (event) => {
+            if (document.pointerLockElement === canvas) {
+                const deltaX = event.movementX;
+                const deltaY = event.movementY;
+
+                cameraRotation[1] += camRotationSpeed * deltaX;  // yaw
+                cameraRotation[0] += camRotationSpeed * deltaY;  // pitch
+
+                // prevent flipping
+                cameraRotation[0] = Math.max(minLook, Math.min(maxLook, cameraRotation[0]));
+
+                // update previous mouse positions
+                lastMouseX = event.clientX;
+                lastMouseY = event.clientY;
+            }
+        });
+
+        // request pointer lock within canvas
+        canvas.addEventListener("click", () => {
+            canvas.requestPointerLock();
+        });
+
+        // handle pointer lock change
+        document.addEventListener("pointerlockchange", () => {
+            if (document.pointerLockElement === canvas) {
+                console.log("pointer locked");
+            }
+            else {
+                console.log("pointer unlocked");
+            }
+        });
+
+        // release pointer lock
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Escape") {
+                document.exitPointerLock();
+            }
+        });
+    }
 
 
     // update camera
@@ -275,7 +319,40 @@ export async function cameraPlayground(canvasID, autoplay) {
         cameraPosition[2] = radius * Math.cos(elevation) * Math.cos(azimuth);
         view = createOrbitalViewMatrix(cameraPosition, [0, 0, 0], [0, 1, 0]);
     }
-    function updateFPSCamera() {}
+
+    function updateFPSCamera() {
+        const forwardX = Math.cos(cameraRotation[0]) * Math.sin(cameraRotation[1]);
+        const forwardY = Math.sin(cameraRotation[0]);
+        const forwardZ = Math.cos(cameraRotation[0]) * Math.cos(cameraRotation[1]);
+        const strafeX = Math.cos(cameraRotation[1]);
+        const strafeZ = -Math.sin(cameraRotation[1]);
+
+        if (keysPressed.w) {
+            cameraPosition[0] += camSpeed * forwardX;
+            cameraPosition[1] -= camSpeed * forwardY;
+            cameraPosition[2] -= camSpeed * forwardZ;
+        }
+        if (keysPressed.a) {
+            cameraPosition[0] -= camSpeed * strafeX;
+            cameraPosition[2] += camSpeed * strafeZ;
+        }
+        if (keysPressed.s) {
+            cameraPosition[0] -= camSpeed * forwardX;
+            cameraPosition[1] += camSpeed * forwardY;
+            cameraPosition[2] += camSpeed * forwardZ;
+        }
+        if (keysPressed.d) {
+            cameraPosition[0] += camSpeed * strafeX;
+            cameraPosition[2] -= camSpeed * strafeZ;
+        }
+        if (keysPressed.r) {
+            cameraPosition[1] += camSpeed;
+        }
+        if (keysPressed.f) {
+            cameraPosition[1] -= camSpeed;
+        }
+        view = createViewMatrix(cameraPosition, cameraRotation, [0, 1, 0]);
+    }
 
 
     // PIPELINE
