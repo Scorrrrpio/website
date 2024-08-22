@@ -4,12 +4,12 @@ import { wgpuSetup } from "./wgpuSetup";
 import { plyToLineList, plyToTriangleList } from "./plyReader";
 
 // inspired by the sphere graphic from lokinet.org
-export async function cameraPlayground(canvasID, autoplay) {
+export async function cameraPlayground(canvasID, autoplay, allowControl) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
     const devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = 512 * devicePixelRatio;
-    canvas.height = 512 * devicePixelRatio;
+    canvas.width = canvas.clientWidth * devicePixelRatio;
+    canvas.height = canvas.clientHeight * devicePixelRatio;
 
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
@@ -117,9 +117,8 @@ export async function cameraPlayground(canvasID, autoplay) {
 
 
     // CAMERA CONTROLS
-    //const CAMTYPE = "TANK";
-    //const CAMTYPE = "ORBITAL";
-    const CAMTYPE = "FPS";
+    // CAMTYPE values: TANK, ORBITAL, FPS
+    const CAMTYPE = allowControl ? "FPS" : "ORBITAL";
 
     let cameraPosition = [0, 0, 7];
     let cameraRotation = [0, 0, 0];
@@ -146,121 +145,114 @@ export async function cameraPlayground(canvasID, autoplay) {
         r: false,  // rise
         f: false,  // fall
     }
-    // listen for keyboard
-    document.addEventListener("keydown", (event) => {
-        switch(event.code) {
-            case "KeyW":
-                keysPressed.w = true;
-                break;
-            case "KeyA":
-                keysPressed.a = true;
-                break;
-            case "KeyS":
-                keysPressed.s = true;
-                break;
-            case "KeyD":
-                keysPressed.d = true;
-                break;
-            case "KeyR":
-                keysPressed.r = true;
-                break;
-            case "KeyF":
-                keysPressed.f = true;
-                break;
-        }
-    });
-    document.addEventListener("keyup", (event) => {
-        switch(event.code) {
-            case "KeyW":
-                keysPressed.w = false;
-                break;
-            case "KeyA":
-                keysPressed.a = false;
-                break;
-            case "KeyS":
-                keysPressed.s = false;
-                break;
-            case "KeyD":
-                keysPressed.d = false;
-                break;
-            case "KeyR":
-                keysPressed.r = false;
-                break;
-            case "KeyF":
-                keysPressed.f = false;
-                break;
-        }
-    });
 
-    // mouse input
-    let isDragging = false;
-    let lastMouseX;
-    let lastMouseY;
-    // listen for mouse
-    if (CAMTYPE === "ORBITAL") {
-        document.addEventListener("mousedown", (event) => {
-            isDragging = true;
-            lastMouseX = event.clientX;
-            lastMouseY = event.clientY;
-        });
-        document.addEventListener("mouseup", (event) => { isDragging = false; });
-        document.addEventListener("mousemove", (event) => {
-            if (isDragging) {
-                const deltaX = event.clientX - lastMouseX;
-                const deltaY = event.clientY - lastMouseY;
-
-                // TODO update if sluggish
-                // update spherical coordinates
-                azimuth -= deltaX * camRotationSpeed;
-                elevation += deltaY * camRotationSpeed;
-
-                elevation = Math.max(minElevation, Math.min(elevation, maxElevation));
-
-                // update previous mouse positions
-                lastMouseX = event.clientX;
-                lastMouseY = event.clientY;
-            }
-        });
-    }
-    else if (CAMTYPE === "FPS") {
-        document.addEventListener("mousemove", (event) => {
-            if (document.pointerLockElement === canvas) {
-                const deltaX = event.movementX;
-                const deltaY = event.movementY;
-
-                cameraRotation[1] += camRotationSpeed * deltaX;  // yaw
-                cameraRotation[0] += camRotationSpeed * deltaY;  // pitch
-
-                // prevent flipping
-                cameraRotation[0] = Math.max(minLook, Math.min(maxLook, cameraRotation[0]));
-
-                // update previous mouse positions
-                lastMouseX = event.clientX;
-                lastMouseY = event.clientY;
-            }
-        });
-
-        // request pointer lock within canvas
-        canvas.addEventListener("click", () => {
-            canvas.requestPointerLock();
-        });
-
-        // handle pointer lock change
-        document.addEventListener("pointerlockchange", () => {
-            if (document.pointerLockElement === canvas) {
-                console.log("pointer locked");
-            }
-            else {
-                console.log("pointer unlocked");
-            }
-        });
-
-        // release pointer lock
+    if (allowControl) {
+        // listen for keyboard
         document.addEventListener("keydown", (event) => {
-            if (event.code === "Escape") {
-                document.exitPointerLock();
+            switch(event.code) {
+                case "KeyW":
+                    keysPressed.w = true;
+                    break;
+                case "KeyA":
+                    keysPressed.a = true;
+                    break;
+                case "KeyS":
+                    keysPressed.s = true;
+                    break;
+                case "KeyD":
+                    keysPressed.d = true;
+                    break;
+                case "KeyR":
+                    keysPressed.r = true;
+                    break;
+                case "KeyF":
+                    keysPressed.f = true;
+                    break;
             }
         });
+        document.addEventListener("keyup", (event) => {
+            switch(event.code) {
+                case "KeyW":
+                    keysPressed.w = false;
+                    break;
+                case "KeyA":
+                    keysPressed.a = false;
+                    break;
+                case "KeyS":
+                    keysPressed.s = false;
+                    break;
+                case "KeyD":
+                    keysPressed.d = false;
+                    break;
+                case "KeyR":
+                    keysPressed.r = false;
+                    break;
+                case "KeyF":
+                    keysPressed.f = false;
+                    break;
+            }
+        });
+
+        // mouse input
+        let isDragging = false;
+        let lastMouseX;
+        let lastMouseY;
+        // listen for mouse
+        if (CAMTYPE === "ORBITAL") {
+            document.addEventListener("mousedown", (event) => {
+                isDragging = true;
+                lastMouseX = event.clientX;
+                lastMouseY = event.clientY;
+            });
+            document.addEventListener("mouseup", (event) => { isDragging = false; });
+            document.addEventListener("mousemove", (event) => {
+                if (isDragging) {
+                    const deltaX = event.clientX - lastMouseX;
+                    const deltaY = event.clientY - lastMouseY;
+
+                    // TODO update if sluggish
+                    // update spherical coordinates
+                    azimuth -= deltaX * camRotationSpeed;
+                    elevation += deltaY * camRotationSpeed;
+
+                    elevation = Math.max(minElevation, Math.min(elevation, maxElevation));
+
+                    // update previous mouse positions
+                    lastMouseX = event.clientX;
+                    lastMouseY = event.clientY;
+                }
+            });
+        }
+        else if (CAMTYPE === "FPS") {
+            document.addEventListener("mousemove", (event) => {
+                if (document.pointerLockElement === canvas) {
+                    const deltaX = event.movementX;
+                    const deltaY = event.movementY;
+
+                    cameraRotation[1] += camRotationSpeed * deltaX;  // yaw
+                    cameraRotation[0] += camRotationSpeed * deltaY;  // pitch
+
+                    // prevent flipping
+                    cameraRotation[0] = Math.max(minLook, Math.min(maxLook, cameraRotation[0]));
+
+                    // update previous mouse positions
+                    lastMouseX = event.clientX;
+                    lastMouseY = event.clientY;
+                }
+            });
+
+            // request pointer lock within canvas
+            canvas.addEventListener("click", () => {
+                canvas.requestPointerLock();
+            });
+
+            // release pointer lock
+            document.addEventListener("keydown", (event) => {
+                if (event.code === "Escape") {
+                    document.exitPointerLock();
+                }
+            });
+        }
     }
 
 
@@ -312,6 +304,9 @@ export async function cameraPlayground(canvasID, autoplay) {
         }
         if (keysPressed.s) {
             radius += camSpeed;
+        }
+        if (!allowControl) {
+            azimuth -= 1 * camRotationSpeed;
         }
         // convert spherical coordinates to cartesian
         cameraPosition[0] = radius * Math.cos(elevation) * Math.sin(azimuth);

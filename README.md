@@ -7,3 +7,4 @@ working on some cool WebGPU stuff
 - better mobile support
 - WebGL fallback
 - better error handling in webpack entry files
+- CANVAS RESIZE HANDLING
