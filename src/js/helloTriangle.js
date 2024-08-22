@@ -198,7 +198,6 @@ export async function helloTriangle(canvasID, autoplay) {
 
 	// ANIMATION CONTROL
     function startRenderLoop() {
-        console.log("in");
         if (!animating) {
             animating = true;
             renderLoop();
@@ -206,7 +205,6 @@ export async function helloTriangle(canvasID, autoplay) {
     }
 
     function stopRenderLoop() {
-        console.log("out");
         animating = false;
     }
 

@@ -1,3 +1,5 @@
+// NOTE: this will not read ALL .ply files (but it works for my purposes)
+
 async function readPly(url, topology) {
     // fetch ply file from server;
     const response = await fetch(url);
@@ -6,98 +8,117 @@ async function readPly(url, topology) {
     // separate into lines
     const lines = text.split("\n");
 
+    const properties = [];
+    const data = {};
+    data.faces = [];
+    data.topologyVerts = 0;  // number of vertices for rendering topology
+
     let readingVertices = false;
     let readingFaces = false;
     let vertsCount = 0;
     let faceCount = 0;
-    let vertices = [];
-    let faces = [];
-    let topologyVerts = 0;  // number of vertices for rendering topology
 
-    // TODO properties -> object
     for (const line of lines) {
         const parts = line.split(" ");
         if (readingFaces) {
-            // reading faces
+            // read faces
             const sides = Number(parts[0]);
-            faces.push(parts.slice(1, sides + 1).map(Number));
+            data.faces.push(parts.slice(1, sides + 1).map(Number));
             // add vertices to count
-            if (topology === "triangle-list") { topologyVerts += (sides - 2) * 3; }
-            else if (topology === "line-list") { topologyVerts += sides * 2; }
+            if (topology === "triangle-list") { data.topologyVerts += (sides - 2) * 3; }
+            else if (topology === "line-list") { data.topologyVerts += sides * 2; }
+            // count faces
+            if (--faceCount === 0) {
+                readingFaces = false;
+            }
         }
         else if (readingVertices) {
-            // reading vertices
-            // TODO variable dimensions
-            vertices.push([
-                Number(parts[0]),
-                Number(parts[1]),
-                Number(parts[2]),
-            ]);
+            // read vertices
+            for (const i in parts) {
+                data[properties[i]].push(Number(parts[i]));
+            }
             // count vertices
-            if (--vertsCount === 0) { readingFaces = true; }
+            if (--vertsCount === 0) {
+                readingVertices = false;
+                readingFaces = true;
+            }
         }
         else {
-            // reading metadata
+            // read header
             // data format
             if (parts[0] == "format" && parts[1] === "binary") {
-                throw new Error("Binary .ply files not supported");
+                throw new Error("Binary .ply files not supported");  // TODO binary support
             }
             // element count
             else if (parts[0] == "element") {
                 if (parts[1] == "vertex") { vertsCount = Number(parts[2]); }
-                if (parts[1] == "face") { faceCount = Number(parts[2]); }
+                if (parts[1] === "face") { faceCount = Number(parts[2]); }
+                // face processing unnecessary
             }
-            // TODO properties
+            // properties
+            else if (parts[0] == "property") {
+                if (parts[1] == "list") {}  // TODO for evil files
+                else {
+                    // parts[1] is type
+                    properties.push(parts[2]);
+                }
+            }
             // end_header
-            else if (parts[0] == "end_header") { readingVertices = true; }
+            else if (parts[0] == "end_header") {
+                readingVertices = true;
+                // create fields in data Object
+                for (const property of properties) { data[property] = []; }
+            }
         }
     }
 
-    return { vertices, faces, topologyVerts };
+    return data;
 }
 
 export async function plyToTriangleList(url) {
-    const { vertices, faces, topologyVerts } = await readPly(url, "triangle-list");
+    const data = await readPly(url, "triangle-list");
     // generate Float32Array
-    const floatVerts = new Float32Array(topologyVerts * 3);
+    const floatVerts = new Float32Array(data.topologyVerts * 3);
     let vIndex = 0;
-    for (const face of faces) {
+    for (const face of data.faces) {
         // TODO selectable triangulation behaviour
         // handle polygons with fan of triangles
         for (let i = 1; i < face.length - 1; i++) {
             // v0
-            floatVerts[vIndex++] = vertices[face[0]][0];
-            floatVerts[vIndex++] = vertices[face[0]][1];
-            floatVerts[vIndex++] = vertices[face[0]][2];
+            floatVerts[vIndex++] = data.x[face[0]];
+            floatVerts[vIndex++] = data.y[face[0]];
+            floatVerts[vIndex++] = data.z[face[0]];
             // vi
-            floatVerts[vIndex++] = vertices[face[i]][0];
-            floatVerts[vIndex++] = vertices[face[i]][1];
-            floatVerts[vIndex++] = vertices[face[i]][2];
+            floatVerts[vIndex++] = data.x[face[i]];
+            floatVerts[vIndex++] = data.y[face[i]];
+            floatVerts[vIndex++] = data.z[face[i]];
             // v(i+1)
-            floatVerts[vIndex++] = vertices[face[i+1]][0];
-            floatVerts[vIndex++] = vertices[face[i+1]][1];
-            floatVerts[vIndex++] = vertices[face[i+1]][2];
+            floatVerts[vIndex++] = data.x[face[i+1]];
+            floatVerts[vIndex++] = data.y[face[i+1]];
+            floatVerts[vIndex++] = data.z[face[i+1]];
         }
     }
-    return floatVerts;
+    data.vertBuffer = floatVerts;
+    return data;
 }
 
 export async function plyToLineList(url) {
-    const { vertices, faces, topologyVerts } = await readPly(url, "line-list");
+    const data = await readPly(url, "line-list");
     // generate Float32Array
-    const floatVerts = new Float32Array(topologyVerts * 3);
+    const floatVerts = new Float32Array(data.topologyVerts * 3);
     let vIndex = 0;
-    for (const face of faces) {
+    for (const face of data.faces) {
         for (let i = 0; i < face.length; i++) {
             // v0
-            floatVerts[vIndex++] = vertices[face[i]][0];
-            floatVerts[vIndex++] = vertices[face[i]][1];
-            floatVerts[vIndex++] = vertices[face[i]][2];
+            floatVerts[vIndex++] = data.x[face[i]];
+            floatVerts[vIndex++] = data.y[face[i]];
+            floatVerts[vIndex++] = data.z[face[i]];
             // v1
-            floatVerts[vIndex++] = vertices[face[(i+1) % face.length]][0];
-            floatVerts[vIndex++] = vertices[face[(i+1) % face.length]][1];
-            floatVerts[vIndex++] = vertices[face[(i+1) % face.length]][2];
+            floatVerts[vIndex++] = data.x[face[(i+1) % face.length]];
+            floatVerts[vIndex++] = data.y[face[(i+1) % face.length]];
+            floatVerts[vIndex++] = data.z[face[(i+1) % face.length]];
         }
     }
-    return floatVerts;
+    data.vertBuffer = floatVerts;
+    return data;
 }
