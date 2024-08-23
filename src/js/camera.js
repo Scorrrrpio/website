@@ -116,6 +116,7 @@ export class fpvCamera {
         // request pointer lock within canvas
         this.canvas.addEventListener("click", (event) => {
             if (document.pointerLockElement === this.canvas) {
+                // TODO possibly move elsewhere?
                 // in game
                 switch (event.button) {
                     case 0:
@@ -150,6 +151,9 @@ export class fpvCamera {
         mat4.rotateY(this.view, this.view, this.rotation[1]);
         mat4.rotateZ(this.view, this.view, this.rotation[2]);
         mat4.translate(this.view, this.view, [-this.position[0], -this.position[1], -this.position[2]]);
+        if (this.view.some(isNaN)) {
+            throw new RangeError("NaN in view matrix");
+        }
     }
 
     updateCamera() {

@@ -16,6 +16,9 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
 
     // GEOMETRY
+    // TODO load assets and create all buffers
+    // TODO glTF if things get dicey
+    // read from .ply files
     const TOPOLOGY = "triangle-list";
     const g1 = await plyToTriangleList("geometry/pyramid.ply");
     const g1Transform = mat4.create();
@@ -27,6 +30,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
     geometry.push({ geo: g1, model: g1Transform });
     geometry.push({ geo: g2, model: g2Transform });
 
+    // create vertex buffers
     const vertexBuffers = [];
     for (const { geo, model } of geometry) {
         // create vertex buffer
@@ -79,7 +83,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
         fn fragmentMain(@location(0) bary: vec3f) -> @location(0) vec4f {
             let threshold = 0.01;
             if (min(min(bary.x, bary.y), bary.z) >= threshold) {
-                return vec4f(0, 0, 0, 0);
+                return vec4f(0, 0, 0, 1);
             }
             return vec4f(1, 1, 1, 1);
         }
@@ -151,18 +155,10 @@ export async function fpv(canvasID, autoplay, allowControl) {
     }
 
 
-    // CAMERA SETUP
-    // view matrix
-
+    // CAMERA
     // coordinates
     const cameraPosition = [0, 0, 7];
     const cameraRotation = [0, 0, 0];
-    // movement
-    const camSpeed = 0.1;
-    const xSense = 0.01;
-    const ySense = 0.01;
-    const maxLook = Math.PI / 2
-    const minLook = -maxLook;
     // projection matrix
     const fov = Math.PI / 6;  // TODO cap at 2 * Math.PI / 3
     const aspect = canvas.width / canvas.height;
@@ -217,6 +213,11 @@ export async function fpv(canvasID, autoplay, allowControl) {
             frontFace: "ccw",
             cullMode: "back",
         },
+        depthStencil: {
+            format: "depth24plus",
+            depthWriteEnabled: true,
+            depthCompare: "less",
+        },
         multisample: {
             count: 4,
         },
@@ -256,6 +257,16 @@ export async function fpv(canvasID, autoplay, allowControl) {
     }
 
 
+    // DEPTH TESTING
+    const depthTexture = device.createTexture({
+        label: "Depth Texture",
+        size: [canvas.width, canvas.height, 1],
+        format: "depth24plus",
+        sampleCount: 4,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+
+
     // RENDER LOOP
     let animating = false;
 	function renderLoop() {
@@ -269,7 +280,6 @@ export async function fpv(canvasID, autoplay, allowControl) {
         for (const { modelBuffer, model } of vertexBuffers) {
             device.queue.writeBuffer(modelBuffer, 0, model);
         }
-        //device.queue.writeBuffer(modelBuffer, 0, new Float32Array(model));
         device.queue.writeBuffer(viewBuffer, 0, new Float32Array(pov.view));
         device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(pov.projection));
 
@@ -286,10 +296,15 @@ export async function fpv(canvasID, autoplay, allowControl) {
 				storeOp: "store",
                 resolveTarget: canvasTexture.createView(),
 			}],
+            depthStencilAttachment: {
+                view: depthTexture.createView(),
+                depthLoadOp: "clear",
+                depthClearValue: 1.0,
+                depthStoreOp: "store",
+            },
 		});
 
-        // TODO defaults to full canvas
-        //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
+        pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
 
 		// draw
         pass.setPipeline(pipeline);
