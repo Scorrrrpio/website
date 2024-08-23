@@ -2,6 +2,7 @@
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
 import { plyToTriangleList } from "./plyReader";
+import { fpvCamera } from "./camera";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv(canvasID, autoplay, allowControl) {
@@ -26,8 +27,6 @@ export async function fpv(canvasID, autoplay, allowControl) {
     geometry.push({ geo: g1, model: g1Transform });
     geometry.push({ geo: g2, model: g2Transform });
 
-    console.log("g1 g2: ", g1Transform, g2Transform);
-
     const vertexBuffers = [];
     for (const { geo, model } of geometry) {
         // create vertex buffer
@@ -46,7 +45,6 @@ export async function fpv(canvasID, autoplay, allowControl) {
             vertexCount: geo.topologyVerts,
         });
     }
-    console.log("VBs: ", vertexBuffers);
 
 
     // SHADERS
@@ -155,183 +153,24 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
     // CAMERA SETUP
     // view matrix
-    function createViewMatrix(pos, rot) {
-        const view = mat4.create();
-        mat4.rotateX(view, view, rot[0]);
-        mat4.rotateY(view, view, rot[1]);
-        mat4.rotateZ(view, view, rot[2]);
-        mat4.translate(view, view, [-pos[0], -pos[1], -pos[2]]);
-        return view;
-    }
 
-    function createOrbitalViewMatrix(pos, target, up) {
-        const view = mat4.create();
-        mat4.lookAt(view, pos, target, up);
-        return view;
-    }
-
-    // projection matrix
-    const fov = Math.PI / 6;  // pi/4 radians
-    const aspect = canvas.width / canvas.height;
-    // clipping planes
-    const near = 0.1;
-    const far = 100.0;
-
-    const projection = mat4.create();
-    mat4.perspective(projection, fov, aspect, near, far);
-    // MVP computed in render loop
-
-
-    // CAMERA CONTROLS
-
-    let cameraPosition = [0, 0, 7];
-    let cameraRotation = [0, 0, 0];
+    // coordinates
+    const cameraPosition = [0, 0, 7];
+    const cameraRotation = [0, 0, 0];
+    // movement
     const camSpeed = 0.1;
     const xSense = 0.01;
     const ySense = 0.01;
     const maxLook = Math.PI / 2
     const minLook = -maxLook;
+    // projection matrix
+    const fov = Math.PI / 6;  // TODO cap at 2 * Math.PI / 3
+    const aspect = canvas.width / canvas.height;
+    const near = 0.1;  // clipping planes
+    const far = 100.0;
 
-    // input handling
-    // keyboard input
-    const inputs = {
-        w: false,
-        a: false,
-        s: false,
-        d: false,
-        space: false,
-    }
-
-    // keyboard input
-    document.addEventListener("keydown", (event) => {
-        if (document.pointerLockElement === canvas) {
-            switch(event.code) {
-                case "KeyW":
-                    inputs.w = true;
-                    break;
-                case "KeyA":
-                    inputs.a = true;
-                    break;
-                case "KeyS":
-                    inputs.s = true;
-                    break;
-                case "KeyD":
-                    inputs.d = true;
-                    break;
-                case "space":
-                    inputs.space = true;
-                    break;
-                case "escape":
-                    // exit pointer lock on canvas
-                    document.exitPointerLock();
-            }
-        }
-    });
-    document.addEventListener("keyup", (event) => {
-        if (document.pointerLockElement === canvas) {
-            switch(event.code) {
-                case "KeyW":
-                    inputs.w = false;
-                    break;
-                case "KeyA":
-                    inputs.a = false;
-                    break;
-                case "KeyS":
-                    inputs.s = false;
-                    break;
-                case "KeyD":
-                    inputs.d = false;
-                    break;
-                case "space":
-                    inputs.space = false;
-                    break;
-            }
-        }
-    });
-
-    // mouse movement
-    document.addEventListener("mousemove", (event) => {
-        if (document.pointerLockElement === canvas) {
-            const deltaX = event.movementX;
-            const deltaY = event.movementY;
-
-            cameraRotation[1] += xSense * deltaX;  // yaw
-            cameraRotation[0] += ySense * deltaY;  // pitch
-
-            // prevent flipping
-            cameraRotation[0] = Math.max(minLook, Math.min(maxLook, cameraRotation[0]));
-        }
-    });
-
-    // request pointer lock within canvas
-    canvas.addEventListener("click", (event) => {
-        if (document.pointerLockElement === canvas) {
-            // in game
-            switch (event.button) {
-                case 0:
-                    console.log("left");
-                    break;
-                case 1:
-                    console.log("middle");
-                    break;
-                case 2:
-                    console.log("right");
-                    break;
-                case 3:
-                    console.log("4");
-                    break;
-                case 4:
-                    console.log("5");
-                    break;
-                default:
-                    console.log("bro what");
-                    break;
-            }
-        }
-        else {
-            // free cursor
-            canvas.requestPointerLock();
-        }
-    });
-
-
-    // update camera
-    let view;
-
-    function updateCamera() {
-        const forwardX = Math.cos(cameraRotation[0]) * Math.sin(cameraRotation[1]);
-        const forwardY = Math.sin(cameraRotation[0]);
-        const forwardZ = Math.cos(cameraRotation[0]) * Math.cos(cameraRotation[1]);
-        const strafeX = Math.cos(cameraRotation[1]);
-        const strafeZ = -Math.sin(cameraRotation[1]);
-
-        // TODO normalize
-        if (inputs.w) {
-            cameraPosition[0] += camSpeed * forwardX;
-            cameraPosition[1] -= camSpeed * forwardY;
-            cameraPosition[2] -= camSpeed * forwardZ;
-        }
-        if (inputs.a) {
-            cameraPosition[0] -= camSpeed * strafeX;
-            cameraPosition[2] += camSpeed * strafeZ;
-        }
-        if (inputs.s) {
-            cameraPosition[0] -= camSpeed * forwardX;
-            cameraPosition[1] += camSpeed * forwardY;
-            cameraPosition[2] += camSpeed * forwardZ;
-        }
-        if (inputs.d) {
-            cameraPosition[0] += camSpeed * strafeX;
-            cameraPosition[2] -= camSpeed * strafeZ;
-        }
-        if (inputs.r) {
-            cameraPosition[1] += camSpeed;
-        }
-        if (inputs.f) {
-            cameraPosition[1] -= camSpeed;
-        }
-        view = createViewMatrix(cameraPosition, cameraRotation, [0, 1, 0]);
-    }
+    // create camera object
+    const pov = new fpvCamera(canvas, cameraPosition, cameraRotation, fov, near, far);
 
 
     // PIPELINE
@@ -400,7 +239,8 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
         canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
 
-        mat4.perspective(projection, fov, canvas.width / canvas.height, near, far);
+        // TODO handle in camera
+        mat4.perspective(pov.projection, fov, canvas.width / canvas.height, near, far);
 
         if (msaaTexture) { msaaTexture.destroy(); }
         msaaTexture = device.createTexture({
@@ -423,15 +263,15 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvasTexture = context.getCurrentTexture();
 
         // update camera
-        updateCamera();
+        pov.updateCamera();
 
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of vertexBuffers) {
             device.queue.writeBuffer(modelBuffer, 0, model);
         }
         //device.queue.writeBuffer(modelBuffer, 0, new Float32Array(model));
-        device.queue.writeBuffer(viewBuffer, 0, new Float32Array(view));
-        device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(projection));
+        device.queue.writeBuffer(viewBuffer, 0, new Float32Array(pov.view));
+        device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(pov.projection));
 
 		// create GPUCommandEncoder
 		const encoder = device.createCommandEncoder();

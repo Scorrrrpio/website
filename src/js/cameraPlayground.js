@@ -16,7 +16,7 @@ export async function cameraPlayground(canvasID, autoplay, allowControl) {
 
     // GEOMETRY
     const TOPOLOGY = "line-list"; const data = await plyToLineList("geometry/cube.ply");
-    const vertices = data.vertBuffer;
+    const vertices = data.vertFloats;
 
     // create vertex buffer
 	const vertexBuffer = device.createBuffer({

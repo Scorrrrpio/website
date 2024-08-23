@@ -17,7 +17,7 @@ export async function lokiSphere(canvasID, autoplay) {
     // GEOMETRY
     //const TOPOLOGY = "triangle-list"; const data = await plyToTriangleList("geometry/lokiSphere.ply");
     const TOPOLOGY = "line-list"; const data = await plyToLineList("geometry/lokiSphere.ply");
-    const vertices = data.vertBuffer;
+    const vertices = data.vertFloats;
 
     // rotate 90 degrees around X because I messed up the sphere export somehow
     for (let i = 0; i < vertices.length; i += 3) {
