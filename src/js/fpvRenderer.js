@@ -3,6 +3,7 @@ import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
 import { plyToTriangleList } from "./plyReader";
 import { fpvCamera } from "./camera";
+import { assetsToBuffers } from "./loadAssets";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv(canvasID, autoplay, allowControl) {
@@ -17,38 +18,27 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
     // GEOMETRY
     // TODO load assets and create all buffers
-    // TODO glTF if things get dicey
     // read from .ply files
     const TOPOLOGY = "triangle-list";
-    const g1 = await plyToTriangleList("geometry/pyramid.ply");
-    const g1Transform = mat4.create();
-    mat4.translate(g1Transform, g1Transform, [-1, 0, 0]);
-    const g2 = await plyToTriangleList("geometry/lokiSphere.ply");
-    const g2Transform = mat4.create();
-    mat4.translate(g2Transform, g2Transform, [1, 0, 0]);
-    const geometry = [];
-    geometry.push({ geo: g1, model: g1Transform });
-    geometry.push({ geo: g2, model: g2Transform });
-
-    // create vertex buffers
-    const vertexBuffers = [];
-    for (const { geo, model } of geometry) {
-        // create vertex buffer
-        const vb = device.createBuffer({
-            label: geo.source,
-            size: geo.vertFloats.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        })
-        // copy vertex data into vertex buffer
-        device.queue.writeBuffer(vb, 0, geo.vertFloats);
-        // add to vertex buffer list
-        vertexBuffers.push({
-            id: vertexBuffers.length,
-            buffer: vb,
-            model: model,
-            vertexCount: geo.topologyVerts,
-        });
-    }
+    // Scene assets as JSON
+    // TODO glTF if things get dicey
+    const assets = {
+        objects: [
+            {
+                file: "geometry/cube.ply",
+                position: [-1, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+            },
+            {
+                file: "geometry/lokiSphere.ply",
+                position: [1, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+            }
+        ],
+    };
+    const { vertexBuffers, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device);
 
 
     // SHADERS
@@ -100,81 +90,27 @@ export async function fpv(canvasID, autoplay, allowControl) {
 	});
 
 
-    // UNIFORM BUFFER AND BIND GROUP
-    // create uniform buffers for MVP matrices
-    const viewBuffer = device.createBuffer({
-        label: "View Uniform",
-        size: 64,  // for 4x4 matrix (8 * 16 bytes)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
-    const projectionBuffer = device.createBuffer({
-        label: "Projection Uniform",
-        size: 64,  // for 4x4 matrix (8 * 16 bytes)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
-    // create bind group layout
-    const bindGroupLayout = device.createBindGroupLayout({
-        label: "MVP Bind Group Layout",
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },  // can omit type param
-        }, {
-            binding: 1,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }, {
-            binding: 2,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }]
-    });
-
-    for (const vb of vertexBuffers) {
-        vb.modelBuffer = device.createBuffer({
-            label: "Model Uniform " + vb.id,
-            size: 64,  // for 4x4 matrix (8 * 16 bytes)
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        vb.bindGroup = device.createBindGroup({
-            label: "MVP bind group " + vb.id,
-            layout: bindGroupLayout,
-            entries: [{
-                binding: 0,
-                resource: { buffer: vb.modelBuffer },
-            }, {
-                binding: 1,
-                resource: { buffer: viewBuffer },
-            }, {
-                binding: 2,
-                resource: { buffer: projectionBuffer },
-            }],
-        });
-    }
-
-
     // CAMERA
     // coordinates
     const cameraPosition = [0, 0, 7];
     const cameraRotation = [0, 0, 0];
     // projection matrix
     const fov = Math.PI / 6;  // TODO cap at 2 * Math.PI / 3
-    const aspect = canvas.width / canvas.height;
     const near = 0.1;  // clipping planes
     const far = 100.0;
+    // aspect ratio computed from canvas
 
     // create camera object
     const pov = new fpvCamera(canvas, cameraPosition, cameraRotation, fov, near, far);
 
 
     // PIPELINE
+    const SAMPLES = 4;
 	const pipeline = device.createRenderPipeline({
 		label: "FPV Pipeline",
 		layout: device.createPipelineLayout({
             label: "FPV Pipeline Layout",
-            bindGroupLayouts: [bindGroupLayout],
+            bindGroupLayouts: [vertexBuffers[0].bindGroupLayout],
         }),
 		vertex: {
 			module: vertexShaderModule,
@@ -219,7 +155,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
             depthCompare: "less",
         },
         multisample: {
-            count: 4,
+            count: SAMPLES,
         },
 	});
 
@@ -233,7 +169,18 @@ export async function fpv(canvasID, autoplay, allowControl) {
         sampleCount: 4,
     });
 
-    // handle resize
+
+    // DEPTH TESTING
+    let depthTexture = device.createTexture({
+        label: "Depth Texture",
+        size: [canvas.width, canvas.height, 1],
+        format: "depth24plus",
+        sampleCount: 4,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+
+
+    // HANDLE RESIZE
     function handleResize() {
         const parent = canvas.parentElement;
 
@@ -251,20 +198,19 @@ export async function fpv(canvasID, autoplay, allowControl) {
             sampleCount: 4,
         });
 
+        if (depthTexture) { depthTexture.destroy(); }
+        depthTexture = device.createTexture({
+            label: "Depth Texture",
+            size: [canvas.width, canvas.height, 1],
+            format: "depth24plus",
+            sampleCount: 4,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+
         if (!animating && !autoplay) {
             renderLoop();
         }
     }
-
-
-    // DEPTH TESTING
-    const depthTexture = device.createTexture({
-        label: "Depth Texture",
-        size: [canvas.width, canvas.height, 1],
-        format: "depth24plus",
-        sampleCount: 4,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
 
 
     // RENDER LOOP
