@@ -232,12 +232,34 @@ export async function cube(canvasID, autoplay) {
     // create texture the size of canvas
     let canvasTexture = context.getCurrentTexture();
     // create multisample texture
-    const msaaTexture = device.createTexture({
+    let msaaTexture = device.createTexture({
         format: canvasTexture.format,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
         size: [canvas.width, canvas.height],
         sampleCount: 4,
     });
+
+    // handle resize
+    function handleResize() {
+        const parent = canvas.parentElement;
+
+        canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
+        canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
+
+        mat4.perspective(projection, fov, canvas.width / canvas.height, near, far);
+
+        if (msaaTexture) { msaaTexture.destroy(); }
+        msaaTexture = device.createTexture({
+            format: canvasTexture.format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            size: [canvas.width, canvas.height],
+            sampleCount: 4,
+        });
+
+        if (!animating && !autoplay) {
+            renderLoop();
+        }
+    }
 
 
     // RENDER LOOP
@@ -313,5 +335,7 @@ export async function cube(canvasID, autoplay) {
         canvas.addEventListener("mouseleave", stopRenderLoop);
     }
 
+    handleResize();
+    window.addEventListener("resize", () => { angle -= 0.02; handleResize(); });
     renderLoop();
 }

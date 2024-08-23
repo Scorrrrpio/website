@@ -190,14 +190,35 @@ export async function lokiSphere(canvasID, autoplay) {
 
 
     // 4xMSAA TEXTURES
-    // TODO resizing with window
     let canvasTexture = context.getCurrentTexture();
-    const msaaTexture = device.createTexture({
+    let msaaTexture = device.createTexture({
         format: canvasTexture.format,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
         size: [canvas.width, canvas.height],
         sampleCount: 4,
     });
+
+    // handle resize
+    function handleResize() {
+        const parent = canvas.parentElement;
+
+        canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
+        canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
+
+        mat4.perspective(projection, fov, canvas.width / canvas.height, near, far);
+
+        if (msaaTexture) { msaaTexture.destroy(); }
+        msaaTexture = device.createTexture({
+            format: canvasTexture.format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            size: [canvas.width, canvas.height],
+            sampleCount: 4,
+        });
+
+        if (!animating && !autoplay) {
+            renderLoop();
+        }
+    }
 
 
     // RENDER LOOP
@@ -235,7 +256,7 @@ export async function lokiSphere(canvasID, autoplay) {
 		});
 
         // TODO what is this?
-        //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
+        pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// render triangle
 		pass.setPipeline(pipeline);
@@ -267,7 +288,13 @@ export async function lokiSphere(canvasID, autoplay) {
         animating = false;
     }
 
+    handleResize();
+    window.addEventListener("resize", () => {
+        angle += 0.01;
+        handleResize();
+    });
     renderLoop();
+
     if (!autoplay) {
 	    canvas.addEventListener("mouseenter", startRenderLoop);
         canvas.addEventListener("mouseleave", stopRenderLoop);

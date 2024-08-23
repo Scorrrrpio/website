@@ -402,12 +402,34 @@ export async function cameraPlayground(canvasID, autoplay, allowControl) {
 
     // 4xMSAA TEXTURES
     let canvasTexture = context.getCurrentTexture();
-    const msaaTexture = device.createTexture({
+    let msaaTexture = device.createTexture({
         format: canvasTexture.format,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
         size: [canvas.width, canvas.height],
         sampleCount: 4,
     });
+
+    // handle resize
+    function handleResize() {
+        const parent = canvas.parentElement;
+
+        canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
+        canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
+
+        mat4.perspective(projection, fov, canvas.width / canvas.height, near, far);
+
+        if (msaaTexture) { msaaTexture.destroy(); }
+        msaaTexture = device.createTexture({
+            format: canvasTexture.format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            size: [canvas.width, canvas.height],
+            sampleCount: 4,
+        });
+
+        if (!animating && !autoplay) {
+            renderLoop();
+        }
+    }
 
 
     // RENDER LOOP
@@ -474,7 +496,15 @@ export async function cameraPlayground(canvasID, autoplay, allowControl) {
         animating = false;
     }
 
+    handleResize();
+    window.addEventListener("resize", () => {
+        if (!allowControl) {
+            azimuth += 1 * camRotationSpeed;
+        }
+        handleResize();
+    });
     renderLoop();
+
     if (!autoplay) {
 	    canvas.addEventListener("mouseenter", startRenderLoop);
         canvas.addEventListener("mouseleave", stopRenderLoop);
