@@ -1,4 +1,10 @@
 import { fpv } from "./fpvRenderer";
 
 console.log("WIP workspace");
-fpv("wip-workspace", true, true).catch((error) => { console.log(error.message); });
+fpv("wip-workspace", true, true).catch((error) => {
+    if (error.name === "Error") {
+        // unsupported WebGPU
+        console.log(error.message);
+    }
+    else { throw error; }
+});

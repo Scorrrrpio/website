@@ -17,13 +17,19 @@ export async function fpv(canvasID, autoplay, allowControl) {
     // GEOMETRY
     const TOPOLOGY = "triangle-list";
     const g1 = await plyToTriangleList("geometry/pyramid.ply");
+    const g1Transform = mat4.create();
+    mat4.translate(g1Transform, g1Transform, [-1, 0, 0]);
     const g2 = await plyToTriangleList("geometry/lokiSphere.ply");
+    const g2Transform = mat4.create();
+    mat4.translate(g2Transform, g2Transform, [1, 0, 0]);
     const geometry = [];
-    geometry.push(g1);
-    geometry.push(g2);
+    geometry.push({ geo: g1, model: g1Transform });
+    geometry.push({ geo: g2, model: g2Transform });
+
+    console.log("g1 g2: ", g1Transform, g2Transform);
 
     const vertexBuffers = [];
-    for (const geo of geometry) {
+    for (const { geo, model } of geometry) {
         // create vertex buffer
         const vb = device.createBuffer({
             label: geo.source,
@@ -34,10 +40,13 @@ export async function fpv(canvasID, autoplay, allowControl) {
         device.queue.writeBuffer(vb, 0, geo.vertFloats);
         // add to vertex buffer list
         vertexBuffers.push({
+            id: vertexBuffers.length,
             buffer: vb,
+            model: model,
             vertexCount: geo.topologyVerts,
         });
     }
+    console.log("VBs: ", vertexBuffers);
 
 
     // SHADERS
@@ -48,7 +57,9 @@ export async function fpv(canvasID, autoplay, allowControl) {
             @builtin(position) position: vec4f
         };
 
-        @group(0) @binding(0) var<uniform> mvp: mat4x4<f32>;
+        @group(0) @binding(0) var<uniform> model: mat4x4<f32>;
+        @group(0) @binding(1) var<uniform> view: mat4x4<f32>;
+        @group(0) @binding(2) var<uniform> projection: mat4x4<f32>;
 
         @vertex
         fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
@@ -58,6 +69,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
                 vec3(0, 0, 1)
             );
             var output: VertexOutput;
+            var mvp = projection * view * model;
             output.position = mvp * vec4f(pos, 1);
             output.barycentric = barycentrics[vertexIndex % 3];
             return output;
@@ -77,19 +89,25 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
     // create shader modules
 	const vertexShaderModule = device.createShaderModule({
-		label: "Sphere Vertex Shader",
+		label: "FPV Vertex Shader",
 		code: vertexShaderCode
 	});
 	const fragmentShaderModule = device.createShaderModule({
-		label: "Sphere Fragment Shader",
+		label: "FPV Fragment Shader",
 		code: fragmentShaderCode
 	});
 
 
     // UNIFORM BUFFER AND BIND GROUP
-    // create uniform buffer for MVP matrix
-    const uniformBuffer = device.createBuffer({
-        label: "MVP Uniform",
+    // create uniform buffers for MVP matrices
+    const viewBuffer = device.createBuffer({
+        label: "View Uniform",
+        size: 64,  // for 4x4 matrix (8 * 16 bytes)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    const projectionBuffer = device.createBuffer({
+        label: "Projection Uniform",
         size: 64,  // for 4x4 matrix (8 * 16 bytes)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
@@ -101,18 +119,38 @@ export async function fpv(canvasID, autoplay, allowControl) {
             binding: 0,
             visibility: GPUShaderStage.VERTEX,
             buffer: { type: "uniform" },  // can omit type param
+        }, {
+            binding: 1,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },
+        }, {
+            binding: 2,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },
         }]
     });
 
-    // create bind group
-    const bindGroup = device.createBindGroup({
-        label: "Sphere bind group",
-        layout: bindGroupLayout,
-        entries: [{
-            binding: 0,
-            resource: { buffer: uniformBuffer },
-        }],
-    });
+    for (const vb of vertexBuffers) {
+        vb.modelBuffer = device.createBuffer({
+            label: "Model Uniform " + vb.id,
+            size: 64,  // for 4x4 matrix (8 * 16 bytes)
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        vb.bindGroup = device.createBindGroup({
+            label: "MVP bind group " + vb.id,
+            layout: bindGroupLayout,
+            entries: [{
+                binding: 0,
+                resource: { buffer: vb.modelBuffer },
+            }, {
+                binding: 1,
+                resource: { buffer: viewBuffer },
+            }, {
+                binding: 2,
+                resource: { buffer: projectionBuffer },
+            }],
+        });
+    }
 
 
     // CAMERA SETUP
@@ -148,11 +186,9 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
     let cameraPosition = [0, 0, 7];
     let cameraRotation = [0, 0, 0];
-    // TANK, ORBITAL
     const camSpeed = 0.1;
-    const camRotationSpeed = 0.01;
-    // ORBITAL
-    let azimuth = 0.0;  // horizontal
+    const xSense = 0.01;
+    const ySense = 0.01;
     const maxLook = Math.PI / 2
     const minLook = -maxLook;
 
@@ -219,8 +255,8 @@ export async function fpv(canvasID, autoplay, allowControl) {
             const deltaX = event.movementX;
             const deltaY = event.movementY;
 
-            cameraRotation[1] += camRotationSpeed * deltaX;  // yaw
-            cameraRotation[0] += camRotationSpeed * deltaY;  // pitch
+            cameraRotation[1] += xSense * deltaX;  // yaw
+            cameraRotation[0] += ySense * deltaY;  // pitch
 
             // prevent flipping
             cameraRotation[0] = Math.max(minLook, Math.min(maxLook, cameraRotation[0]));
@@ -228,10 +264,29 @@ export async function fpv(canvasID, autoplay, allowControl) {
     });
 
     // request pointer lock within canvas
-    canvas.addEventListener("click", () => {
+    canvas.addEventListener("click", (event) => {
         if (document.pointerLockElement === canvas) {
             // in game
-            console.log("click");
+            switch (event.button) {
+                case 0:
+                    console.log("left");
+                    break;
+                case 1:
+                    console.log("middle");
+                    break;
+                case 2:
+                    console.log("right");
+                    break;
+                case 3:
+                    console.log("4");
+                    break;
+                case 4:
+                    console.log("5");
+                    break;
+                default:
+                    console.log("bro what");
+                    break;
+            }
         }
         else {
             // free cursor
@@ -370,12 +425,13 @@ export async function fpv(canvasID, autoplay, allowControl) {
         // update camera
         updateCamera();
 
-        // mvp matrix
-        const mvp = mat4.create();
-        mat4.multiply(mvp, projection, view);
-
-        // write mvp matrix to uniform buffer
-        device.queue.writeBuffer(uniformBuffer, 0, mvp);
+        // write mvp matrices to uniform buffers
+        for (const { modelBuffer, model } of vertexBuffers) {
+            device.queue.writeBuffer(modelBuffer, 0, model);
+        }
+        //device.queue.writeBuffer(modelBuffer, 0, new Float32Array(model));
+        device.queue.writeBuffer(viewBuffer, 0, new Float32Array(view));
+        device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(projection));
 
 		// create GPUCommandEncoder
 		const encoder = device.createCommandEncoder();
@@ -392,14 +448,14 @@ export async function fpv(canvasID, autoplay, allowControl) {
 			}],
 		});
 
-        // TODO what is this?
+        // TODO defaults to full canvas
         //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// draw
-		pass.setPipeline(pipeline);
-        pass.setBindGroup(0, bindGroup);
+        pass.setPipeline(pipeline);
 
-        for (const { buffer, vertexCount } of vertexBuffers) {
+        for (const { buffer, bindGroup, vertexCount } of vertexBuffers) {
+            pass.setBindGroup(0, bindGroup);
             pass.setVertexBuffer(0, buffer);
             pass.draw(vertexCount);
         }
