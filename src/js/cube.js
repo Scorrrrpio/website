@@ -146,7 +146,7 @@ export async function cube(canvasID, autoplay) {
             binding: 0,
             visibility: GPUShaderStage.VERTEX,
             buffer: { type: "uniform" },  // can omit type param
-        }]
+        }],
     });
 
     // create bind group

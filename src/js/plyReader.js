@@ -12,6 +12,7 @@ async function readPly(url, topology) {
     const data = {};
     data.faces = [];
     data.topologyVerts = 0;  // number of vertices for rendering topology
+    data.source = url;
 
     let readingVertices = false;
     let readingFaces = false;
@@ -98,7 +99,7 @@ export async function plyToTriangleList(url) {
             floatVerts[vIndex++] = data.z[face[i+1]];
         }
     }
-    data.vertBuffer = floatVerts;
+    data.vertFloats = floatVerts;
     return data;
 }
 
@@ -119,6 +120,6 @@ export async function plyToLineList(url) {
             floatVerts[vIndex++] = data.z[face[(i+1) % face.length]];
         }
     }
-    data.vertBuffer = floatVerts;
+    data.vertFloats = floatVerts;
     return data;
 }

@@ -1,4 +1,4 @@
-import { cameraPlayground } from "./cameraPlayground";
+import { fpv } from "./fpvRenderer";
 
 console.log("WIP workspace");
-cameraPlayground("wip-workspace", true, true).catch((error) => { console.log(error.message); });
+fpv("wip-workspace", true, true).catch((error) => { console.log(error.message); });
