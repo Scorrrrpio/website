@@ -9,13 +9,19 @@ export class Player {
     rotation = [0, 0, 0];
 
     pov;  // Camera
+    cameraOffset = [0, 1, 0]
 
-    // movement
-    maxSpeed = 0.1;
+    // aiming
     xSense = 0.01;
     ySense = 0.01;
     maxLook = Math.PI / 2;
     minLook = -this.maxLook;
+
+    // movement
+    maxSpeed = 0.2;
+    jumpVelocity = 0;
+    jumpImpulse = 0.5;
+    gravity = 0.03;
 
     // input handling
     inputs = {
@@ -51,7 +57,7 @@ export class Player {
                     case "KeyD":
                         this.inputs.d = true;
                         break;
-                    case "space":
+                    case "Space":
                         this.inputs.space = true;
                         break;
                     case "escape":
@@ -75,7 +81,7 @@ export class Player {
                     case "KeyD":
                         this.inputs.d = false;
                         break;
-                    case "space":
+                    case "Space":
                         this.inputs.space = false;
                         break;
                 }
@@ -131,15 +137,14 @@ export class Player {
 
     move() {
         const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
-        const forwardY = Math.sin(this.rotation[0]);
         const forwardZ = Math.cos(this.rotation[0]) * Math.cos(this.rotation[1]);
         const strafeX = Math.cos(this.rotation[1]);
         const strafeZ = -Math.sin(this.rotation[1]);
 
+        // horizontal movement
         // TODO normalize
         if (this.inputs.w) {
             this.position[0] += this.maxSpeed * forwardX;
-            this.position[1] -= this.maxSpeed * forwardY;
             this.position[2] -= this.maxSpeed * forwardZ;
         }
         if (this.inputs.a) {
@@ -148,22 +153,31 @@ export class Player {
         }
         if (this.inputs.s) {
             this.position[0] -= this.maxSpeed * forwardX;
-            this.position[1] += this.maxSpeed * forwardY;
             this.position[2] += this.maxSpeed * forwardZ;
         }
         if (this.inputs.d) {
             this.position[0] += this.maxSpeed * strafeX;
             this.position[2] -= this.maxSpeed * strafeZ;
         }
-        if (this.inputs.r) {
-            this.position[1] += this.maxSpeed;
+
+        // jumping
+        if (this.inputs.space) {
+            if (this.position[1] === 0) {  // arbitrary floor TODO physics
+                this.jumpVelocity = this.jumpImpulse;
+            }
         }
-        if (this.inputs.f) {
-            this.position[1] -= this.maxSpeed;
-        }
+        this.position[1] += this.jumpVelocity;
         this.position[1] = Math.max(0, this.position[1]);  // floor
+        this.jumpVelocity -= this.gravity;
+        if (this.position[1] === 0) {
+            this.jumpVelocity = 0;
+        }
 
         // update camera view matrix
-        this.pov.updateViewMatrix(this.position, this.rotation);
+        this.pov.updateViewMatrix([
+            this.position[0] + this.cameraOffset[0],
+            this.position[1] + this.cameraOffset[1],
+            this.position[2] + this.cameraOffset[2],
+        ], this.rotation);
     }
 }
