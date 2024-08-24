@@ -95,9 +95,5 @@ export async function assetsToBuffers(assets, device) {
         });
     }
 
-    for (const vb of vertexBuffers) {
-        
-    }
-
     return { vertexBuffers, viewBuffer, projectionBuffer };
 }

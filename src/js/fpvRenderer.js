@@ -1,8 +1,7 @@
 // imports
 import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
-import { plyToTriangleList } from "./plyReader";
-import { fpvCamera } from "./camera";
+import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
 
 // inspired by the sphere graphic from lokinet.org
@@ -26,19 +25,26 @@ export async function fpv(canvasID, autoplay, allowControl) {
         objects: [
             {
                 file: "geometry/cube.ply",
-                position: [-1, 0, 0],
+                position: [-2, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+            },
+            {
+                file: "geometry/cube.ply",
+                position: [1, 0, 0],
                 rotation: [0, 0, 0],
                 scale: [1, 1, 1],
             },
             {
                 file: "geometry/lokiSphere.ply",
-                position: [1, 0, 0],
+                position: [0, 0, 0],
                 rotation: [0, 0, 0],
-                scale: [1, 1, 1],
+                scale: [0.25, 0.25, 0.25],
             }
         ],
     };
     const { vertexBuffers, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device);
+    console.log(vertexBuffers);
 
 
     // SHADERS
@@ -90,18 +96,18 @@ export async function fpv(canvasID, autoplay, allowControl) {
 	});
 
 
-    // CAMERA
+    // PLAYER
     // coordinates
-    const cameraPosition = [0, 0, 7];
-    const cameraRotation = [0, 0, 0];
+    const spawnPosition = [0, 0, 7];
+    const spawnRotation = [0, 0, 0];
     // projection matrix
     const fov = Math.PI / 6;  // TODO cap at 2 * Math.PI / 3
     const near = 0.1;  // clipping planes
     const far = 100.0;
     // aspect ratio computed from canvas
 
-    // create camera object
-    const pov = new fpvCamera(canvas, cameraPosition, cameraRotation, fov, near, far);
+    // create player object
+    const player = new Player(canvas, spawnPosition, spawnRotation);
 
 
     // PIPELINE
@@ -188,7 +194,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
 
         // TODO handle in camera
-        mat4.perspective(pov.projection, fov, canvas.width / canvas.height, near, far);
+        mat4.perspective(player.pov.projection, fov, canvas.width / canvas.height, near, far);
 
         if (msaaTexture) { msaaTexture.destroy(); }
         msaaTexture = device.createTexture({
@@ -220,14 +226,14 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvasTexture = context.getCurrentTexture();
 
         // update camera
-        pov.updateCamera();
+        player.move();
 
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of vertexBuffers) {
             device.queue.writeBuffer(modelBuffer, 0, model);
         }
-        device.queue.writeBuffer(viewBuffer, 0, new Float32Array(pov.view));
-        device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(pov.projection));
+        device.queue.writeBuffer(viewBuffer, 0, new Float32Array(player.pov.view));
+        device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(player.pov.projection));
 
 		// create GPUCommandEncoder
 		const encoder = device.createCommandEncoder();
@@ -236,7 +242,6 @@ export async function fpv(canvasID, autoplay, allowControl) {
 		const pass = encoder.beginRenderPass({
 			colorAttachments: [{
                 view: msaaTexture.createView(),  // render to MSAA texture
-				//view: context.getCurrentTexture().createView(),
 				loadOp: "clear",
 				clearValue: { r: 0, g: 0, b: 0, a: 1 },
 				storeOp: "store",
@@ -263,6 +268,8 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
 		// end render pass
 		pass.end();
+
+        // TODO render HUD
 
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
