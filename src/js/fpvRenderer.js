@@ -25,26 +25,42 @@ export async function fpv(canvasID, autoplay, allowControl) {
         objects: [
             {
                 file: "geometry/cube.ply",
-                position: [-2, 0, 0],
+                position: [0, 0, 0],
                 rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-            },
-            {
-                file: "geometry/cube.ply",
-                position: [1, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
+                scale: [7, 2, 7],
             },
             {
                 file: "geometry/lokiSphere.ply",
                 position: [0, 0, 0],
                 rotation: [0, 0, 0],
                 scale: [0.25, 0.25, 0.25],
-            }
+            },
+            {
+                file: "geometry/lokiSphere.ply",
+                position: [0, 0, -30],
+                rotation: [0, 0, 0],
+                scale: [10, 10, 10],
+            },
+            {
+                file: "geometry/lokiSphere.ply",
+                position: [-7, 3, 0],
+                rotation: [0, 0, 0],
+                scale: [0.25, 0.25, 0.25],
+            },
         ],
     };
+    // TODO rename vertexBuffers
     const { vertexBuffers, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device);
     console.log(vertexBuffers);
+
+    // TODO automate creation and integrate into object
+    // origin collision
+    const cubeBox = [
+        // min, max
+        -7, 0,  // x
+        0, 1,  // y
+        0, 7,  // z
+    ];
 
 
     // SHADERS
@@ -79,7 +95,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
         fn fragmentMain(@location(0) bary: vec3f) -> @location(0) vec4f {
             let threshold = 0.01;
             if (min(min(bary.x, bary.y), bary.z) >= threshold) {
-                return vec4f(0, 0, 0, 1);
+                return vec4f(1, 0, 0, 1);
             }
             return vec4f(1, 1, 1, 1);
         }
@@ -98,12 +114,12 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
     // PLAYER
     // coordinates
-    const spawnPosition = [0, 0, 7];
+    const spawnPosition = [0, 0, 10];
     const spawnRotation = [0, 0, 0];
     // projection matrix
     const fov = Math.PI / 6;  // TODO cap at 2 * Math.PI / 3
     const near = 0.1;  // clipping planes
-    const far = 100.0;
+    const far = 1000.0;
     // aspect ratio computed from canvas
 
     // create player object
@@ -226,7 +242,9 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvasTexture = context.getCurrentTexture();
 
         // update camera
-        player.move();
+        player.move(cubeBox);
+
+        // check for collisions
 
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of vertexBuffers) {

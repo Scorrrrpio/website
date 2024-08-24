@@ -7,21 +7,21 @@ export class Camera {
     // projection matrix
     fov = Math.PI / 6;
     aspect = 1;
-    near = 0.1;
-    far = 100.0;
+    near = 0.01;
+    far = 1000.0;
     projection = mat4.create();
 
     constructor(aspect, fov, near, far) {
         // projection matrix setup
         this.fov = fov;
         this.aspect = aspect;
-        this.near = near;
-        this.far = far;
-        mat4.perspective(this.projection, fov, this.aspect, near, far);
+        //this.near = near;
+        //this.far = far;
+        mat4.perspective(this.projection, fov, this.aspect, this.near, this.far);
     }
 
     updateProjectionMatrix(aspect, fov, near, far) {
-        mat4.perspective(this.projection, fov, this.aspect, near, far);
+        mat4.perspective(this.projection, fov, aspect, near, far);
     }
 
     updateViewMatrix(position, rotation) {

@@ -44,11 +44,11 @@ export async function assetsToBuffers(assets, device) {
         const data = await plyToTriangleList(asset.file);
         // generate model matrix
         const model = mat4.create();
-        mat4.scale(model, model, asset.scale);
+        mat4.translate(model, model, asset.position);
         mat4.rotateX(model, model, asset.rotation[0]);
         mat4.rotateY(model, model, asset.rotation[1]);
         mat4.rotateZ(model, model, asset.rotation[2]);
-        mat4.translate(model, model, asset.position);
+        mat4.scale(model, model, asset.scale);
 
         // create vertex buffer
         const vb = device.createBuffer({
