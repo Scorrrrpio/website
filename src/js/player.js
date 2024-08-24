@@ -6,7 +6,7 @@ export class Player {
     rotation = [0, 0, 0];
 
     // collision
-    boxRadius = 1;
+    boxRadius = 0.1;
     aabb;
 
     pov;  // Camera
@@ -41,30 +41,34 @@ export class Player {
         this.pov = new Camera(canvas.width / canvas.height);  // default fov, near plane, far plane
         this.position = position;
         this.rotation = rotation;
-        this.#generateAABB();
+        this.#generateAABB(position);
         this.#enableControls(canvas);
     }
 
-    #generateAABB() {
-        this.aabb = [
-            this.position[0] - this.boxRadius,  // min x
-            this.position[0] + this.boxRadius,  // max x
-            this.position[1] - this.boxRadius,  // min y
-            this.position[1] + this.boxRadius,  // max y
-            this.position[2] - this.boxRadius,  // min z
-            this.position[2] + this.boxRadius,  // max z
-        ];
+    #generateAABB(pos) {
+        this.aabb = {
+            min: [
+                pos[0] - this.boxRadius,
+                pos[1] - 0.1,
+                pos[2] - this.boxRadius,
+            ],
+            max: [
+                pos[0] + this.boxRadius,
+                pos[1] + 1,
+                pos[2] + this.boxRadius,
+            ],
+        };
     }
 
     #checkCollision(box2) {
         return (
-            this.aabb[0] < box2[1] &&  // min < max
-            this.aabb[1] > box2[0] &&  // max > min
-            this.aabb[2] < box2[3] &&
-            this.aabb[3] > box2[2] &&
-            this.aabb[4] < box2[5] &&
-            this.aabb[5] > box2[4]
-        )
+            this.aabb.min[0] < box2.max[0] &&
+            this.aabb.max[0] > box2.min[0] &&
+            this.aabb.min[1] < box2.max[1] &&
+            this.aabb.max[1] > box2.min[1] &&
+            this.aabb.min[2] < box2.max[2] &&
+            this.aabb.max[2] > box2.min[2]
+        );
     }
 
     #enableControls(canvas) {
@@ -200,19 +204,22 @@ export class Player {
         movement[1] += this.jumpSpeed;
         this.jumpSpeed -= this.gravity;
 
+        // predicted position
+        const nextPos = [
+            this.position[0] + movement[0],
+            this.position[1] + movement[1],
+            this.position[2] + movement[2],
+        ];
+
         // update AABB
-        this.#generateAABB();
+        this.#generateAABB(nextPos);
 
         // TODO box2 is a placeholder
         if (this.#checkCollision(box2)) {
-            console.log("COLLISION");
-
             const axis = this.#collisionAxis(box2);
 
             movement[0] *= axis[0];
-            if (movement[1] < 0) {
-                movement[1] *= axis[1];
-            }
+            movement[1] *= axis[1];
             movement[2] *= axis[2];
         }
 
@@ -239,25 +246,38 @@ export class Player {
         const normal = [1, 1, 1];
 
         // x
-        if (this.aabb[0] <= box[1]) {
+        if (this.aabb.max[0] <= box.min[0]) {
+            console.log("left");
             normal[0] = 0;   // left face
         }
-        if (this.aabb[1] >= box[2]) {
+        if (this.aabb.min[0] >= box.max[0]) {
+            console.log("right");
             normal[0] = 0;   // right face
         }
         // y
-        if (this.aabb[2] <= box[3]) {
-            normal[1] = 0;  // bottom face
-        }
-        if (this.aabb[3] >= box[2]) {
+        console.log(this.aabb, box);
+        if (this.aabb.max[1] >= box.max[1]) {
+            //console.log("top: player: ", this.aabb.min[1], "<= box: ", box.max[1]);
+            console.log("BOTTOM")
+            //console.log("player: ", this.aabb.min[1], this.aabb.max[1]);
             normal[1] = 0;  // top face
             this.grounded = true;
+            this.jumpSpeed = 0;
+        }
+        else if (this.aabb.min[1] <= box.min[1]) {
+            console.log("TOP");
+            //console.log("bottom: player: ", this.aabb.max[1], ">= box: ", box.min[1]);
+            //console.log("player: ", this.aabb.min[1], this.aabb.max[1]);
+            normal[1] = 0;  // bottom face
+            this.jumpSpeed = 0;
         }
         // z
-        if (this.aabb[4] <= box[5]) {
+        if (this.aabb.max[2] <= box.min[2]) {
+            console.log("back");
             normal[2] = 0;  // back face
         }
-        if (this.aabb[5] >= box[4]) {
+        if (this.aabb.min[2] >= box.max[2]) {
+            console.log("front");
             normal[2] = 0;   // front face
         }
 

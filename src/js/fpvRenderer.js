@@ -25,9 +25,9 @@ export async function fpv(canvasID, autoplay, allowControl) {
         objects: [
             {
                 file: "geometry/cube.ply",
-                position: [0, 0, 0],
+                position: [0, 1.5, 0],
                 rotation: [0, 0, 0],
-                scale: [7, 2, 7],
+                scale: [7, 0.1, 7],
             },
             {
                 file: "geometry/lokiSphere.ply",
@@ -54,13 +54,10 @@ export async function fpv(canvasID, autoplay, allowControl) {
     console.log(vertexBuffers);
 
     // TODO automate creation and integrate into object
-    // origin collision
-    const cubeBox = [
-        // min, max
-        -7, 0,  // x
-        0, 1,  // y
-        0, 7,  // z
-    ];
+    const cubeBox = {
+        min: [-7, 1.5, 0],
+        max: [0, 1.6, 7],
+    };
 
 
     // SHADERS
