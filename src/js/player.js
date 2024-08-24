@@ -6,7 +6,7 @@ export class Player {
     rotation = [0, 0, 0];
 
     // collision
-    boxRadius = 0.1;
+    boxRadius = 0.4;
     aabb;
 
     pov;  // Camera
@@ -49,7 +49,7 @@ export class Player {
         this.aabb = {
             min: [
                 pos[0] - this.boxRadius,
-                pos[1] - 0.1,
+                pos[1],
                 pos[2] - this.boxRadius,
             ],
             max: [
@@ -216,11 +216,15 @@ export class Player {
 
         // TODO box2 is a placeholder
         if (this.#checkCollision(box2)) {
+            console.log(this.aabb);
+
             const axis = this.#collisionAxis(box2);
 
             movement[0] *= axis[0];
             movement[1] *= axis[1];
             movement[2] *= axis[2];
+
+            console.log(movement);
         }
 
         this.position[0] += movement[0];
@@ -245,40 +249,36 @@ export class Player {
     #collisionAxis(box) {
         const normal = [1, 1, 1];
 
+        //console.log(this.aabb, box);
+        // faces names are for player but based on world axes
         // x
-        if (this.aabb.max[0] <= box.min[0]) {
-            console.log("left");
-            normal[0] = 0;   // left face
+        if (this.aabb.max[0] >= box.max[0]) {  // left
+            this.position[0] = box.max[0] + this.boxRadius;
+            normal[0] = 0;
         }
-        if (this.aabb.min[0] >= box.max[0]) {
-            console.log("right");
-            normal[0] = 0;   // right face
+        else if (this.aabb.min[0] <= box.min[0]) {  // right
+            this.position[0] = box.min[0] - this.boxRadius;
+            normal[0] = 0;
         }
         // y
-        console.log(this.aabb, box);
-        if (this.aabb.max[1] >= box.max[1]) {
-            //console.log("top: player: ", this.aabb.min[1], "<= box: ", box.max[1]);
-            console.log("BOTTOM")
-            //console.log("player: ", this.aabb.min[1], this.aabb.max[1]);
-            normal[1] = 0;  // top face
+        if (this.aabb.max[1] >= box.max[1]) {  // bottom
+            normal[1] = 0;
+            this.position[1] = box.max[1];  // unintentional clamber implementation
             this.grounded = true;
             this.jumpSpeed = 0;
         }
-        else if (this.aabb.min[1] <= box.min[1]) {
-            console.log("TOP");
-            //console.log("bottom: player: ", this.aabb.max[1], ">= box: ", box.min[1]);
-            //console.log("player: ", this.aabb.min[1], this.aabb.max[1]);
-            normal[1] = 0;  // bottom face
+        else if (this.aabb.min[1] <= box.min[1]) {  // top
+            normal[1] = 0;
             this.jumpSpeed = 0;
         }
         // z
-        if (this.aabb.max[2] <= box.min[2]) {
-            console.log("back");
-            normal[2] = 0;  // back face
+        if (this.aabb.max[2] >= box.max[2]) {  // front
+            this.position[2] = box.max[2] + this.boxRadius;
+            normal[2] = 0;
         }
-        if (this.aabb.min[2] >= box.max[2]) {
-            console.log("front");
-            normal[2] = 0;   // front face
+        else if (this.aabb.min[2] <= box.min[2]) {  // back
+            this.position[2] = box.min[2] - this.boxRadius;
+            normal[2] = 0;
         }
 
         return normal;
