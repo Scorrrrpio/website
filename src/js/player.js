@@ -7,7 +7,6 @@ export class Player {
 
     // collision
     boxRadius = 0.4;
-    aabb;
 
     pov;  // Camera
     cameraOffset = [0, 1, 0];
@@ -46,7 +45,7 @@ export class Player {
     }
 
     #generateAABB(pos) {
-        this.aabb = {
+        return {
             min: [
                 pos[0] - this.boxRadius,
                 pos[1],
@@ -60,14 +59,14 @@ export class Player {
         };
     }
 
-    #checkCollision(box2) {
+    #checkCollision(box1, box2) {
         return (
-            this.aabb.min[0] < box2.max[0] &&
-            this.aabb.max[0] > box2.min[0] &&
-            this.aabb.min[1] < box2.max[1] &&
-            this.aabb.max[1] > box2.min[1] &&
-            this.aabb.min[2] < box2.max[2] &&
-            this.aabb.max[2] > box2.min[2]
+            box1.min[0] <= box2.max[0] &&
+            box1.max[0] >= box2.min[0] &&
+            box1.min[1] <= box2.max[1] &&
+            box1.max[1] >= box2.min[1] &&
+            box1.min[2] <= box2.max[2] &&
+            box1.max[2] >= box2.min[2]
         );
     }
 
@@ -166,7 +165,7 @@ export class Player {
         });
     }
 
-    move(box2) {
+    move(boxes) {
         const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
         const forwardZ = Math.cos(this.rotation[0]) * Math.cos(this.rotation[1]);
         const strafeX = Math.cos(this.rotation[1]);
@@ -196,7 +195,6 @@ export class Player {
         // jumping
         if (this.inputs.space) {
             if (this.grounded) {
-                console.log("jump");
                 this.jumpSpeed = this.jumpImpulse;
                 this.grounded = false;
             }
@@ -204,27 +202,21 @@ export class Player {
         movement[1] += this.jumpSpeed;
         this.jumpSpeed -= this.gravity;
 
-        // predicted position
-        const nextPos = [
-            this.position[0] + movement[0],
-            this.position[1] + movement[1],
-            this.position[2] + movement[2],
-        ];
+        // collision handling
+        for (const box of boxes) {
+            // predicted position
+            const nextPos = [
+                this.position[0] + movement[0],
+                this.position[1] + movement[1],
+                this.position[2] + movement[2],
+            ];
 
-        // update AABB
-        this.#generateAABB(nextPos);
+            // update AABB
+            const aabb = this.#generateAABB(nextPos);
 
-        // TODO box2 is a placeholder
-        if (this.#checkCollision(box2)) {
-            console.log(this.aabb);
-
-            const axis = this.#collisionAxis(box2);
-
-            movement[0] *= axis[0];
-            movement[1] *= axis[1];
-            movement[2] *= axis[2];
-
-            console.log(movement);
+            if (this.#checkCollision(aabb, box)) {
+                movement = this.#collisionAxis(aabb, box, movement);
+            }
         }
 
         this.position[0] += movement[0];
@@ -246,41 +238,39 @@ export class Player {
         ], this.rotation);
     }
 
-    #collisionAxis(box) {
-        const normal = [1, 1, 1];
-
-        //console.log(this.aabb, box);
+    #collisionAxis(box1, box2, movement) {
         // faces names are for player but based on world axes
         // x
-        if (this.aabb.max[0] >= box.max[0]) {  // left
-            this.position[0] = box.max[0] + this.boxRadius;
-            normal[0] = 0;
+        if (box1.max[0] >= box2.max[0]) {  // left
+            //this.position[0] = box2.max[0] + this.boxRadius;
+            movement[0] = Math.max(0, movement[0]);
         }
-        else if (this.aabb.min[0] <= box.min[0]) {  // right
-            this.position[0] = box.min[0] - this.boxRadius;
-            normal[0] = 0;
+        else if (box1.min[0] <= box2.min[0]) {  // right
+            //this.position[0] = box2.min[0] - this.boxRadius;
+            movement[0] = Math.min(0, movement[0]);
         }
         // y
-        if (this.aabb.max[1] >= box.max[1]) {  // bottom
-            normal[1] = 0;
-            this.position[1] = box.max[1];  // unintentional clamber implementation
-            this.grounded = true;
-            this.jumpSpeed = 0;
+        if (box1.max[1] >= box2.max[1]) {  // bottom
+            if (this.position[1] >= box2.max[1]) {
+                movement[1] = Math.max(0, movement[1]);
+                this.grounded = true;
+                this.jumpSpeed = 0;
+            }
         }
-        else if (this.aabb.min[1] <= box.min[1]) {  // top
-            normal[1] = 0;
+        else if (box1.min[1] <= box2.min[1]) {  // top
+            movement[1] = Math.min(0, movement[1]);
             this.jumpSpeed = 0;
         }
         // z
-        if (this.aabb.max[2] >= box.max[2]) {  // front
-            this.position[2] = box.max[2] + this.boxRadius;
-            normal[2] = 0;
+        if (box1.max[2] >= box2.max[2]) {  // front
+            //this.position[2] = box2.max[2] + this.boxRadius;
+            movement[2] = Math.max(0, movement[2]);
         }
-        else if (this.aabb.min[2] <= box.min[2]) {  // back
-            this.position[2] = box.min[2] - this.boxRadius;
-            normal[2] = 0;
+        else if (box1.min[2] <= box2.min[2]) {  // back
+            //this.position[2] = box2.min[2] - this.boxRadius;
+            movement[2] = Math.min(0, movement[2]);
         }
 
-        return normal;
+        return movement;
     }
 }

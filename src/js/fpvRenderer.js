@@ -27,37 +27,61 @@ export async function fpv(canvasID, autoplay, allowControl) {
                 file: "geometry/cube.ply",
                 position: [0, 0, 0],
                 rotation: [0, 0, 0],
-                scale: [7, 2, 7],
+                scale: [7, 1, 7],
             },
             {
-                file: "geometry/lokiSphere.ply",
-                position: [0, 0, 0],
+                file: "geometry/cube.ply",
+                position: [-7, 1, -7],
                 rotation: [0, 0, 0],
-                scale: [0.25, 0.25, 0.25],
+                scale: [7, 1, 7],
+            },
+            {
+                file: "geometry/cube.ply",
+                position: [0, 2, -14],
+                rotation: [0, 0, 0],
+                scale: [7, 1, 7],
+            },
+            {
+                file: "geometry/cube.ply",
+                position: [7, 3, -7],
+                rotation: [0, 0, 0],
+                scale: [7, 1, 7],
             },
             {
                 file: "geometry/lokiSphere.ply",
-                position: [0, 0, -30],
+                position: [-3.5, 1.5, -30],
                 rotation: [0, 0, 0],
                 scale: [10, 10, 10],
-            },
-            {
-                file: "geometry/lokiSphere.ply",
-                position: [-7, 3, 0],
-                rotation: [0, 0, 0],
-                scale: [0.25, 0.25, 0.25],
             },
         ],
     };
     // TODO rename vertexBuffers
     const { vertexBuffers, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device);
-    console.log(vertexBuffers);
 
     // TODO automate creation and integrate into object
-    const cubeBox = {
+    const cubeBox1 = {
         min: [-7, 0, 0],
-        max: [0, 2, 7],
+        max: [0, 1, 7],
     };
+    const cubeBox2 = {
+        min: [-14, 1, -7],
+        max: [-7, 2, 0],
+    };
+    const cubeBox3 = {
+        min: [-7, 2, -14],
+        max: [0, 3, -7],
+    };
+    const cubeBox4 = {
+        min: [0, 3, -7],
+        max: [7, 4, 0],
+    };
+
+    const aabbBoxes = [
+        cubeBox1,
+        cubeBox2,
+        cubeBox3,
+        cubeBox4,
+    ];
 
 
     // SHADERS
@@ -92,7 +116,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
         fn fragmentMain(@location(0) bary: vec3f) -> @location(0) vec4f {
             let threshold = 0.01;
             if (min(min(bary.x, bary.y), bary.z) >= threshold) {
-                return vec4f(1, 0, 0, 1);
+                return vec4f(0, 0, 0, 1);
             }
             return vec4f(1, 1, 1, 1);
         }
@@ -239,7 +263,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvasTexture = context.getCurrentTexture();
 
         // update camera
-        player.move(cubeBox);
+        player.move(aabbBoxes);
 
         // check for collisions
 
