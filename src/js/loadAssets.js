@@ -1,7 +1,68 @@
 import { plyToTriangleList } from "./plyReader";  // TODO line-list
 import { mat4 } from "gl-matrix";
 
-export async function assetsToBuffers(assets, device) {
+function createPipeline(device, bindGroupLayout, vertexShaderModule, fragmentShaderModule, format, topology, multisamples) {
+    return device.createRenderPipeline({
+		label: "FPV Pipeline",
+		layout: device.createPipelineLayout({
+            label: "FPV Pipeline Layout",
+            bindGroupLayouts: [bindGroupLayout],
+        }),
+		vertex: {
+			module: vertexShaderModule,
+			entryPoint: "vertexMain",
+			buffers: [{
+				arrayStride: 4 * 3 /*bytes*/,
+				attributes: [{
+					format: "float32x3",
+					offset: 0,
+					shaderLocation: 0
+				}],
+			}],
+		},
+		fragment: {
+			module: fragmentShaderModule,
+			entryPoint: "fragmentMain",
+			targets: [{
+				format: format,
+                blend: {
+                    color: {
+                        srcFactor: "src-alpha",
+                        dstFactor: "one-minus-src-alpha",
+                        operation: "add",
+                    },
+                    alpha: {
+                        srcFactor: "one",
+                        dstFactor: "one-minus-src-alpha",
+                        operation: "add",
+                    },
+                },
+                writeMask: GPUColorWrite.ALL,
+			}],
+		},
+		primitive: {
+            topology: topology,
+            frontFace: "ccw",
+            cullMode: "back",
+        },
+        depthStencil: {
+            format: "depth24plus",
+            depthWriteEnabled: true,
+            depthCompare: "less",
+        },
+        multisample: {
+            count: multisamples,
+        },
+	});
+}
+
+async function loadShader(url) {
+    const response = await fetch(url);
+    if (!response) { throw new Error("Failed to load shader: ", url); }
+    return await response.text();
+}
+
+export async function assetsToBuffers(assets, device, format, topology, multisamples) {
     // UNIFORM BUFFERS
     // create uniform buffers for MVP matrices
     const viewBuffer = device.createBuffer({
@@ -37,63 +98,90 @@ export async function assetsToBuffers(assets, device) {
 
 
     // VERTEX BUFFERS
-    const vertexBuffers = [];
+    const renderables = [];
     for (const asset of assets.objects) {  // each object
         // read .ply file
-        // TODO line-list
         const data = await plyToTriangleList(asset.file);
-        // generate model matrix
-        const model = mat4.create();
-        mat4.translate(model, model, asset.position);
-        mat4.rotateX(model, model, asset.rotation[0]);
-        mat4.rotateY(model, model, asset.rotation[1]);
-        mat4.rotateZ(model, model, asset.rotation[2]);
-        mat4.scale(model, model, asset.scale);
 
-        // create vertex buffer
-        const vb = device.createBuffer({
-            label: asset.file,
-            size: data.vertFloats.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        // SHADERS
+        // TODO distinct for instances? Override asset.shader with asset.instance.shader?
+        // vertex shader
+        const vertexShaderCode = await loadShader(asset.vertexShader);
+        // fragment shader
+        const fragmentShaderCode = await loadShader(asset.fragmentShader);
+
+        // create shader modules
+        const vertexShaderModule = device.createShaderModule({
+            label: "FPV Vertex Shader",
+            code: vertexShaderCode
+        });
+        const fragmentShaderModule = device.createShaderModule({
+            label: "FPV Fragment Shader",
+            code: fragmentShaderCode
         });
 
-        // write data
-        device.queue.writeBuffer(vb, 0, data.vertFloats);
+        for (const instance of asset.instances) {
+            // generate model matrix
+            const model = mat4.create();
+            mat4.translate(model, model, instance.position);
+            mat4.rotateX(model, model, instance.rotation[0]);
+            mat4.rotateY(model, model, instance.rotation[1]);
+            mat4.rotateZ(model, model, instance.rotation[2]);
+            mat4.scale(model, model, instance.scale);
 
-        // create model matrix uniform buffer for object
-        const modelBuffer = device.createBuffer({
-            label: "Model Uniform " + vertexBuffers.length,
-            size: 64,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+            // create vertex buffer
+            const vb = device.createBuffer({
+                label: asset.file,
+                size: data.vertFloats.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
 
-        // create bind group for object's model matrix
-        const bindGroup = device.createBindGroup({
-            label: "MVP bind group " + vertexBuffers.length,
-            layout: bindGroupLayout,
-            entries: [{
-                binding: 0,
-                resource: { buffer: modelBuffer },
-            }, {
-                binding: 1,
-                resource: { buffer: viewBuffer },
-            }, {
-                binding: 2,
-                resource: { buffer: projectionBuffer },
-            }],
-        });
+            // write data
+            device.queue.writeBuffer(vb, 0, data.vertFloats);
 
-        // add to vertex buffer list
-        vertexBuffers.push({
-            id: vertexBuffers.length,
-            buffer: vb,
-            model: model,
-            modelBuffer: modelBuffer,
-            bindGroup: bindGroup,
-            bindGroupLayout: bindGroupLayout,
-            vertexCount: data.topologyVerts,
-        });
+            // create model matrix uniform buffer for object
+            const modelBuffer = device.createBuffer({
+                label: "Model Uniform " + renderables.length,
+                size: 64,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            });
+
+            // create bind group for object's model matrix
+            const bindGroup = device.createBindGroup({
+                label: "MVP bind group " + renderables.length,
+                layout: bindGroupLayout,
+                entries: [{
+                    binding: 0,
+                    resource: { buffer: modelBuffer },
+                }, {
+                    binding: 1,
+                    resource: { buffer: viewBuffer },
+                }, {
+                    binding: 2,
+                    resource: { buffer: projectionBuffer },
+                }],
+            });
+
+            // add to vertex buffer list
+            renderables.push({
+                id: renderables.length,
+                vertexBuffer: vb,
+                vertexCount: data.topologyVerts,
+                model: model,
+                modelBuffer: modelBuffer,
+                bindGroup: bindGroup,
+                bindGroupLayout: bindGroupLayout,
+                pipeline: createPipeline(
+                    device,
+                    bindGroupLayout,
+                    vertexShaderModule,
+                    fragmentShaderModule,
+                    format,
+                    topology,
+                    multisamples),
+            });
+        }
     }
 
-    return { vertexBuffers, viewBuffer, projectionBuffer };
+    return { renderables, viewBuffer, projectionBuffer };
 }

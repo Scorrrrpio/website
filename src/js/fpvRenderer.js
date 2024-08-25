@@ -16,55 +16,67 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
 
     // GEOMETRY
-    // TODO load assets and create all buffers
-    // read from .ply files
     const TOPOLOGY = "triangle-list";
+    const MULTISAMPLE = 4;
     // Scene assets as JSON
     // TODO glTF if things get dicey
-    // TODO only read ply file once
     const assets = {
         objects: [
             {
                 file: "geometry/cube.ply",
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [7, 1, 7],
-            },
-            {
-                file: "geometry/cube.ply",
-                position: [-7, 1, -7],
-                rotation: [0, 0, 0],
-                scale: [7, 1, 7],
-            },
-            {
-                file: "geometry/cube.ply",
-                position: [0, 2, -14],
-                rotation: [0, 0, 0],
-                scale: [7, 1, 7],
-            },
-            {
-                file: "geometry/cube.ply",
-                position: [7, 3, -7],
-                rotation: [0, 0, 0],
-                scale: [7, 1, 7],
+                vertexShader: "shaders/cubeVertex.wgsl",
+                fragmentShader: "shaders/cubeFragment.wgsl",
+                instances: [
+                    {
+                        position: [0, 0, 0],
+                        rotation: [0, 0, 0],
+                        scale: [7, 1, 7],
+                        
+                    },
+                    {
+                        position: [-7, 1, -7],
+                        rotation: [0, 0, 0],
+                        scale: [7, 1, 7],
+                    },
+                    {
+                        position: [0, 2, -14],
+                        rotation: [0, 0, 0],
+                        scale: [7, 1, 7],
+                    },
+                    {
+                        position: [7, 3, -7],
+                        rotation: [0, 0, 0],
+                        scale: [7, 1, 7],
+                    },
+                ],
             },
             {
                 file: "geometry/lokiSphere.ply",
-                position: [-3.5, 1.5, -30],
-                rotation: [0, 0, 0],
-                scale: [10, 10, 10],
+                vertexShader: "shaders/sphereVertex.wgsl",
+                fragmentShader: "shaders/sphereFragment.wgsl",
+                instances: [
+                    {
+                        position: [-3.5, 1.5, -30],
+                        rotation: [0, 0, 0],
+                        scale: [10, 10, 10],
+                    },
+                ],
             },
             {
                 file: "geometry/pyramidOcto.ply",
-                position: [-3.5, 2, -3.5],
-                rotation: [0, 0, 0],
-                scale: [2, 2, 2],
+                vertexShader: "shaders/pyramidVertex.wgsl",
+                fragmentShader: "shaders/pyramidFragment.wgsl",
+                instances: [
+                    {
+                        position: [-3.5, 2, -3.5],
+                        rotation: [0, 0, 0],
+                        scale: [2, 2, 2],
+                    },
+                ],
             },
         ],
     };
-    // TODO rename vertexBuffers
-    const { vertexBuffers, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device);
-    console.log(vertexBuffers);
+    const { renderables, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device, format, TOPOLOGY, MULTISAMPLE);
 
     // TODO automate creation and integrate into object
     /*{
@@ -104,127 +116,6 @@ export async function fpv(canvasID, autoplay, allowControl) {
     ];
 
 
-    // SHADERS
-    /* PYRAMID SHADER
-    const vertexShaderCode = `
-        struct VertexOutput {
-            @location(0) rawPos: vec3f,
-            @location(1) barycentric: vec3f,
-            @builtin(position) position: vec4f
-        };
-
-        @group(0) @binding(0) var<uniform> model: mat4x4<f32>;
-        @group(0) @binding(1) var<uniform> view: mat4x4<f32>;
-        @group(0) @binding(2) var<uniform> projection: mat4x4<f32>;
-
-        @vertex
-        fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-            var barycentrics = array<vec3f, 3> (
-                vec3f(1, 0, 0),
-                vec3f(0, 1, 0),
-                vec3f(0, 0, 1)
-            );
-            var output: VertexOutput;
-            var mvp = projection * view * model;
-            output.position = mvp * vec4f(pos, 1);
-            output.barycentric = barycentrics[vertexIndex % 3];
-            output.rawPos = pos;
-            return output;
-    }`;
-
-    // fragment shader
-    // TODO absolute value
-    const fragmentShaderCode = `
-        struct VertexOutput {
-            @location(0) rawPos: vec3f,
-            @location(1) barycentric: vec3f,
-            @builtin(position) position: vec4f
-        };
-
-        @fragment
-        fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
-            let threshold = 0.02;
-            if (((fragData.rawPos[1] % 0.5 < 0.01 && fragData.rawPos[1] % 0.5 > -0.01)
-            || fragData.rawPos[1] % 0.5 >= 0.49 || fragData.rawPos[1] % 0.5 <= -0.49)
-            && fragData.rawPos[1] % 0.5 != 0) {
-                return vec4f(fragData.rawPos, 1);
-            }
-            if (min(min(fragData.barycentric.x, fragData.barycentric.y), fragData.barycentric.z) < threshold) {
-                return vec4f(fragData.rawPos, 1);
-            }
-            return vec4f(0, 0, 0, 1);
-        }
-    `;
-    */
-	/* SPHERE SHADER TODO?
-    */
-    // vertex shader
-	const vertexShaderCode = `
-        struct VertexOutput {
-            @location(0) rawPos: vec3f,
-            @builtin(position) position: vec4f
-        };
-
-        @group(0) @binding(0) var<uniform> model: mat4x4<f32>;
-        @group(0) @binding(1) var<uniform> view: mat4x4<f32>;
-        @group(0) @binding(2) var<uniform> projection: mat4x4<f32>;
-
-        @vertex
-        fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-            var output: VertexOutput;
-            var mvp = projection * view * model;
-            output.position = mvp * vec4f(pos, 1);
-            var scale = vec3f(
-                length(vec3f(model[0].x, model[1].x, model[2].x)),
-                length(vec3f(model[0].y, model[1].y, model[2].y)),
-                length(vec3f(model[0].z, model[1].z, model[2].z)),
-            );
-            output.rawPos = pos * scale;  // TODO remove for spheres
-            return output;
-    }`;
-
-    // fragment shader
-    // TODO absolute value
-    // TODO shader doesn't like decimal dimensions
-    const fragmentShaderCode = `
-        struct VertexOutput {
-            @location(0) rawPos: vec3f,
-            @builtin(position) position: vec4f
-        };
-
-        @fragment
-        fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
-            let threshold = 0.02;
-            if (((fragData.rawPos[0] % 1 > -0.01 && fragData.rawPos[0] % 1 < 0.01)
-            || fragData.rawPos[0] % 1 < -0.99 || fragData.rawPos[0] % 1 > 0.99)
-            && fragData.rawPos[0] % 1 != 0) {
-                return vec4f(fragData.rawPos, 1);
-            }
-            if (((fragData.rawPos[1] % 1 < 0.01 && fragData.rawPos[1] % 1 > -0.01)
-            || fragData.rawPos[1] % 1 >= 0.99 || fragData.rawPos[1] % 1 <= -0.99)
-            && fragData.rawPos[1] % 1 != 0) {
-                return vec4f(fragData.rawPos, 1);
-            }
-            if (((fragData.rawPos[2] % 1 < 0.01 && fragData.rawPos[2] % 1 > -0.01)
-            || fragData.rawPos[2] % 1 >= 0.99 || fragData.rawPos[2] % 1 <= -0.99)
-            && fragData.rawPos[2] % 1 != 0) {
-                return vec4f(fragData.rawPos, 1);
-            }
-            return vec4f(0, 0, 0, 1);
-        }
-    `;
-
-    // create shader modules
-	const vertexShaderModule = device.createShaderModule({
-		label: "FPV Vertex Shader",
-		code: vertexShaderCode
-	});
-	const fragmentShaderModule = device.createShaderModule({
-		label: "FPV Fragment Shader",
-		code: fragmentShaderCode
-	});
-
-
     // PLAYER
     // coordinates
     const spawnPosition = [0, 0, 10];
@@ -239,78 +130,22 @@ export async function fpv(canvasID, autoplay, allowControl) {
     const player = new Player(canvas, spawnPosition, spawnRotation);
 
 
-    // PIPELINE
-    const SAMPLES = 4;
-	const pipeline = device.createRenderPipeline({
-		label: "FPV Pipeline",
-		layout: device.createPipelineLayout({
-            label: "FPV Pipeline Layout",
-            bindGroupLayouts: [vertexBuffers[0].bindGroupLayout],
-        }),
-		vertex: {
-			module: vertexShaderModule,
-			entryPoint: "vertexMain",
-			buffers: [{
-				arrayStride: 4 * 3 /*bytes*/,
-				attributes: [{
-					format: "float32x3",
-					offset: 0,
-					shaderLocation: 0
-				}],
-			}],
-		},
-		fragment: {
-			module: fragmentShaderModule,
-			entryPoint: "fragmentMain",
-			targets: [{
-				format: format,
-                blend: {
-                    color: {
-                        srcFactor: "src-alpha",
-                        dstFactor: "one-minus-src-alpha",
-                        operation: "add",
-                    },
-                    alpha: {
-                        srcFactor: "one",
-                        dstFactor: "one-minus-src-alpha",
-                        operation: "add",
-                    },
-                },
-                writeMask: GPUColorWrite.ALL,
-			}],
-		},
-		primitive: {
-            topology: TOPOLOGY,
-            frontFace: "ccw",
-            cullMode: "back",
-        },
-        depthStencil: {
-            format: "depth24plus",
-            depthWriteEnabled: true,
-            depthCompare: "less",
-        },
-        multisample: {
-            count: SAMPLES,
-        },
-	});
-
-
     // 4xMSAA TEXTURES
     let canvasTexture = context.getCurrentTexture();
     let msaaTexture = device.createTexture({
         format: canvasTexture.format,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
         size: [canvas.width, canvas.height],
-        sampleCount: 4,
+        sampleCount: MULTISAMPLE,
     });
 
 
-    // DEPTH TESTING
+    // DEPTH TESTING TEXTURE
     let depthTexture = device.createTexture({
         label: "Depth Texture",
         size: [canvas.width, canvas.height, 1],
         format: "depth24plus",
-        sampleCount: 4,
+        sampleCount: MULTISAMPLE,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
@@ -360,7 +195,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
         // check for collisions
 
         // write mvp matrices to uniform buffers
-        for (const { modelBuffer, model } of vertexBuffers) {
+        for (const { modelBuffer, model } of renderables) {
             device.queue.writeBuffer(modelBuffer, 0, model);
         }
         device.queue.writeBuffer(viewBuffer, 0, new Float32Array(player.pov.view));
@@ -388,12 +223,11 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
         pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
 
-		// draw
-        pass.setPipeline(pipeline);
-
-        for (const { buffer, bindGroup, vertexCount } of vertexBuffers) {
+        for (const { pipeline, vertexBuffer, bindGroup, vertexCount } of renderables) {
+            // draw
+            pass.setPipeline(pipeline);
             pass.setBindGroup(0, bindGroup);
-            pass.setVertexBuffer(0, buffer);
+            pass.setVertexBuffer(0, vertexBuffer);
             pass.draw(vertexCount);
         }
 

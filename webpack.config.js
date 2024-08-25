@@ -45,6 +45,7 @@ module.exports = {
 			patterns: [
 				{ from: "src/styles", to: "" },
 				{ from: "src/geometry", to: "geometry" },
+				{ from: "src/shaders", to: "shaders" },
 			],
 		}),
 	],
