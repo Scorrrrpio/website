@@ -56,6 +56,18 @@ function createPipeline(device, bindGroupLayout, vertexShaderModule, fragmentSha
 	});
 }
 
+function generateAABB(vertices) {
+    const aabb = {
+        min: [Infinity, Infinity, Infinity],
+        max: [-Infinity, -Infinity, -Infinity],
+    };
+    for (const i in vertices) {
+        if (vertices[i] < aabb.min[i % 3]) { aabb.min[i % 3] = vertices[i]; }
+        if (vertices[i] > aabb.max[i % 3]) { aabb.max[i % 3] = vertices[i]; }
+    }
+    return aabb;
+}
+
 async function loadShader(url) {
     const response = await fetch(url);
     if (!response) { throw new Error("Failed to load shader: ", url); }
@@ -120,6 +132,13 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             code: fragmentShaderCode
         });
 
+        // generate collision mesh for geometry
+        // TODO other types (sphere, mesh)
+        let baselineMesh;
+        if (asset.collision === "aabb") {
+            baselineMesh = generateAABB(data.vertFloats);
+        }
+
         for (const instance of asset.instances) {
             // generate model matrix
             const model = mat4.create();
@@ -128,6 +147,24 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             mat4.rotateY(model, model, instance.rotation[1]);
             mat4.rotateZ(model, model, instance.rotation[2]);
             mat4.scale(model, model, instance.scale);
+
+            // transform collision mesh
+            // TODO other types (sphere, mesh)
+            let collisionMesh;
+            if (baselineMesh) {
+                collisionMesh = {
+                    min: [
+                        baselineMesh.min[0] * instance.scale[0] + instance.position[0],
+                        baselineMesh.min[1] * instance.scale[1] + instance.position[1],
+                        baselineMesh.min[2] * instance.scale[2] + instance.position[2],
+                    ],
+                    max: [
+                        baselineMesh.max[0] * instance.scale[0] + instance.position[0],
+                        baselineMesh.max[1] * instance.scale[1] + instance.position[1],
+                        baselineMesh.max[2] * instance.scale[2] + instance.position[2],
+                    ],
+                };
+            }
 
             // create vertex buffer
             const vb = device.createBuffer({
@@ -170,7 +207,6 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 model: model,
                 modelBuffer: modelBuffer,
                 bindGroup: bindGroup,
-                bindGroupLayout: bindGroupLayout,
                 pipeline: createPipeline(
                     device,
                     bindGroupLayout,
@@ -179,6 +215,7 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     format,
                     topology,
                     multisamples),
+                collisionMesh: collisionMesh,
             });
         }
     }

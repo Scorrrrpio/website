@@ -26,6 +26,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
                 file: "geometry/cube.ply",
                 vertexShader: "shaders/cubeVertex.wgsl",
                 fragmentShader: "shaders/cubeFragment.wgsl",
+                collision: "aabb",
                 instances: [
                     {
                         position: [0, 0, 0],
@@ -54,6 +55,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
                 file: "geometry/lokiSphere.ply",
                 vertexShader: "shaders/sphereVertex.wgsl",
                 fragmentShader: "shaders/sphereFragment.wgsl",
+                collision: "sphere",
                 instances: [
                     {
                         position: [-3.5, 1.5, -30],
@@ -66,6 +68,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
                 file: "geometry/pyramidOcto.ply",
                 vertexShader: "shaders/pyramidVertex.wgsl",
                 fragmentShader: "shaders/pyramidFragment.wgsl",
+                collision: "none",  // TODO
                 instances: [
                     {
                         position: [-3.5, 2, -3.5],
@@ -77,6 +80,12 @@ export async function fpv(canvasID, autoplay, allowControl) {
         ],
     };
     const { renderables, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device, format, TOPOLOGY, MULTISAMPLE);
+    
+    const aabbBoxes = [];
+    // TODO not ideal for potentially moving boxes
+    for (const { collisionMesh } of renderables) {
+        if (collisionMesh) { aabbBoxes.push(collisionMesh); }
+    }
 
     // TODO automate creation and integrate into object
     /*{
@@ -86,34 +95,9 @@ export async function fpv(canvasID, autoplay, allowControl) {
         model matrix
         model matrix uniform buffer
         bind group (for model matrix)
-        bind group layout for some reason???
         AABB (or collision mesh + mesh type)
         shader
     } */
-
-    const cubeBox1 = {
-        min: [-7, 0, 0],
-        max: [0, 1, 7],
-    };
-    const cubeBox2 = {
-        min: [-14, 1, -7],
-        max: [-7, 2, 0],
-    };
-    const cubeBox3 = {
-        min: [-7, 2, -14],
-        max: [0, 3, -7],
-    };
-    const cubeBox4 = {
-        min: [0, 3, -7],
-        max: [7, 4, 0],
-    };
-
-    const aabbBoxes = [
-        cubeBox1,
-        cubeBox2,
-        cubeBox3,
-        cubeBox4,
-    ];
 
 
     // PLAYER
