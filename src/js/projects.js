@@ -3,7 +3,19 @@ import { cube } from "./cube";
 import { lokiSphere } from "./lokiSphere";
 import { cameraPlayground } from "./cameraPlayground";
 
-helloTriangle("hello-triangle", false).catch((error) => { console.log(error.message); });
-cube("spinning-cube", false).catch((error) => { console.log(error.message); });
-lokiSphere("loki-sphere", false).catch((error) => { console.log(error.message); });
-cameraPlayground("camera-playground", false, false).catch((error) => { console.log(error.message); });
+helloTriangle("hello-triangle", false).catch((error) => {
+    if (error.name === "Error") { console.log(error.message); }
+    else { throw Error };
+});
+cube("spinning-cube", false).catch((error) => {
+    if (error.name === "Error") { console.log(error.message); }
+    else { throw Error };
+});
+lokiSphere("loki-sphere", false).catch((error) => {
+    if (error.name === "Error") { console.log(error.message); }
+    else { throw Error };
+});
+cameraPlayground("camera-playground", false, false).catch((error) => {
+    if (error.name === "Error") { console.log(error.message); }
+    else { throw Error };
+});
