@@ -17,6 +17,6 @@ fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) 
         length(vec3f(model[0].y, model[1].y, model[2].y)),
         length(vec3f(model[0].z, model[1].z, model[2].z)),
     );
-    output.rawPos = pos;  // TODO remove for spheres
+    output.rawPos = pos;
     return output;
 }
