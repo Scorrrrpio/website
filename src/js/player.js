@@ -251,7 +251,7 @@ export class Player {
         }
         // y
         if (box1.max[1] >= box2.max[1]) {  // bottom
-            if (this.position[1] >= box2.max[1]) {
+            if (this.position[1] > box2.max[1]) {
                 movement[1] = Math.max(0, movement[1]);
                 this.grounded = true;
                 this.jumpSpeed = 0;

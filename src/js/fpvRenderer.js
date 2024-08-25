@@ -88,7 +88,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
 	// vertex shader
 	const vertexShaderCode = `
         struct VertexOutput {
-            @location(0) barycentric: vec3f,
+            @location(0) rawPos: vec3f,
             @builtin(position) position: vec4f
         };
 
@@ -98,27 +98,36 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
         @vertex
         fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-            var barycentrics = array<vec3f, 3> (
-                vec3(1, 0, 0),
-                vec3(0, 1, 0),
-                vec3(0, 0, 1)
-            );
             var output: VertexOutput;
             var mvp = projection * view * model;
             output.position = mvp * vec4f(pos, 1);
-            output.barycentric = barycentrics[vertexIndex % 3];
+            output.rawPos = pos;
             return output;
     }`;
 
     // fragment shader
+    // TODO see sphere
     const fragmentShaderCode = `
+        struct VertexOutput {
+            @location(0) rawPos: vec3f,
+            @builtin(position) position: vec4f
+        };
+
         @fragment
-        fn fragmentMain(@location(0) bary: vec3f) -> @location(0) vec4f {
-            let threshold = 0.01;
-            if (min(min(bary.x, bary.y), bary.z) >= threshold) {
-                return vec4f(0, 0, 0, 1);
+        fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
+            if ((fragData.rawPos[0] % 0.5 > -0.01 || fragData.rawPos[0] % 0.5 < -0.49)
+            && fragData.rawPos[0] % 0.5 != 0) {
+                return vec4f(fragData.rawPos, 1);
             }
-            return vec4f(1, 1, 1, 1);
+            if ((fragData.rawPos[1] % 0.5 < 0.01 || fragData.rawPos[1] % 0.5 >= 0.49)
+            && fragData.rawPos[1] % 0.5 != 0) {
+                return vec4f(fragData.rawPos, 1);
+            }
+            if ((fragData.rawPos[2] % 0.5 < 0.01 || fragData.rawPos[2] % 0.5 >= 0.49)
+            && fragData.rawPos[2] % 0.5 != 0) {
+                return vec4f(fragData.rawPos, 1);
+            }
+            return vec4f(0, 0, 0, 1);
         }
     `;
 
