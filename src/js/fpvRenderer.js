@@ -21,6 +21,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
     const TOPOLOGY = "triangle-list";
     // Scene assets as JSON
     // TODO glTF if things get dicey
+    // TODO only read ply file once
     const assets = {
         objects: [
             {
@@ -53,12 +54,31 @@ export async function fpv(canvasID, autoplay, allowControl) {
                 rotation: [0, 0, 0],
                 scale: [10, 10, 10],
             },
+            {
+                file: "geometry/pyramidOcto.ply",
+                position: [-3.5, 2, -3.5],
+                rotation: [0, 0, 0],
+                scale: [2, 2, 2],
+            },
         ],
     };
     // TODO rename vertexBuffers
     const { vertexBuffers, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device);
+    console.log(vertexBuffers);
 
     // TODO automate creation and integrate into object
+    /*{
+        id
+        vertex buffer
+        vertex count
+        model matrix
+        model matrix uniform buffer
+        bind group (for model matrix)
+        bind group layout for some reason???
+        AABB (or collision mesh + mesh type)
+        shader
+    } */
+
     const cubeBox1 = {
         min: [-7, 0, 0],
         max: [0, 1, 7],
@@ -85,7 +105,60 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
 
     // SHADERS
-	// vertex shader
+    /* PYRAMID SHADER
+    const vertexShaderCode = `
+        struct VertexOutput {
+            @location(0) rawPos: vec3f,
+            @location(1) barycentric: vec3f,
+            @builtin(position) position: vec4f
+        };
+
+        @group(0) @binding(0) var<uniform> model: mat4x4<f32>;
+        @group(0) @binding(1) var<uniform> view: mat4x4<f32>;
+        @group(0) @binding(2) var<uniform> projection: mat4x4<f32>;
+
+        @vertex
+        fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
+            var barycentrics = array<vec3f, 3> (
+                vec3f(1, 0, 0),
+                vec3f(0, 1, 0),
+                vec3f(0, 0, 1)
+            );
+            var output: VertexOutput;
+            var mvp = projection * view * model;
+            output.position = mvp * vec4f(pos, 1);
+            output.barycentric = barycentrics[vertexIndex % 3];
+            output.rawPos = pos;
+            return output;
+    }`;
+
+    // fragment shader
+    // TODO absolute value
+    const fragmentShaderCode = `
+        struct VertexOutput {
+            @location(0) rawPos: vec3f,
+            @location(1) barycentric: vec3f,
+            @builtin(position) position: vec4f
+        };
+
+        @fragment
+        fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
+            let threshold = 0.02;
+            if (((fragData.rawPos[1] % 0.5 < 0.01 && fragData.rawPos[1] % 0.5 > -0.01)
+            || fragData.rawPos[1] % 0.5 >= 0.49 || fragData.rawPos[1] % 0.5 <= -0.49)
+            && fragData.rawPos[1] % 0.5 != 0) {
+                return vec4f(fragData.rawPos, 1);
+            }
+            if (min(min(fragData.barycentric.x, fragData.barycentric.y), fragData.barycentric.z) < threshold) {
+                return vec4f(fragData.rawPos, 1);
+            }
+            return vec4f(0, 0, 0, 1);
+        }
+    `;
+    */
+	/* SPHERE SHADER TODO?
+    */
+    // vertex shader
 	const vertexShaderCode = `
         struct VertexOutput {
             @location(0) rawPos: vec3f,
@@ -101,12 +174,18 @@ export async function fpv(canvasID, autoplay, allowControl) {
             var output: VertexOutput;
             var mvp = projection * view * model;
             output.position = mvp * vec4f(pos, 1);
-            output.rawPos = pos;
+            var scale = vec3f(
+                length(vec3f(model[0].x, model[1].x, model[2].x)),
+                length(vec3f(model[0].y, model[1].y, model[2].y)),
+                length(vec3f(model[0].z, model[1].z, model[2].z)),
+            );
+            output.rawPos = pos * scale;  // TODO remove for spheres
             return output;
     }`;
 
     // fragment shader
-    // TODO see sphere
+    // TODO absolute value
+    // TODO shader doesn't like decimal dimensions
     const fragmentShaderCode = `
         struct VertexOutput {
             @location(0) rawPos: vec3f,
@@ -115,16 +194,20 @@ export async function fpv(canvasID, autoplay, allowControl) {
 
         @fragment
         fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
-            if ((fragData.rawPos[0] % 0.5 > -0.01 || fragData.rawPos[0] % 0.5 < -0.49)
-            && fragData.rawPos[0] % 0.5 != 0) {
+            let threshold = 0.02;
+            if (((fragData.rawPos[0] % 1 > -0.01 && fragData.rawPos[0] % 1 < 0.01)
+            || fragData.rawPos[0] % 1 < -0.99 || fragData.rawPos[0] % 1 > 0.99)
+            && fragData.rawPos[0] % 1 != 0) {
                 return vec4f(fragData.rawPos, 1);
             }
-            if ((fragData.rawPos[1] % 0.5 < 0.01 || fragData.rawPos[1] % 0.5 >= 0.49)
-            && fragData.rawPos[1] % 0.5 != 0) {
+            if (((fragData.rawPos[1] % 1 < 0.01 && fragData.rawPos[1] % 1 > -0.01)
+            || fragData.rawPos[1] % 1 >= 0.99 || fragData.rawPos[1] % 1 <= -0.99)
+            && fragData.rawPos[1] % 1 != 0) {
                 return vec4f(fragData.rawPos, 1);
             }
-            if ((fragData.rawPos[2] % 0.5 < 0.01 || fragData.rawPos[2] % 0.5 >= 0.49)
-            && fragData.rawPos[2] % 0.5 != 0) {
+            if (((fragData.rawPos[2] % 1 < 0.01 && fragData.rawPos[2] % 1 > -0.01)
+            || fragData.rawPos[2] % 1 >= 0.99 || fragData.rawPos[2] % 1 <= -0.99)
+            && fragData.rawPos[2] % 1 != 0) {
                 return vec4f(fragData.rawPos, 1);
             }
             return vec4f(0, 0, 0, 1);

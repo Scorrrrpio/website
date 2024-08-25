@@ -258,8 +258,10 @@ export class Player {
             }
         }
         else if (box1.min[1] <= box2.min[1]) {  // top
-            movement[1] = Math.min(0, movement[1]);
-            this.jumpSpeed = 0;
+            if (this.position[1] + this.cameraOffset[1] < box2.min[1]) {
+                movement[1] = Math.min(0, movement[1]);
+                this.jumpSpeed = 0;
+            }
         }
         // z
         if (box1.max[2] >= box2.max[2]) {  // front
