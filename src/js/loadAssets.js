@@ -202,13 +202,10 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             let vertexShaderModule = baseVertexShaderModule;
             let fragmentShaderModule = baseFragmentShaderModule;
             if (instance.vertexShader && instance.fragmentShader) {
-                console.log("SHADER OVERRIDE");
                 // vertex shader
                 const overrideVertex = await loadShader(instance.vertexShader);
                 // fragment shader
                 const overrideFragment = await loadShader(instance.fragmentShader);
-
-                console.log(overrideFragment);
 
                 // create shader modules
                 vertexShaderModule = device.createShaderModule({

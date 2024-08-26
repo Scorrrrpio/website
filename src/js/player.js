@@ -9,8 +9,14 @@ function normalizeXZ(v, speed) {
     return v;
 }
 
-function raycast() {
-    // TOOD
+function normalize(v) {
+    const magnitude = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    if (magnitude > 0) {
+        v[0] = v[0] / magnitude;
+        v[1] = v[1] / magnitude;
+        v[2] = v[2] / magnitude;
+    }
+    return v;
 }
 
 export class Player {
@@ -153,24 +159,20 @@ export class Player {
                 // in game
                 switch (event.button) {
                     case 0:
-                        console.log("left");
-                        // cast ray
-                        raycast();
+                        // left
+                        this.#raycast();
                         break;
                     case 1:
-                        console.log("middle");
+                        // middle
                         break;
                     case 2:
-                        console.log("right");
+                        // right
                         break;
                     case 3:
-                        console.log("4");
+                        // mouse 4
                         break;
                     case 4:
-                        console.log("5");
-                        break;
-                    default:
-                        console.log("bro what");
+                        // mouse 5
                         break;
                 }
             }
@@ -179,6 +181,71 @@ export class Player {
                 canvas.requestPointerLock();
             }
         });
+    }
+
+    #raycast() {
+        const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
+        const forwardY = Math.sin(this.rotation[0]);
+        const forwardZ = Math.cos(this.rotation[0]) * Math.cos(this.rotation[1]);
+
+        const rayDirection = normalize([forwardX, -forwardY, -forwardZ]);
+        const rayOrigin = [
+            this.position[0] + this.cameraOffset[0],
+            this.position[1] + this.cameraOffset[1],
+            this.position[2] + this.cameraOffset[2],
+        ];
+
+        // check intersection
+        // TODO this is hardcoded
+        const demoBox = {
+            max: [-3, 5, -3],
+            min: [-4, 4, -4],
+        };
+
+        // TODO review
+        let intersect = true;
+
+        let tmin = (demoBox.min[0] - rayOrigin[0]) / rayDirection[0];
+        let tmax = (demoBox.max[0] - rayOrigin[0]) / rayDirection[0];
+
+        if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
+
+        let tymin, tymax;
+        if (rayDirection[1] !== 0) {
+            tymin = (demoBox.min[1] - rayOrigin[1]) / rayDirection[1];
+            tymax = (demoBox.max[1] - rayOrigin[1]) / rayDirection[1];
+
+            if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
+        } else {
+            tymin = -Infinity;
+            tymax = Infinity;
+        }
+
+        if ((tmin > tymax) || (tymin > tmax)) intersect = false;
+
+        if (tymin > tmin) tmin = tymin;
+        if (tymax < tmax) tmax = tymax;
+
+        let tzmin, tzmax;
+        if (rayDirection[2] !== 0) {
+            tzmin = (demoBox.min[2] - rayOrigin[2]) / rayDirection[2];
+            tzmax = (demoBox.max[2] - rayOrigin[2]) / rayDirection[2];
+
+            if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
+        } else {
+            tzmin = -Infinity;
+            tzmax = Infinity;
+        }
+
+        if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
+
+        if (tzmin > tmin) tmin = tzmin;
+        if (tzmax < tmax) tmax = tzmax;
+
+        if (intersect) {
+            console.log("bang");
+            window.location.href="https://x.com/amkoz__";z
+        }
     }
 
     move(boxes) {
