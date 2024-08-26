@@ -123,13 +123,13 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
         const fragmentShaderCode = await loadShader(asset.fragmentShader);
 
         // create shader modules
-        const vertexShaderModule = device.createShaderModule({
+        const baseVertexShaderModule = device.createShaderModule({
             label: "FPV Vertex Shader",
-            code: vertexShaderCode
+            code: vertexShaderCode,
         });
-        const fragmentShaderModule = device.createShaderModule({
+        const baseFragmentShaderModule = device.createShaderModule({
             label: "FPV Fragment Shader",
-            code: fragmentShaderCode
+            code: fragmentShaderCode,
         });
 
         // generate collision mesh for geometry
@@ -140,6 +140,23 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
         }
 
         for (const instance of asset.instances) {
+            // create vertex buffer
+            const vb = device.createBuffer({
+                label: asset.file,
+                size: data.vertFloats.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
+
+            // write data
+            device.queue.writeBuffer(vb, 0, data.vertFloats);
+
+            // create model matrix uniform buffer for object
+            const modelBuffer = device.createBuffer({
+                label: "Model Uniform " + renderables.length,
+                size: 64,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            });
+
             // generate model matrix
             const model = mat4.create();
             mat4.translate(model, model, instance.position);
@@ -147,6 +164,22 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             mat4.rotateY(model, model, instance.rotation[1]);
             mat4.rotateZ(model, model, instance.rotation[2]);
             mat4.scale(model, model, instance.scale);
+
+            // create bind group for object's model matrix
+            const bindGroup = device.createBindGroup({
+                label: "MVP bind group " + renderables.length,
+                layout: bindGroupLayout,
+                entries: [{
+                    binding: 0,
+                    resource: { buffer: modelBuffer },
+                }, {
+                    binding: 1,
+                    resource: { buffer: viewBuffer },
+                }, {
+                    binding: 2,
+                    resource: { buffer: projectionBuffer },
+                }],
+            });
 
             // transform collision mesh
             let collisionMesh;
@@ -165,38 +198,28 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 };
             }
 
-            // create vertex buffer
-            const vb = device.createBuffer({
-                label: asset.file,
-                size: data.vertFloats.byteLength,
-                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-            });
+            // override shaders
+            let vertexShaderModule = baseVertexShaderModule;
+            let fragmentShaderModule = baseFragmentShaderModule;
+            if (instance.vertexShader && instance.fragmentShader) {
+                console.log("SHADER OVERRIDE");
+                // vertex shader
+                const overrideVertex = await loadShader(instance.vertexShader);
+                // fragment shader
+                const overrideFragment = await loadShader(instance.fragmentShader);
 
-            // write data
-            device.queue.writeBuffer(vb, 0, data.vertFloats);
+                console.log(overrideFragment);
 
-            // create model matrix uniform buffer for object
-            const modelBuffer = device.createBuffer({
-                label: "Model Uniform " + renderables.length,
-                size: 64,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            });
-
-            // create bind group for object's model matrix
-            const bindGroup = device.createBindGroup({
-                label: "MVP bind group " + renderables.length,
-                layout: bindGroupLayout,
-                entries: [{
-                    binding: 0,
-                    resource: { buffer: modelBuffer },
-                }, {
-                    binding: 1,
-                    resource: { buffer: viewBuffer },
-                }, {
-                    binding: 2,
-                    resource: { buffer: projectionBuffer },
-                }],
-            });
+                // create shader modules
+                vertexShaderModule = device.createShaderModule({
+                    label: "FPV Vertex Shader OVERRIDE",
+                    code: overrideVertex,
+                });
+                fragmentShaderModule = device.createShaderModule({
+                    label: "FPV Fragment Shader OVERRIDE",
+                    code: overrideFragment,
+                });
+            }
 
             // add to vertex buffer list
             renderables.push({

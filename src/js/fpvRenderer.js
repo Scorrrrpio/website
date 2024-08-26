@@ -35,20 +35,32 @@ export async function fpv(canvasID, autoplay) {
                         
                     },
                     {
-                        position: [-7, 1, -7],
+                        position: [-7, 2, -7],
                         rotation: [0, 0, 0],
                         scale: [7, 1, 7],
                     },
                     {
-                        position: [0, 2, -14],
+                        position: [0, 4, -14],
                         rotation: [0, 0, 0],
                         scale: [7, 1, 7],
                     },
                     {
-                        position: [7, 3, -7],
+                        position: [7, 6, -7],
                         rotation: [0, 0, 0],
                         scale: [7, 1, 7],
                     },
+                    {
+                        position: [0, 8, 0],
+                        rotation: [0, 0, 0],
+                        scale: [7, 1, 7],
+                    },
+                    {
+                        position: [-3, 4, -4],
+                        rotation: [0, 0, 0],
+                        scale: [1, 1, 1],
+                        vertexShader: "shaders/debugVertex.wgsl",
+                        fragmentShader: "shaders/debugFragment.wgsl",
+                    }
                 ],
             },
             {
