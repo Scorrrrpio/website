@@ -26,8 +26,8 @@ export class Player {
 
     // aiming
     // TODO change settings
-    xSense = 0.01;
-    ySense = 0.01;
+    xSense = 0.002;
+    ySense = 0.002;
     maxLook = Math.PI / 2;
     minLook = -this.maxLook;
 
