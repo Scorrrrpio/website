@@ -179,6 +179,86 @@ export async function fpv(canvasID, autoplay) {
     }
 
 
+    // HUD
+    // TODO awful code
+    // geometry
+    const aspect = canvas.width / canvas.height;
+    const crosshair = new Float32Array([
+        // X,    Y
+        -0.1 / aspect,    0,
+         0.1 / aspect,    0,
+           0, -0.1,
+           0,  0.1,
+    ]);
+
+    // vertex buffer
+    const hudVB = device.createBuffer({
+		label: "HUD Vertices",
+		size: crosshair.byteLength,
+		usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+	});
+
+    device.queue.writeBuffer(hudVB, 0, crosshair);
+
+    // shaders
+    const hudVertexShaderCode = `
+    @vertex
+    fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
+        return vec4f(pos, 0, 1);
+    }`;
+    const hudFragmentShaderCode = `
+    @fragment
+    fn fragmentMain (@builtin(position) pos: vec4f) -> @location(0) vec4f {
+        return vec4f(1, 1, 1, 1);
+    }`;
+    const hudVertexShaderModule = device.createShaderModule({
+        label: "HUD Vertex Shader",
+        code: hudVertexShaderCode
+    });
+    const hudFragmentShaderModule = device.createShaderModule({
+        label: "HUD Fragment Shader",
+        code: hudFragmentShaderCode
+    });
+
+    // pipeline
+	const hudPipeline = device.createRenderPipeline({
+		label: "HUD Pipeline",
+		layout: "auto",
+		vertex: {
+			module: hudVertexShaderModule,
+			entryPoint: "vertexMain",
+			buffers: [{
+				arrayStride: 4 * 2 /*bytes*/,
+				attributes: [
+                    {
+                        format: "float32x2",
+                        offset: 0,
+                        shaderLocation: 0
+                    },
+                ]
+			}],
+		},
+		fragment: {
+			module: hudFragmentShaderModule,
+			entryPoint: "fragmentMain",
+			targets: [{
+				format: format,
+			}]
+		},
+		primitive: {
+			topology: "line-list"
+		},
+        depthStencil: {
+            format: "depth24plus",
+            depthWriteEnabled: true,
+            depthCompare: "less",
+        },
+        multisample: {
+            count: 4,
+        },
+	});
+
+
     // RENDER LOOP
     let animating = false;
 	function renderLoop() {
@@ -227,10 +307,13 @@ export async function fpv(canvasID, autoplay) {
             pass.draw(vertexCount);
         }
 
+        // render HUD
+        pass.setPipeline(hudPipeline);
+        pass.setVertexBuffer(0, hudVB);
+        pass.draw(crosshair.length / 2);
+
 		// end render pass
 		pass.end();
-
-        // TODO render HUD
 
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);

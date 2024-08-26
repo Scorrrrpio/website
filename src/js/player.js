@@ -9,6 +9,10 @@ function normalizeXZ(v, speed) {
     return v;
 }
 
+function raycast() {
+    // TOOD
+}
+
 export class Player {
     // coordinates
     position = [0, 0, 0];
@@ -145,11 +149,13 @@ export class Player {
         // request pointer lock within canvas
         canvas.addEventListener("click", (event) => {
             if (document.pointerLockElement === canvas) {
-                // TODO possibly move elsewhere?
+                // TODO click and hold / release behaviour
                 // in game
                 switch (event.button) {
                     case 0:
                         console.log("left");
+                        // cast ray
+                        raycast();
                         break;
                     case 1:
                         console.log("middle");
