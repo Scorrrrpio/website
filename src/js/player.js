@@ -1,5 +1,14 @@
 import { Camera } from "./camera";
 
+function normalizeXZ(v, speed) {
+    const magnitude = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
+    if (magnitude > 0) {
+        v[0] = v[0] * speed / magnitude ;
+        v[2] = v[2] * speed / magnitude;
+    }
+    return v;
+}
+
 export class Player {
     // coordinates
     position = [0, 0, 0];
@@ -12,6 +21,7 @@ export class Player {
     cameraOffset = [0, 1, 0];
 
     // aiming
+    // TODO change settings
     xSense = 0.01;
     ySense = 0.01;
     maxLook = Math.PI / 2;
@@ -174,23 +184,24 @@ export class Player {
         let movement = [0, 0, 0];
 
         // horizontal movement
-        // TODO normalize
         if (this.inputs.w) {
-            movement[0] += this.maxSpeed * forwardX;
-            movement[2] -= this.maxSpeed * forwardZ;
+            movement[0] += forwardX;
+            movement[2] -= forwardZ;
         }
         if (this.inputs.a) {
-            movement[0] -= this.maxSpeed * strafeX;
-            movement[2] += this.maxSpeed * strafeZ;
+            movement[0] -= strafeX;
+            movement[2] += strafeZ;
         }
         if (this.inputs.s) {
-            movement[0] -= this.maxSpeed * forwardX;
-            movement[2] += this.maxSpeed * forwardZ;
+            movement[0] -= forwardX;
+            movement[2] += forwardZ;
         }
         if (this.inputs.d) {
-            movement[0] += this.maxSpeed * strafeX;
-            movement[2] -= this.maxSpeed * strafeZ;
+            movement[0] += strafeX;
+            movement[2] -= strafeZ;
         }
+
+        movement = normalizeXZ(movement, this.maxSpeed);
 
         // jumping
         if (this.inputs.space) {

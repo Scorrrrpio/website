@@ -11,16 +11,17 @@ export class Camera {
     far = 1000.0;
     projection = mat4.create();
 
-    constructor(aspect, fov, near, far) {
+    constructor(aspect) {
         // projection matrix setup
-        this.fov = fov;
         this.aspect = aspect;
-        //this.near = near;
-        //this.far = far;
-        mat4.perspective(this.projection, fov, this.aspect, this.near, this.far);
+        mat4.perspective(this.projection, this.fov, this.aspect, this.near, this.far);
     }
 
-    updateProjectionMatrix(aspect, fov, near, far) {
+    updateProjectionMatrix(aspect = this.aspect, fov = this.fov, near = this.near, far = this.far) {
+        this.aspect = aspect;
+        this.fov = fov;
+        this.near = near;
+        this.far = far;
         mat4.perspective(this.projection, fov, aspect, near, far);
     }
 
@@ -29,8 +30,5 @@ export class Camera {
         mat4.rotateY(this.view, this.view, rotation[1]);
         mat4.rotateZ(this.view, this.view, rotation[2]);
         mat4.translate(this.view, this.view, [-position[0], -position[1], -position[2]]);
-        if (this.view.some(isNaN)) {
-            throw new RangeError("NaN in view matrix");
-        }
     }
 }

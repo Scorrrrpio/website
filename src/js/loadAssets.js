@@ -149,7 +149,6 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             mat4.scale(model, model, instance.scale);
 
             // transform collision mesh
-            // TODO other types (sphere, mesh)
             let collisionMesh;
             if (baselineMesh) {
                 collisionMesh = {

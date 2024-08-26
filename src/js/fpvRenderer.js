@@ -5,7 +5,7 @@ import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
 
 // inspired by the sphere graphic from lokinet.org
-export async function fpv(canvasID, autoplay, allowControl) {
+export async function fpv(canvasID, autoplay) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -79,6 +79,7 @@ export async function fpv(canvasID, autoplay, allowControl) {
             },
         ],
     };
+    // TODO what if objects are added at runtime?
     const { renderables, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device, format, TOPOLOGY, MULTISAMPLE);
     
     const aabbBoxes = [];
@@ -141,7 +142,6 @@ export async function fpv(canvasID, autoplay, allowControl) {
         canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
         canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
 
-        // TODO handle in camera
         mat4.perspective(player.pov.projection, fov, canvas.width / canvas.height, near, far);
 
         if (msaaTexture) { msaaTexture.destroy(); }
