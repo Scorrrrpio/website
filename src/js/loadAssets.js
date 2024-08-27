@@ -106,6 +106,11 @@ function createBindGroupLayout(device, label, texture, sampler) {
             visibility: GPUShaderStage.FRAGMENT,
             sampler: { type: "filtering" },
         });
+        BGLDescriptor.entries.push({
+            binding: 5,
+            visibility: GPUShaderStage.FRAGMENT,
+            buffer: { type: "uniform" },
+        });
     }
     return device.createBindGroupLayout(BGLDescriptor);
 }
@@ -195,9 +200,6 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             baseMesh = createAABB(data);
         }
 
-        // TODO debugging
-        //console.log(data);  // texture coords
-
         for (const instance of asset.instances) {
             // create vertex buffer
             const vb = device.createBuffer({
@@ -284,11 +286,11 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
 
             // load texture
             let texture;
-            if (instance.textureUrl) {
+            if (instance.texture) {
                 // read image from texture url
-                console.log(instance.textureUrl);
+                console.log(instance.texture.url);
                 const img = new Image();
-                img.src = instance.textureUrl;
+                img.src = instance.texture.url;
                 await img.decode();
 
                 // convert to bmp
@@ -307,17 +309,31 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     [imgBmp.width, imgBmp.height, 1],
                 );
 
-                console.log(texture);
-
                 // create texture sampler
                 const sampler = device.createSampler({
                     magFilter: "linear",
                     minFilter: "linear",
                 });
 
+                // create list of faces to texture
+                const faceIDs = new Uint32Array([
+                    instance.texture.faces.includes("front") ? 1 : 0, 0, 0, 0,
+                    instance.texture.faces.includes("back") ? 1 : 0, 0, 0, 0,
+                    instance.texture.faces.includes("left") ? 1 : 0, 0, 0, 0,
+                    instance.texture.faces.includes("right") ? 1 : 0, 0, 0, 0,
+                    instance.texture.faces.includes("top") ? 1 : 0, 0, 0, 0,
+                    instance.texture.faces.includes("bottom") ? 1 : 0, 0, 0, 0,
+                ]);
+                // store in uniform buffer
+                const faceIDsBuffer = device.createBuffer({
+                    label: "Texture Faces Buffer",
+                    size: faceIDs.byteLength,
+                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+                });
+                device.queue.writeBuffer(faceIDsBuffer, 0, faceIDs);
+
                 // override bind group layout
                 bindGroupLayout = createBindGroupLayout(device, "Texture Bind Group Layout", texture, sampler);
-                console.log(bindGroupLayout);
 
                 // override bind group
                 bindGroup = device.createBindGroup({
@@ -338,6 +354,9 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     }, {
                         binding: 4,
                         resource: sampler,
+                    }, {
+                        binding: 5,
+                        resource: { buffer: faceIDsBuffer },
                     }],
                 });
             }

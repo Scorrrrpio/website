@@ -59,7 +59,10 @@ export async function fpv(canvasID, autoplay) {
                         scale: [2, 2, 2],
                         href: "https://x.com/amkoz__",
                         ghost: true,
-                        textureUrl: "media/LogoB.png",
+                        texture: {
+                            url: "media/LogoB.png",
+                            faces: ["right"],
+                        },
                         vertexShader: "shaders/textureVertex.wgsl",
                         fragmentShader: "shaders/textureFragment.wgsl",
                     },
