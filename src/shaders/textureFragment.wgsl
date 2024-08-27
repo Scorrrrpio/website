@@ -3,7 +3,10 @@ struct VertexOutput {
     @builtin(position) position: vec4f
 };
 
+@group(0) @binding(3) var texture: texture_2d<f32>;
+@group(0) @binding(4) var mySampler: sampler;
+
 @fragment
 fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
-    return vec4f(fragData.uv, 0, 1);
+    return textureSample(texture, mySampler, fragData.uv);
 }

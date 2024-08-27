@@ -55,7 +55,7 @@ export async function fpv(canvasID, autoplay) {
                     },
                     {
                         position: [-0.5, 4, -20.5],
-                        rotation: [0, 0, 0],
+                        rotation: [0, -Math.PI / 2, 0],
                         scale: [1, 1, 1],
                         href: "https://x.com/amkoz__",
                         ghost: true,

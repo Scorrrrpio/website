@@ -78,8 +78,8 @@ function createAABB(data) {
     return aabb;
 }
 
-function createBindGroupLayout(device, label) {
-    return device.createBindGroupLayout({
+function createBindGroupLayout(device, label, texture, sampler) {
+    const BGLDescriptor = {
         label: label,
         entries: [{
             binding: 0,
@@ -94,7 +94,20 @@ function createBindGroupLayout(device, label) {
             visibility: GPUShaderStage.VERTEX,
             buffer: { type: "uniform" },
         }]
-    });
+    }
+    if (texture && sampler) {
+        BGLDescriptor.entries.push({
+            binding: 3,
+            visibility: GPUShaderStage.FRAGMENT,
+            texture: { sampleType: "float" },
+        });
+        BGLDescriptor.entries.push({
+            binding: 4,
+            visibility: GPUShaderStage.FRAGMENT,
+            sampler: { type: "filtering" },
+        });
+    }
+    return device.createBindGroupLayout(BGLDescriptor);
 }
 
 function createVBAttributes(properties) {
@@ -130,14 +143,6 @@ function createVBAttributes(properties) {
     return attributes;
 }
 
-/*
-const vertexBufferAttributes = [{
-    format: "float32x3",
-    offset: 0,
-    shaderLocation: 0
-}];
-*/
-
 async function loadShader(url) {
     const response = await fetch(url);
     if (!response) { throw new Error("Failed to load shader: ", url); }
@@ -160,7 +165,7 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
 
 
     // BIND GROUP LAYOUT
-    const bindGroupLayout = createBindGroupLayout(device, "DefaultBind Group Layout");
+    const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout");
 
 
     // RENDERABLES
@@ -220,7 +225,8 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             });
 
             // create bind group for MVP matrices
-            const bindGroup = device.createBindGroup({
+            let bindGroupLayout = baseBindGroupLayout;
+            let bindGroup = device.createBindGroup({
                 label: "MVP bind group " + renderables.length,
                 layout: bindGroupLayout,
                 entries: [{
@@ -290,16 +296,18 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
 
                 // create texture on device
                 texture = device.createTexture({
+                    label: "Instance Texture",
                     size: [imgBmp.width, imgBmp.height, 1],
                     format: "rgba8unorm",
                     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
                 });
-
                 device.queue.copyExternalImageToTexture(
                     { source: imgBmp },
                     { texture: texture },
                     [imgBmp.width, imgBmp.height, 1],
                 );
+
+                console.log(texture);
 
                 // create texture sampler
                 const sampler = device.createSampler({
@@ -307,7 +315,31 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     minFilter: "linear",
                 });
 
-                // TODO override bind group
+                // override bind group layout
+                bindGroupLayout = createBindGroupLayout(device, "Texture Bind Group Layout", texture, sampler);
+                console.log(bindGroupLayout);
+
+                // override bind group
+                bindGroup = device.createBindGroup({
+                    label: "MVP bind group " + renderables.length,
+                    layout: bindGroupLayout,
+                    entries: [{
+                        binding: 0,
+                        resource: { buffer: modelBuffer },
+                    }, {
+                        binding: 1,
+                        resource: { buffer: viewBuffer },
+                    }, {
+                        binding: 2,
+                        resource: { buffer: projectionBuffer },
+                    }, {
+                        binding: 3,
+                        resource: texture.createView(),
+                    }, {
+                        binding: 4,
+                        resource: sampler,
+                    }],
+                });
             }
 
             // add to renderables list
