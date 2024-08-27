@@ -196,6 +196,9 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                         baselineMesh.max[2] * instance.scale[2] + instance.position[2],
                     ],
                 };
+                if (instance.href) {
+                    collisionMesh.href = instance.href;
+                }
             }
 
             // override shaders

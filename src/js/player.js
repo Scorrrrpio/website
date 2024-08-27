@@ -54,6 +54,8 @@ export class Player {
         s: false,
         d: false,
         space: false,
+        leftMouse: false,
+        rightMouse: false,
     }
 
     constructor(canvas, position, rotation) {
@@ -160,29 +162,7 @@ export class Player {
 
         // request pointer lock within canvas
         canvas.addEventListener("click", (event) => {
-            if (document.pointerLockElement === canvas) {
-                // TODO click and hold / release behaviour
-                // in game
-                switch (event.button) {
-                    case 0:
-                        // left
-                        this.#raycast();
-                        break;
-                    case 1:
-                        // middle
-                        break;
-                    case 2:
-                        // right
-                        break;
-                    case 3:
-                        // mouse 4
-                        break;
-                    case 4:
-                        // mouse 5
-                        break;
-                }
-            }
-            else {
+            if (document.pointerLockElement !== canvas) {
                 // stop movement
                 this.inputs.w = false;
                 this.inputs.a = false;
@@ -193,9 +173,41 @@ export class Player {
                 canvas.requestPointerLock();
             }
         });
+
+        canvas.addEventListener("mousedown", (event) => {
+            if (document.pointerLockElement === canvas) {
+                // in game
+                switch (event.button) {
+                    case 0:
+                        // left
+                        this.inputs.leftMouse = true;
+                        break;
+                    case 2:
+                        this.inputs.rightMouse = true;
+                        // right
+                        break;
+                }
+            }
+        });
+
+        canvas.addEventListener("mouseup", (event) => {
+            if (document.pointerLockElement === canvas) {
+                // in game
+                switch (event.button) {
+                    case 0:
+                        // left
+                        this.inputs.leftMouse = false;
+                        break;
+                    case 2:
+                        this.inputs.rightMouse = false;
+                        // right
+                        break;
+                }
+            }
+        });
     }
 
-    #raycast() {
+    #raycast(boxes) {
         const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
         const forwardY = Math.sin(this.rotation[0]);
         const forwardZ = Math.cos(this.rotation[0]) * Math.cos(this.rotation[1]);
@@ -208,62 +220,73 @@ export class Player {
         ];
 
         // check intersection
-        // TODO this is hardcoded
-        const demoBox = {
-            max: [0.5, 5, -19.5],
-            min: [-0.5, 4, -20.5],
-        };
-
+        let closest;
+        let closestDist = Infinity;
         // TODO review
-        let intersect = true;
+        for (const box of boxes) {
+            let intersect = true;
 
-        let tmin = (demoBox.min[0] - rayOrigin[0]) / rayDirection[0];
-        let tmax = (demoBox.max[0] - rayOrigin[0]) / rayDirection[0];
+            let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
+            let tmax = (box.max[0] - rayOrigin[0]) / rayDirection[0];
 
-        if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
+            if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
 
-        let tymin, tymax;
-        if (rayDirection[1] !== 0) {
-            tymin = (demoBox.min[1] - rayOrigin[1]) / rayDirection[1];
-            tymax = (demoBox.max[1] - rayOrigin[1]) / rayDirection[1];
+            let tymin, tymax;
+            if (rayDirection[1] !== 0) {
+                tymin = (box.min[1] - rayOrigin[1]) / rayDirection[1];
+                tymax = (box.max[1] - rayOrigin[1]) / rayDirection[1];
 
-            if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
-        } else {
-            tymin = -Infinity;
-            tymax = Infinity;
+                if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
+            } else {
+                tymin = -Infinity;
+                tymax = Infinity;
+            }
+
+            if ((tmin > tymax) || (tymin > tmax)) intersect = false;
+
+            if (tymin > tmin) tmin = tymin;
+            if (tymax < tmax) tmax = tymax;
+
+            let tzmin, tzmax;
+            if (rayDirection[2] !== 0) {
+                tzmin = (box.min[2] - rayOrigin[2]) / rayDirection[2];
+                tzmax = (box.max[2] - rayOrigin[2]) / rayDirection[2];
+
+                if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
+            } else {
+                tzmin = -Infinity;
+                tzmax = Infinity;
+            }
+
+            if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
+
+            if (tzmin > tmin) tmin = tzmin;
+            if (tzmax < tmax) tmax = tzmax;
+
+            if (intersect) {
+                if (tmin < closestDist) {
+                    closest = box;
+                    closestDist = tmin;
+                }
+            }
         }
 
-        if ((tmin > tymax) || (tymin > tmax)) intersect = false;
-
-        if (tymin > tmin) tmin = tymin;
-        if (tymax < tmax) tmax = tymax;
-
-        let tzmin, tzmax;
-        if (rayDirection[2] !== 0) {
-            tzmin = (demoBox.min[2] - rayOrigin[2]) / rayDirection[2];
-            tzmax = (demoBox.max[2] - rayOrigin[2]) / rayDirection[2];
-
-            if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
-        } else {
-            tzmin = -Infinity;
-            tzmax = Infinity;
-        }
-
-        if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
-
-        if (tzmin > tmin) tmin = tzmin;
-        if (tzmax < tmax) tmax = tzmax;
-
-        if (intersect) {
-            console.log("bang");
+        if (closest) {
             // stop movement
             this.inputs.w = false;
             this.inputs.a = false;
             this.inputs.s = false;
             this.inputs.d = false;
             this.inputs.space = false;
-            // open link
-            window.open("https://x.com/amkoz__", "__blank");
+            this.inputs.leftMouse = false;
+            this.inputs.rightMouse = false;
+
+            // if link
+            if (closest.href) {
+                console.log("bang");
+                // open link
+                window.open(closest.href, "__blank");
+            }
         }
     }
 
@@ -340,6 +363,11 @@ export class Player {
             this.position[1] + this.cameraOffset[1],
             this.position[2] + this.cameraOffset[2],
         ], this.rotation);
+
+        // cast interaction ray
+        if (this.inputs.leftMouse) {
+            this.#raycast(boxes);
+        }
     }
 
     #slide(box1, box2, movement) {

@@ -28,17 +28,10 @@ export async function fpv(canvasID, autoplay) {
                 fragmentShader: "shaders/cubeFragment.wgsl",
                 collision: "aabb",
                 instances: [
-                    /*{
-                        position: [100, -1, -100],
-                        rotation: [0, 0, 0],
-                        scale: [200, 1, 200],
-                        
-                    },*/
                     {
                         position: [-4, 0, -16],
                         rotation: [0, 0, 0],
                         scale: [8, 1, 8],
-                        
                     },
                     {
                         position: [-12, 0, -24],
@@ -64,6 +57,7 @@ export async function fpv(canvasID, autoplay) {
                         position: [-0.5, 4, -20.5],
                         rotation: [0, 0, 0],
                         scale: [1, 1, 1],
+                        href: "https://x.com/amkoz__",
                         vertexShader: "shaders/debugVertex.wgsl",
                         fragmentShader: "shaders/debugFragment.wgsl",
                     }
