@@ -54,6 +54,11 @@ export async function fpv(canvasID, autoplay) {
                         scale: [8, 1, 8],
                     },
                     {
+                        position: [0, 0, -4],
+                        rotation: [0, 0, 0],
+                        scale: [1, 1, 1],
+                    },
+                    {
                         position: [0, 5, -24],
                         rotation: [0, -Math.PI / 2, 0],
                         scale: [2, 2, 2],
@@ -100,6 +105,34 @@ export async function fpv(canvasID, autoplay) {
                         position: [0, 2, -24],
                         rotation: [0, 0, 0],
                         scale: [2, 2, 2],
+                    },
+                ],
+            },
+            {
+                file: "geometry/pyramidQuad.ply",
+                vertexShader: "shaders/pyramidVertex.wgsl",
+                fragmentShader: "shaders/pyramidFragment.wgsl",
+                collision: "none",  // TODO
+                instances: [
+                    {
+                        position: [0, 1, -4],
+                        rotation: [0, 0, 0],
+                        scale: [1, 1, 1],
+                    },
+                    {
+                        position: [16, 3, 16],
+                        rotation: [0, 0, 0],
+                        scale: [3, 6, 3],
+                    },
+                    {
+                        position: [-32, 3, 16],
+                        rotation: [0, 0, 0],
+                        scale: [3, 6, 3],
+                    },
+                    {
+                        position: [0, 16, 16],
+                        rotation: [0, 0, 0],
+                        scale: [3, 6, 3],
                     },
                 ],
             },
