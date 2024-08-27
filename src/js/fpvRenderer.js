@@ -60,8 +60,8 @@ export async function fpv(canvasID, autoplay) {
                         href: "https://x.com/amkoz__",
                         ghost: true,
                         textureUrl: "media/LogoB.png",
-                        vertexShader: "shaders/basicVertex.wgsl",
-                        fragmentShader: "shaders/debugFragment.wgsl",
+                        vertexShader: "shaders/textureVertex.wgsl",
+                        fragmentShader: "shaders/textureFragment.wgsl",
                     },
                     {
                         position: [6, 3, -16],
@@ -342,8 +342,7 @@ export async function fpv(canvasID, autoplay) {
             pass.draw(vertexCount);
         }
 
-        // TODO testing
-        if (player.inputs.rightMouse) {
+        if (document.pointerLockElement === canvas) {
             // render HUD
             pass.setPipeline(hudPipeline);
             pass.setBindGroup(0, hudBG);

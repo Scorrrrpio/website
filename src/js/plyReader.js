@@ -8,8 +8,8 @@ async function readPly(url, topology) {
     // separate into lines
     const lines = text.split("\n");
 
-    const properties = [];
     const data = {};
+    data.properties = [];
     data.faces = [];
     data.topologyVerts = 0;  // number of vertices for rendering topology
     data.source = url;
@@ -36,7 +36,7 @@ async function readPly(url, topology) {
         else if (readingVertices) {
             // read vertices
             for (const i in parts) {
-                data[properties[i]].push(Number(parts[i]));
+                data[data.properties[i]].push(Number(parts[i]));
             }
             // count vertices
             if (--vertsCount === 0) {
@@ -54,21 +54,20 @@ async function readPly(url, topology) {
             else if (parts[0] == "element") {
                 if (parts[1] == "vertex") { vertsCount = Number(parts[2]); }
                 if (parts[1] === "face") { faceCount = Number(parts[2]); }
-                // face processing unnecessary
             }
             // properties
             else if (parts[0] == "property") {
                 if (parts[1] == "list") {}  // TODO for evil files
                 else {
                     // parts[1] is type
-                    properties.push(parts[2]);
+                    data.properties.push(parts[2]);
                 }
             }
             // end_header
             else if (parts[0] == "end_header") {
                 readingVertices = true;
                 // create fields in data Object
-                for (const property of properties) { data[property] = []; }
+                for (const property of data.properties) { data[property] = []; }
             }
         }
     }
@@ -79,30 +78,32 @@ async function readPly(url, topology) {
 export async function plyToTriangleList(url) {
     const data = await readPly(url, "triangle-list");
     // generate Float32Array
-    const floatVerts = new Float32Array(data.topologyVerts * 3);
+    const vertices = {};
+    vertices.properties = data.properties;
+    vertices.floats = new Float32Array(data.topologyVerts * data.properties.length);
     let vIndex = 0;
     for (const face of data.faces) {
         // TODO selectable triangulation behaviour
         // handle polygons with fan of triangles
         for (let i = 1; i < face.length - 1; i++) {
             // v0
-            floatVerts[vIndex++] = data.x[face[0]];
-            floatVerts[vIndex++] = data.y[face[0]];
-            floatVerts[vIndex++] = data.z[face[0]];
+            for (const property of vertices.properties) {
+                vertices.floats[vIndex++] = data[property][face[0]];
+            }
             // vi
-            floatVerts[vIndex++] = data.x[face[i]];
-            floatVerts[vIndex++] = data.y[face[i]];
-            floatVerts[vIndex++] = data.z[face[i]];
+            for (const property of vertices.properties) {
+                vertices.floats[vIndex++] = data[property][face[i]];
+            }
             // v(i+1)
-            floatVerts[vIndex++] = data.x[face[i+1]];
-            floatVerts[vIndex++] = data.y[face[i+1]];
-            floatVerts[vIndex++] = data.z[face[i+1]];
+            for (const property of vertices.properties) {
+                vertices.floats[vIndex++] = data[property][face[i+1]];
+            }
         }
     }
-    data.vertFloats = floatVerts;
-    return data;
+    return vertices;
 }
 
+// TODO overhaul to bring in line with triangle-list
 export async function plyToLineList(url) {
     const data = await readPly(url, "line-list");
     // generate Float32Array

@@ -161,7 +161,7 @@ export class Player {
         });
 
         // request pointer lock within canvas
-        canvas.addEventListener("click", (event) => {
+        canvas.addEventListener("click", () => {
             if (document.pointerLockElement !== canvas) {
                 // stop movement
                 this.inputs.w = false;
@@ -184,8 +184,6 @@ export class Player {
                         break;
                     case 2:
                         this.inputs.rightMouse = true;
-                        this.pov.fov = Math.PI / 10;  // TODO testing
-                        this.pov.updateProjectionMatrix();
                         // right
                         break;
                 }
@@ -202,8 +200,6 @@ export class Player {
                         break;
                     case 2:
                         this.inputs.rightMouse = false;
-                        this.pov.fov = Math.PI / 6;  // TODO testing
-                        this.pov.updateProjectionMatrix();
                         // right
                         break;
                 }

@@ -1,7 +1,7 @@
 import { plyToTriangleList } from "./plyReader";  // TODO line-list
 import { mat4 } from "gl-matrix";
 
-function createPipeline(device, bindGroupLayout, vertexShaderModule, fragmentShaderModule, format, topology, multisamples) {
+function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, multisamples) {
     return device.createRenderPipeline({
 		label: "FPV Pipeline",
 		layout: device.createPipelineLayout({
@@ -12,12 +12,8 @@ function createPipeline(device, bindGroupLayout, vertexShaderModule, fragmentSha
 			module: vertexShaderModule,
 			entryPoint: "vertexMain",
 			buffers: [{
-				arrayStride: 4 * 3 /*bytes*/,
-				attributes: [{
-					format: "float32x3",
-					offset: 0,
-					shaderLocation: 0
-				}],
+				arrayStride: 4 * vertexBufferStride /*bytes*/,
+				attributes: vertexBufferAttributes,
 			}],
 		},
 		fragment: {
@@ -56,17 +52,91 @@ function createPipeline(device, bindGroupLayout, vertexShaderModule, fragmentSha
 	});
 }
 
-function generateAABB(vertices) {
+function createAABB(data) {
+    const xIndex = data.properties.indexOf("x");
+    const yIndex = data.properties.indexOf("y");
+    const zIndex = data.properties.indexOf("z");
+
     const aabb = {
         min: [Infinity, Infinity, Infinity],
         max: [-Infinity, -Infinity, -Infinity],
     };
-    for (const i in vertices) {
-        if (vertices[i] < aabb.min[i % 3]) { aabb.min[i % 3] = vertices[i]; }
-        if (vertices[i] > aabb.max[i % 3]) { aabb.max[i % 3] = vertices[i]; }
+    for (const i in data.floats) {
+        if (i % data.properties.length === xIndex) {
+            if (data.floats[i] < aabb.min[0]) { aabb.min[0] = data.floats[i]; }
+            if (data.floats[i] > aabb.max[0]) { aabb.max[0] = data.floats[i]; }
+        }
+        if (i % data.properties.length === yIndex) {
+            if (data.floats[i] < aabb.min[1]) { aabb.min[1] = data.floats[i]; }
+            if (data.floats[i] > aabb.max[1]) { aabb.max[1] = data.floats[i]; }
+        }
+        if (i % data.properties.length === zIndex) {
+            if (data.floats[i] < aabb.min[2]) { aabb.min[2] = data.floats[i]; }
+            if (data.floats[i] > aabb.max[2]) { aabb.max[2] = data.floats[i]; }
+        }
     }
     return aabb;
 }
+
+function createBindGroupLayout(device, label) {
+    return device.createBindGroupLayout({
+        label: label,
+        entries: [{
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },
+        }, {
+            binding: 1,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },
+        }, {
+            binding: 2,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "uniform" },
+        }]
+    });
+}
+
+function createVBAttributes(properties) {
+    const attributes = [];
+    let offset = 0;
+    let shaderLocation = 0;
+    // TODO upgrade this alongside .ply reader
+    for (let i = 0; i < properties.length; i++) {
+        const attribute = {};
+        if (i < properties.length - 2 && properties[i] === "x" && properties[i+1] === "y" && properties[i+1] === "y") {
+            attribute.format = "float32x3";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset += 3;
+            i += 2;
+        }
+        else if (i < properties.length - 1 && properties[i] === "s" && properties[i+1] === "t") {
+            attribute.format = "float32x2";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset += 2;
+            i++;
+        }
+        else {
+            attribute.format = "float32x1";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset++;
+        }
+        attributes.push(attribute);
+        shaderLocation++;
+    }
+    return attributes;
+}
+
+/*
+const vertexBufferAttributes = [{
+    format: "float32x3",
+    offset: 0,
+    shaderLocation: 0
+}];
+*/
 
 async function loadShader(url) {
     const response = await fetch(url);
@@ -82,7 +152,6 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
         size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
-
     const projectionBuffer = device.createBuffer({
         label: "Projection Uniform",
         size: 64,
@@ -91,71 +160,50 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
 
 
     // BIND GROUP LAYOUT
-    const bindGroupLayout = device.createBindGroupLayout({
-        label: "MVP Bind Group Layout",
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }, {
-            binding: 1,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }, {
-            binding: 2,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }]
-    });
+    const bindGroupLayout = createBindGroupLayout(device, "DefaultBind Group Layout");
 
 
-    // VERTEX BUFFERS
+    // RENDERABLES
     const renderables = [];
-    for (const asset of assets.objects) {  // each object
+    for (const asset of assets.objects) {  // each object in scene
         // read .ply file
         const data = await plyToTriangleList(asset.file);
 
         // SHADERS
-        // TODO distinct for instances? Override asset.shader with asset.instance.shader?
         // vertex shader
         const vertexShaderCode = await loadShader(asset.vertexShader);
-        // fragment shader
-        const fragmentShaderCode = await loadShader(asset.fragmentShader);
-
-        // create shader modules
         const baseVertexShaderModule = device.createShaderModule({
-            label: "FPV Vertex Shader",
+            label: "Default Vertex Shader",
             code: vertexShaderCode,
         });
+        // fragment shader
+        const fragmentShaderCode = await loadShader(asset.fragmentShader);
         const baseFragmentShaderModule = device.createShaderModule({
-            label: "FPV Fragment Shader",
+            label: "Default Fragment Shader",
             code: fragmentShaderCode,
         });
 
-        // generate collision mesh for geometry
+        // generate default collision mesh for geometry
         // TODO other types (sphere, mesh)
-        let baselineMesh;
+        let baseMesh;
         if (asset.collision === "aabb") {
-            baselineMesh = generateAABB(data.vertFloats);
+            baseMesh = createAABB(data);
         }
+
+        // TODO debugging
+        //console.log(data);  // texture coords
 
         for (const instance of asset.instances) {
             // create vertex buffer
             const vb = device.createBuffer({
                 label: asset.file,
-                size: data.vertFloats.byteLength,
+                size: data.floats.byteLength,
                 usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             });
-
             // write data
-            device.queue.writeBuffer(vb, 0, data.vertFloats);
-
-            // create model matrix uniform buffer for object
-            const modelBuffer = device.createBuffer({
-                label: "Model Uniform " + renderables.length,
-                size: 64,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            });
+            device.queue.writeBuffer(vb, 0, data.floats);
+            // create vertex buffer atrributes array
+            const vertexBufferAttributes = createVBAttributes(data.properties);
 
             // generate model matrix
             const model = mat4.create();
@@ -164,8 +212,14 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             mat4.rotateY(model, model, instance.rotation[1]);
             mat4.rotateZ(model, model, instance.rotation[2]);
             mat4.scale(model, model, instance.scale);
+            // create model matrix uniform buffer for object
+            const modelBuffer = device.createBuffer({
+                label: "Model Uniform " + renderables.length,
+                size: 64,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            });
 
-            // create bind group for object's model matrix
+            // create bind group for MVP matrices
             const bindGroup = device.createBindGroup({
                 label: "MVP bind group " + renderables.length,
                 layout: bindGroupLayout,
@@ -183,17 +237,17 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
 
             // transform collision mesh
             let collisionMesh;
-            if (baselineMesh) {
+            if (baseMesh) {
                 collisionMesh = {
                     min: [
-                        baselineMesh.min[0] * instance.scale[0] + instance.position[0],
-                        baselineMesh.min[1] * instance.scale[1] + instance.position[1],
-                        baselineMesh.min[2] * instance.scale[2] + instance.position[2],
+                        baseMesh.min[0] * instance.scale[0] + instance.position[0],
+                        baseMesh.min[1] * instance.scale[1] + instance.position[1],
+                        baseMesh.min[2] * instance.scale[2] + instance.position[2],
                     ],
                     max: [
-                        baselineMesh.max[0] * instance.scale[0] + instance.position[0],
-                        baselineMesh.max[1] * instance.scale[1] + instance.position[1],
-                        baselineMesh.max[2] * instance.scale[2] + instance.position[2],
+                        baseMesh.max[0] * instance.scale[0] + instance.position[0],
+                        baseMesh.max[1] * instance.scale[1] + instance.position[1],
+                        baseMesh.max[2] * instance.scale[2] + instance.position[2],
                     ],
                 };
                 if (instance.href) {
@@ -210,14 +264,12 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             if (instance.vertexShader && instance.fragmentShader) {
                 // vertex shader
                 const overrideVertex = await loadShader(instance.vertexShader);
-                // fragment shader
-                const overrideFragment = await loadShader(instance.fragmentShader);
-
-                // create shader modules
                 vertexShaderModule = device.createShaderModule({
                     label: "FPV Vertex Shader OVERRIDE",
                     code: overrideVertex,
                 });
+                // fragment shader
+                const overrideFragment = await loadShader(instance.fragmentShader);
                 fragmentShaderModule = device.createShaderModule({
                     label: "FPV Fragment Shader OVERRIDE",
                     code: overrideFragment,
@@ -262,7 +314,7 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             renderables.push({
                 id: renderables.length,
                 vertexBuffer: vb,
-                vertexCount: data.topologyVerts,
+                vertexCount: data.floats.length / data.properties.length,  // TODO hardcoded length
                 model: model,
                 modelBuffer: modelBuffer,
                 bindGroup: bindGroup,
@@ -270,6 +322,8 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     device,
                     bindGroupLayout,
                     vertexShaderModule,
+                    data.properties.length,
+                    vertexBufferAttributes,
                     fragmentShaderModule,
                     format,
                     topology,
