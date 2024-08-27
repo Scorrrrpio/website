@@ -199,6 +199,9 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 if (instance.href) {
                     collisionMesh.href = instance.href;
                 }
+                if (instance.ghost) {
+                    collisionMesh.ghost = true;
+                }
             }
 
             // override shaders

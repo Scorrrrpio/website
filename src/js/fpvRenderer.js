@@ -58,9 +58,19 @@ export async function fpv(canvasID, autoplay) {
                         rotation: [0, 0, 0],
                         scale: [1, 1, 1],
                         href: "https://x.com/amkoz__",
-                        vertexShader: "shaders/debugVertex.wgsl",
+                        ghost: true,
+                        vertexShader: "shaders/basicVertex.wgsl",
                         fragmentShader: "shaders/debugFragment.wgsl",
-                    }
+                    },
+                    {
+                        position: [6, 3, -16],
+                        rotation: [0, 0, 0],
+                        scale: [1, 1, 1],
+                        href: "https://x.com/amkoz__",
+                        ghost: true,
+                        vertexShader: "shaders/basicVertex.wgsl",
+                        fragmentShader: "shaders/debugFragment.wgsl",
+                    },
                 ],
             },
             {

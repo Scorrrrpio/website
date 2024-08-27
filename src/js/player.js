@@ -329,19 +329,21 @@ export class Player {
 
         // collision handling
         for (const box of boxes) {
-            // predicted position
-            const nextPos = [
-                this.position[0] + movement[0],
-                this.position[1] + movement[1],
-                this.position[2] + movement[2],
-            ];
+            if (!(box.ghost)) {
+                // predicted position
+                const nextPos = [
+                    this.position[0] + movement[0],
+                    this.position[1] + movement[1],
+                    this.position[2] + movement[2],
+                ];
 
-            // update AABB
-            const aabb = this.#generateAABB(nextPos);
+                // update AABB
+                const aabb = this.#generateAABB(nextPos);
 
-            if (this.#checkCollision(aabb, box)) {
-                // modify movement
-                movement = this.#slide(aabb, box, movement);
+                if (this.#checkCollision(aabb, box)) {
+                    // modify movement
+                    movement = this.#slide(aabb, box, movement);
+                }
             }
         }
 
