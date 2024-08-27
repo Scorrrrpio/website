@@ -54,9 +54,9 @@ export async function fpv(canvasID, autoplay) {
                         scale: [8, 1, 8],
                     },
                     {
-                        position: [-0.5, 4, -20.5],
-                        rotation: [0, -Math.PI / 2, 0],
-                        scale: [1, 1, 1],
+                        position: [0, 2, -16],
+                        rotation: [0, 0, 0],
+                        scale: [2, 2, 2],
                         href: "https://x.com/amkoz__",
                         ghost: true,
                         textureUrl: "media/LogoB.png",

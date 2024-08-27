@@ -1,5 +1,8 @@
 struct VertexOutput {
-    @location(0) uv: vec2f,
+    @location(0) rawPos: vec3f,
+    @location(1) worldPos: vec3f,
+    @location(2) scale: vec3f,
+    @location(3) uv: vec2f,
     @builtin(position) position: vec4f
 };
 
@@ -14,6 +17,14 @@ fn vertexMain(@location(0) pos: vec3f,
     var output: VertexOutput;
     var mvp = projection * view * model;
     output.position = mvp * vec4f(pos, 1);
+    var worldSpace = model * vec4f(pos, 1);
+    output.worldPos = worldSpace.xyz;
+    output.scale = vec3f(
+        length(vec3f(model[0].x, model[1].x, model[2].x)),
+        length(vec3f(model[0].y, model[1].y, model[2].y)),
+        length(vec3f(model[0].z, model[1].z, model[2].z)),
+    );
+    output.rawPos = pos;
     output.uv = uv;
     return output;
 }
