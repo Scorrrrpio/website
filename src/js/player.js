@@ -111,6 +111,12 @@ export class Player {
                         this.inputs.space = true;
                         break;
                     case "escape":
+                        // stop movement
+                        this.inputs.w = false;
+                        this.inputs.a = false;
+                        this.inputs.s = false;
+                        this.inputs.d = false;
+                        this.inputs.space = false;
                         // release pointer lock on canvas
                         document.exitPointerLock();
                 }
@@ -177,6 +183,12 @@ export class Player {
                 }
             }
             else {
+                // stop movement
+                this.inputs.w = false;
+                this.inputs.a = false;
+                this.inputs.s = false;
+                this.inputs.d = false;
+                this.inputs.space = false;
                 // free cursor
                 canvas.requestPointerLock();
             }
@@ -198,8 +210,8 @@ export class Player {
         // check intersection
         // TODO this is hardcoded
         const demoBox = {
-            max: [-3, 5, -3],
-            min: [-4, 4, -4],
+            max: [0.5, 5, -19.5],
+            min: [-0.5, 4, -20.5],
         };
 
         // TODO review
@@ -244,7 +256,14 @@ export class Player {
 
         if (intersect) {
             console.log("bang");
-            window.location.href="https://x.com/amkoz__";z
+            // stop movement
+            this.inputs.w = false;
+            this.inputs.a = false;
+            this.inputs.s = false;
+            this.inputs.d = false;
+            this.inputs.space = false;
+            // open link
+            window.open("https://x.com/amkoz__", "__blank");
         }
     }
 
@@ -299,7 +318,8 @@ export class Player {
             const aabb = this.#generateAABB(nextPos);
 
             if (this.#checkCollision(aabb, box)) {
-                movement = this.#collisionAxis(aabb, box, movement);
+                // modify movement
+                movement = this.#slide(aabb, box, movement);
             }
         }
 
@@ -322,7 +342,7 @@ export class Player {
         ], this.rotation);
     }
 
-    #collisionAxis(box1, box2, movement) {
+    #slide(box1, box2, movement) {
         // faces names are for player but based on world axes
         // x
         if (box1.max[0] >= box2.max[0]) {  // left
@@ -349,11 +369,9 @@ export class Player {
         }
         // z
         if (box1.max[2] >= box2.max[2]) {  // front
-            //this.position[2] = box2.max[2] + this.boxRadius;
             movement[2] = Math.max(0, movement[2]);
         }
         else if (box1.min[2] <= box2.min[2]) {  // back
-            //this.position[2] = box2.min[2] - this.boxRadius;
             movement[2] = Math.min(0, movement[2]);
         }
 

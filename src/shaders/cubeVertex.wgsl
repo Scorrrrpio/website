@@ -1,5 +1,7 @@
 struct VertexOutput {
     @location(0) rawPos: vec3f,
+    @location(1) worldPos: vec3f,
+    @location(2) scale: vec3f,
     @builtin(position) position: vec4f
 };
 
@@ -12,11 +14,13 @@ fn vertexMain(@location(0) pos: vec3f, @builtin(vertex_index) vertexIndex: u32) 
     var output: VertexOutput;
     var mvp = projection * view * model;
     output.position = mvp * vec4f(pos, 1);
-    var scale = vec3f(
+    var worldSpace = model * vec4f(pos, 1);
+    output.worldPos = worldSpace.xyz;
+    output.scale = vec3f(
         length(vec3f(model[0].x, model[1].x, model[2].x)),
         length(vec3f(model[0].y, model[1].y, model[2].y)),
         length(vec3f(model[0].z, model[1].z, model[2].z)),
     );
-    output.rawPos = pos * scale;  // TODO remove for spheres
+    output.rawPos = pos * output.scale;
     return output;
 }

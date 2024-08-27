@@ -28,34 +28,40 @@ export async function fpv(canvasID, autoplay) {
                 fragmentShader: "shaders/cubeFragment.wgsl",
                 collision: "aabb",
                 instances: [
-                    {
-                        position: [0, 0, 0],
+                    /*{
+                        position: [100, -1, -100],
                         rotation: [0, 0, 0],
-                        scale: [7, 1, 7],
+                        scale: [200, 1, 200],
+                        
+                    },*/
+                    {
+                        position: [-4, 0, -16],
+                        rotation: [0, 0, 0],
+                        scale: [8, 1, 8],
                         
                     },
                     {
-                        position: [-7, 2, -7],
+                        position: [-12, 2, -24],
                         rotation: [0, 0, 0],
-                        scale: [7, 1, 7],
+                        scale: [8, 1, 8],
                     },
                     {
-                        position: [0, 4, -14],
+                        position: [-4, 4, -32],
                         rotation: [0, 0, 0],
-                        scale: [7, 1, 7],
+                        scale: [8, 1, 8],
                     },
                     {
-                        position: [7, 6, -7],
+                        position: [4, 6, -24],
                         rotation: [0, 0, 0],
-                        scale: [7, 1, 7],
+                        scale: [8, 1, 8],
                     },
                     {
-                        position: [0, 8, 0],
+                        position: [-4, 8, -16],
                         rotation: [0, 0, 0],
-                        scale: [7, 1, 7],
+                        scale: [8, 1, 8],
                     },
                     {
-                        position: [-3, 4, -4],
+                        position: [-0.5, 4, -20.5],
                         rotation: [0, 0, 0],
                         scale: [1, 1, 1],
                         vertexShader: "shaders/debugVertex.wgsl",
@@ -70,7 +76,7 @@ export async function fpv(canvasID, autoplay) {
                 collision: "sphere",
                 instances: [
                     {
-                        position: [-3.5, 1.5, -30],
+                        position: [0, 1.5, -48],
                         rotation: [0, 0, 0],
                         scale: [10, 10, 10],
                     },
@@ -83,7 +89,7 @@ export async function fpv(canvasID, autoplay) {
                 collision: "none",  // TODO
                 instances: [
                     {
-                        position: [-3.5, 2, -3.5],
+                        position: [0, 2, -20],
                         rotation: [0, 0, 0],
                         scale: [2, 2, 2],
                     },
@@ -115,7 +121,8 @@ export async function fpv(canvasID, autoplay) {
 
     // PLAYER
     // coordinates
-    const spawnPosition = [0, 0, 10];
+    // TODO read from URL
+    const spawnPosition = [0, 0, 0];
     const spawnRotation = [0, 0, 0];
     // projection matrix
     const fov = Math.PI / 6;  // TODO cap at 2 * Math.PI / 3
@@ -292,8 +299,6 @@ export async function fpv(canvasID, autoplay) {
 
         // update camera
         player.move(aabbBoxes);
-
-        // check for collisions
 
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of renderables) {
