@@ -29,33 +29,33 @@ export async function fpv(canvasID, autoplay) {
                 collision: "aabb",
                 instances: [
                     {
-                        position: [-4, 0, -16],
+                        position: [0, 0.5, -16],
                         rotation: [0, 0, 0],
                         scale: [8, 1, 8],
                     },
                     {
-                        position: [-12, 0, -24],
+                        position: [-8, 1.5, -24],
                         rotation: [0, 0, 0],
                         scale: [8, 3, 8],
                     },
                     {
-                        position: [-4, 0, -32],
+                        position: [0, 2.5, -32],
                         rotation: [0, 0, 0],
                         scale: [8, 5, 8],
                     },
                     {
-                        position: [4, 0, -24],
+                        position: [8, 3.5, -24],
                         rotation: [0, 0, 0],
                         scale: [8, 7, 8],
                     },
                     {
-                        position: [-4, 8, -16],
+                        position: [0, 9, -16],
                         rotation: [0, 0, 0],
                         scale: [8, 1, 8],
                     },
                     {
-                        position: [0, 2, -16],
-                        rotation: [0, 0, 0],
+                        position: [0, 5, -24],
+                        rotation: [0, -Math.PI / 2, 0],
                         scale: [2, 2, 2],
                         href: "https://x.com/amkoz__",
                         ghost: true,
@@ -64,7 +64,7 @@ export async function fpv(canvasID, autoplay) {
                         fragmentShader: "shaders/textureFragment.wgsl",
                     },
                     {
-                        position: [6, 3, -16],
+                        position: [5.5, 4.5, -19.5],
                         rotation: [0, 0, 0],
                         scale: [1, 1, 1],
                         href: "https://x.com/amkoz__",
@@ -94,7 +94,7 @@ export async function fpv(canvasID, autoplay) {
                 collision: "none",  // TODO
                 instances: [
                     {
-                        position: [0, 2, -20],
+                        position: [0, 2, -24],
                         rotation: [0, 0, 0],
                         scale: [2, 2, 2],
                     },
