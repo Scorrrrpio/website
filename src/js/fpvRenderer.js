@@ -59,6 +59,7 @@ export async function fpv(canvasID, autoplay) {
                         scale: [1, 1, 1],
                         href: "https://x.com/amkoz__",
                         ghost: true,
+                        textureUrl: "media/LogoB.png",
                         vertexShader: "shaders/basicVertex.wgsl",
                         fragmentShader: "shaders/debugFragment.wgsl",
                     },
@@ -165,7 +166,7 @@ export async function fpv(canvasID, autoplay) {
         canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
         canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
 
-        mat4.perspective(player.pov.projection, fov, canvas.width / canvas.height, near, far);
+        player.pov.updateProjectionMatrix(canvas.width / canvas.height);
 
         if (msaaTexture) { msaaTexture.destroy(); }
         msaaTexture = device.createTexture({
@@ -341,11 +342,14 @@ export async function fpv(canvasID, autoplay) {
             pass.draw(vertexCount);
         }
 
-        // render HUD
-        pass.setPipeline(hudPipeline);
-        pass.setBindGroup(0, hudBG);
-        pass.setVertexBuffer(0, hudVB);
-        pass.draw(crosshair.length / 2);
+        // TODO testing
+        if (player.inputs.rightMouse) {
+            // render HUD
+            pass.setPipeline(hudPipeline);
+            pass.setBindGroup(0, hudBG);
+            pass.setVertexBuffer(0, hudVB);
+            pass.draw(crosshair.length / 2);
+        }
 
 		// end render pass
 		pass.end();

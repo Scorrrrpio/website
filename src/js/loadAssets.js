@@ -224,7 +224,41 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 });
             }
 
-            // add to vertex buffer list
+            // load texture
+            let texture;
+            if (instance.textureUrl) {
+                // read image from texture url
+                console.log(instance.textureUrl);
+                const img = new Image();
+                img.src = instance.textureUrl;
+                await img.decode();
+
+                // convert to bmp
+                const imgBmp = await createImageBitmap(img);
+
+                // create texture on device
+                texture = device.createTexture({
+                    size: [imgBmp.width, imgBmp.height, 1],
+                    format: "rgba8unorm",
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+                });
+
+                device.queue.copyExternalImageToTexture(
+                    { source: imgBmp },
+                    { texture: texture },
+                    [imgBmp.width, imgBmp.height, 1],
+                );
+
+                // create texture sampler
+                const sampler = device.createSampler({
+                    magFilter: "linear",
+                    minFilter: "linear",
+                });
+
+                // TODO override bind group
+            }
+
+            // add to renderables list
             renderables.push({
                 id: renderables.length,
                 vertexBuffer: vb,

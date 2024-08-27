@@ -46,6 +46,7 @@ module.exports = {
 				{ from: "src/styles", to: "" },
 				{ from: "src/geometry", to: "geometry" },
 				{ from: "src/shaders", to: "shaders" },
+				{ from: "src/media", to: "media" }
 			],
 		}),
 	],

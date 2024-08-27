@@ -28,7 +28,7 @@ export class Player {
     boxRadius = 0.4;
 
     pov;  // Camera
-    cameraOffset = [0, 1, 0];
+    cameraOffset = [0, 2, 0];
 
     // aiming
     // TODO change settings
@@ -184,6 +184,8 @@ export class Player {
                         break;
                     case 2:
                         this.inputs.rightMouse = true;
+                        this.pov.fov = Math.PI / 10;  // TODO testing
+                        this.pov.updateProjectionMatrix();
                         // right
                         break;
                 }
@@ -200,6 +202,8 @@ export class Player {
                         break;
                     case 2:
                         this.inputs.rightMouse = false;
+                        this.pov.fov = Math.PI / 6;  // TODO testing
+                        this.pov.updateProjectionMatrix();
                         // right
                         break;
                 }
