@@ -41,19 +41,19 @@ export async function fpv(canvasID, autoplay) {
                         
                     },
                     {
-                        position: [-12, 2, -24],
+                        position: [-12, 0, -24],
                         rotation: [0, 0, 0],
-                        scale: [8, 1, 8],
+                        scale: [8, 3, 8],
                     },
                     {
-                        position: [-4, 4, -32],
+                        position: [-4, 0, -32],
                         rotation: [0, 0, 0],
-                        scale: [8, 1, 8],
+                        scale: [8, 5, 8],
                     },
                     {
-                        position: [4, 6, -24],
+                        position: [4, 0, -24],
                         rotation: [0, 0, 0],
-                        scale: [8, 1, 8],
+                        scale: [8, 7, 8],
                     },
                     {
                         position: [-4, 8, -16],
