@@ -272,18 +272,17 @@ export class Player {
         }
 
         if (closest) {
-            // stop movement
-            this.inputs.w = false;
-            this.inputs.a = false;
-            this.inputs.s = false;
-            this.inputs.d = false;
-            this.inputs.space = false;
-            this.inputs.leftMouse = false;
-            this.inputs.rightMouse = false;
-
             // if link
             if (closest.href) {
                 console.log("bang");
+                // stop movement
+                this.inputs.w = false;
+                this.inputs.a = false;
+                this.inputs.s = false;
+                this.inputs.d = false;
+                this.inputs.space = false;
+                this.inputs.leftMouse = false;
+                this.inputs.rightMouse = false;
                 // open link
                 window.open(closest.href, "__blank");
             }
