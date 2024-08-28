@@ -92,6 +92,8 @@ circle.play-button {
 
 /* info */
 #bio {
+	width: 100vh;
+	margin: 16px;
 	text-align: left;
 }
 

@@ -132,9 +132,9 @@
                     "p": [8, 3, -60],
                     "r": [0, 0, 0],
                     "s": [2, 2, 2],
-                    "href": "https://x.com/amkoz__",
+                    "href": "https://github.com/Scorrrrpio/",
                     "texture": {
-                        "url": "media/x-texture.png",
+                        "url": "media/github-texture.png",
                         "faces": ["front", "back", "right", "left"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
@@ -145,7 +145,7 @@
                     "r": [0, 0, 0],
                     "s": [8, 8, 2],
                     "texture": {
-                        "url": "media/debug2.png",
+                        "url": "media/about-texture.png",
                         "faces": ["front"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
