@@ -84,7 +84,7 @@ export class Player {
         return (
             box1.min[0] <= box2.max[0] &&
             box1.max[0] >= box2.min[0] &&
-            box1.min[1] <= box2.max[1] &&
+            box1.min[1] < box2.max[1] &&
             box1.max[1] >= box2.min[1] &&
             box1.min[2] <= box2.max[2] &&
             box1.max[2] >= box2.min[2]
@@ -389,7 +389,7 @@ export class Player {
                 this.jumpSpeed = 0;
             }
         }
-        else if (box1.min[1] <= box2.min[1]) {  // top
+        else if (box1.min[1] < box2.min[1]) {  // top
             if (this.position[1] + this.cameraOffset[1] < box2.min[1]) {
                 movement[1] = Math.min(0, movement[1]);
                 this.jumpSpeed = 0;

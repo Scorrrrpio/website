@@ -47,9 +47,8 @@ export async function fpv(canvasID) {
     // PLAYER
     // coordinates
     // TODO read from URL
-    const spawnPosition = [0, 2.1, 0];
+    const spawnPosition = [0, 2.001, 0];
     const spawnRotation = [0, 0, 0];
-    // aspect ratio computed from canvas
 
     // create player object
     const player = new Player(canvas, spawnPosition, spawnRotation);
