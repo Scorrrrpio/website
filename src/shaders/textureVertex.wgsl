@@ -25,6 +25,6 @@ fn vertexMain(@location(0) pos: vec3f,
         length(vec3f(model[0].z, model[1].z, model[2].z)),
     );
     output.rawPos = pos;
-    output.uv = uv;
+    output.uv = vec2f(uv.x ,1-uv.y);
     return output;
 }
