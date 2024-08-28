@@ -1,5 +1,4 @@
 // imports
-import { mat4 } from "gl-matrix";
 import { wgpuSetup } from "./wgpuSetup";
 import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
@@ -20,124 +19,9 @@ export async function fpv(canvasID, autoplay) {
     const MULTISAMPLE = 4;
     // Scene assets as JSON
     // TODO glTF if things get dicey
-    const assets = {
-        objects: [
-            {
-                file: "geometry/cube.ply",
-                vertexShader: "shaders/cubeVertex.wgsl",
-                fragmentShader: "shaders/cubeFragment.wgsl",
-                collision: "aabb",
-                instances: [
-                    {
-                        position: [0, 0.5, -16],
-                        rotation: [0, 0, 0],
-                        scale: [8, 1, 8],
-                    },
-                    {
-                        position: [-8, 1.5, -24],
-                        rotation: [0, 0, 0],
-                        scale: [8, 3, 8],
-                    },
-                    {
-                        position: [0, 2.5, -32],
-                        rotation: [0, 0, 0],
-                        scale: [8, 5, 8],
-                    },
-                    {
-                        position: [8, 3.5, -24],
-                        rotation: [0, 0, 0],
-                        scale: [8, 7, 8],
-                    },
-                    {
-                        position: [0, 9, -16],
-                        rotation: [0, 0, 0],
-                        scale: [8, 1, 8],
-                    },
-                    {
-                        position: [0, 0, -4],
-                        rotation: [0, 0, 0],
-                        scale: [1, 1, 1],
-                    },
-                    {
-                        position: [0, 5, -24],
-                        rotation: [0, -Math.PI / 2, 0],
-                        scale: [2, 2, 2],
-                        href: "https://x.com/amkoz__",
-                        ghost: true,
-                        texture: {
-                            url: "media/LogoB.png",
-                            faces: ["right"],
-                        },
-                        vertexShader: "shaders/textureVertex.wgsl",
-                        fragmentShader: "shaders/textureFragment.wgsl",
-                    },
-                    {
-                        position: [5.5, 4.5, -19.5],
-                        rotation: [0, 0, 0],
-                        scale: [1, 1, 1],
-                        href: "https://x.com/amkoz__",
-                        ghost: true,
-                        vertexShader: "shaders/basicVertex.wgsl",
-                        fragmentShader: "shaders/debugFragment.wgsl",
-                    },
-                ],
-            },
-            {
-                file: "geometry/lokiSphere.ply",
-                vertexShader: "shaders/sphereVertex.wgsl",
-                fragmentShader: "shaders/sphereFragment.wgsl",
-                collision: "sphere",
-                instances: [
-                    {
-                        position: [0, 1.5, -48],
-                        rotation: [0, 0, 0],
-                        scale: [10, 10, 10],
-                    },
-                ],
-            },
-            {
-                file: "geometry/pyramidOcto.ply",
-                vertexShader: "shaders/pyramidVertex.wgsl",
-                fragmentShader: "shaders/pyramidFragment.wgsl",
-                collision: "none",  // TODO
-                instances: [
-                    {
-                        position: [0, 2, -24],
-                        rotation: [0, 0, 0],
-                        scale: [2, 2, 2],
-                    },
-                ],
-            },
-            {
-                file: "geometry/pyramidQuad.ply",
-                vertexShader: "shaders/pyramidVertex.wgsl",
-                fragmentShader: "shaders/pyramidFragment.wgsl",
-                collision: "none",  // TODO
-                instances: [
-                    {
-                        position: [0, 1, -4],
-                        rotation: [0, 0, 0],
-                        scale: [1, 1, 1],
-                    },
-                    {
-                        position: [16, 3, 16],
-                        rotation: [0, 0, 0],
-                        scale: [3, 6, 3],
-                    },
-                    {
-                        position: [-32, 3, 16],
-                        rotation: [0, 0, 0],
-                        scale: [3, 6, 3],
-                    },
-                    {
-                        position: [0, 16, 16],
-                        rotation: [0, 0, 0],
-                        scale: [3, 6, 3],
-                    },
-                ],
-            },
-        ],
-    };
+    const assetsResponse = await fetch("geometry/scene.json");
+    if (!assetsResponse.ok) { throw new Error("Failed to load scene"); }
+    const assets = await assetsResponse.json();
     // TODO what if objects are added at runtime?
     const { renderables, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device, format, TOPOLOGY, MULTISAMPLE);
     

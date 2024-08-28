@@ -214,11 +214,11 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
 
             // generate model matrix
             const model = mat4.create();
-            mat4.translate(model, model, instance.position);
-            mat4.rotateX(model, model, instance.rotation[0]);
-            mat4.rotateY(model, model, instance.rotation[1]);
-            mat4.rotateZ(model, model, instance.rotation[2]);
-            mat4.scale(model, model, instance.scale);
+            mat4.translate(model, model, instance.p);
+            mat4.rotateX(model, model, instance.r[0]);
+            mat4.rotateY(model, model, instance.r[1]);
+            mat4.rotateZ(model, model, instance.r[2]);
+            mat4.scale(model, model, instance.s);
             // create model matrix uniform buffer for object
             const modelBuffer = device.createBuffer({
                 label: "Model Uniform " + renderables.length,
@@ -248,14 +248,14 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             if (baseMesh) {
                 collisionMesh = {
                     min: [
-                        baseMesh.min[0] * instance.scale[0] + instance.position[0],
-                        baseMesh.min[1] * instance.scale[1] + instance.position[1],
-                        baseMesh.min[2] * instance.scale[2] + instance.position[2],
+                        baseMesh.min[0] * instance.s[0] + instance.p[0],
+                        baseMesh.min[1] * instance.s[1] + instance.p[1],
+                        baseMesh.min[2] * instance.s[2] + instance.p[2],
                     ],
                     max: [
-                        baseMesh.max[0] * instance.scale[0] + instance.position[0],
-                        baseMesh.max[1] * instance.scale[1] + instance.position[1],
-                        baseMesh.max[2] * instance.scale[2] + instance.position[2],
+                        baseMesh.max[0] * instance.s[0] + instance.p[0],
+                        baseMesh.max[1] * instance.s[1] + instance.p[1],
+                        baseMesh.max[2] * instance.s[2] + instance.p[2],
                     ],
                 };
                 if (instance.href) {
@@ -288,7 +288,6 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             let texture;
             if (instance.texture) {
                 // read image from texture url
-                console.log(instance.texture.url);
                 const img = new Image();
                 img.src = instance.texture.url;
                 await img.decode();

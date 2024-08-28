@@ -1,0 +1,118 @@
+{
+    "objects": [
+        {
+            "file": "geometry/cube.ply",
+            "vertexShader": "shaders/cubeVertex.wgsl",
+            "fragmentShader": "shaders/cubeFragment.wgsl",
+            "collision": "aabb",
+            "instances": [
+                {
+                    "p": [0, 0.5, -16],
+                    "r": [0, 0, 0],
+                    "s": [8, 1, 8]
+                },
+                {
+                    "p": [-8, 1.5, -24],
+                    "r": [0, 0, 0],
+                    "s": [8, 3, 8]
+                },
+                {
+                    "p": [0, 2.5, -32],
+                    "r": [0, 0, 0],
+                    "s": [8, 5, 8]
+                },
+                {
+                    "p": [8, 3.5, -24],
+                    "r": [0, 0, 0],
+                    "s": [8, 7, 8]
+                },
+                {
+                    "p": [0, 9, -16],
+                    "r": [0, 0, 0],
+                    "s": [8, 1, 8]
+                },
+                {
+                    "p": [0, 0, -4],
+                    "r": [0, 0, 0],
+                    "s": [1, 1, 1]
+                },
+                {
+                    "p": [0, 5, -24],
+                    "r": [0, -1.57079632679, 0],
+                    "s": [2, 2, 2],
+                    "href": "https://x.com/amkoz__",
+                    "ghost": true,
+                    "texture": {
+                        "url": "media/LogoB.png",
+                        "faces": ["right"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
+                },
+                {
+                    "p": [5.5, 4.5, -19.5],
+                    "r": [0, 0, 0],
+                    "s": [1, 1, 1],
+                    "href": "https://x.com/amkoz__",
+                    "ghost": true,
+                    "vertexShader": "shaders/basicVertex.wgsl",
+                    "fragmentShader": "shaders/debugFragment.wgsl"
+                }
+            ]
+        },
+        {
+            "file": "geometry/lokiSphere.ply",
+            "vertexShader": "shaders/sphereVertex.wgsl",
+            "fragmentShader": "shaders/sphereFragment.wgsl",
+            "collision": "sphere",
+            "instances": [
+                {
+                    "p": [0, 1.5, -48],
+                    "r": [0, 0, 0],
+                    "s": [10, 10, 10]
+                }
+            ]
+        },
+        {
+            "file": "geometry/pyramidOcto.ply",
+            "vertexShader": "shaders/pyramidVertex.wgsl",
+            "fragmentShader": "shaders/pyramidFragment.wgsl",
+            "collision": "none",
+            "instances": [
+                {
+                    "p": [0, 2, -24],
+                    "r": [0, 0, 0],
+                    "s": [2, 2, 2]
+                }
+            ]
+        },
+        {
+            "file": "geometry/pyramidQuad.ply",
+            "vertexShader": "shaders/pyramidVertex.wgsl",
+            "fragmentShader": "shaders/pyramidFragment.wgsl",
+            "collision": "none",
+            "instances": [
+                {
+                    "p": [0, 1, -4],
+                    "r": [0, 0, 0],
+                    "s": [1, 1, 1]
+                },
+                {
+                    "p": [16, 3, 16],
+                    "r": [0, 0, 0],
+                    "s": [3, 6, 3]
+                },
+                {
+                    "p": [-32, 3, 16],
+                    "r": [0, 0, 0],
+                    "s": [3, 6, 3]
+                },
+                {
+                    "p": [0, 16, 16],
+                    "r": [0, 0, 0],
+                    "s": [3, 6, 3]
+                }
+            ]
+        }
+    ]
+}
