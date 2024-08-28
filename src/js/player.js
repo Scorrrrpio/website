@@ -161,8 +161,11 @@ export class Player {
         });
 
         // request pointer lock within canvas
+        const playButton = document.getElementById("play-svg");
         canvas.addEventListener("click", () => {
             if (document.pointerLockElement !== canvas) {
+                // remove play button
+                playButton.remove();
                 // stop movement
                 this.inputs.w = false;
                 this.inputs.a = false;
@@ -172,6 +175,13 @@ export class Player {
                 // free cursor
                 canvas.requestPointerLock();
             }
+        });
+
+        // start game with play button
+        playButton.addEventListener("click", () => {
+            // remove play button
+            playButton.remove();
+            canvas.requestPointerLock();
         });
 
         canvas.addEventListener("mousedown", (event) => {

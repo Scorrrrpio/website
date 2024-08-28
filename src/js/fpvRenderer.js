@@ -4,7 +4,7 @@ import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
 
 // inspired by the sphere graphic from lokinet.org
-export async function fpv(canvasID, autoplay) {
+export async function fpv(canvasID) {
     // WEBGPU SETUP
 	const canvas = document.getElementById(canvasID);
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -104,10 +104,6 @@ export async function fpv(canvasID, autoplay) {
             sampleCount: 4,
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
-
-        if (!animating && !autoplay) {
-            renderLoop();
-        }
     }
 
 
@@ -217,7 +213,6 @@ export async function fpv(canvasID, autoplay) {
 
 
     // RENDER LOOP
-    let animating = false;
 	function renderLoop() {
         // create input texture the size of canvas
         canvasTexture = context.getCurrentTexture();
@@ -276,23 +271,8 @@ export async function fpv(canvasID, autoplay) {
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
 
-        if (animating || autoplay) {
-            requestAnimationFrame(renderLoop);
-        }
+        requestAnimationFrame(renderLoop);
 	}
-
-
-    // ANIMATION CONTROL
-    function startRenderLoop() {
-        if (!animating) {
-            animating = true;
-            renderLoop();
-        }
-    }
-
-    function stopRenderLoop() {
-        animating = false;
-    }
 
     handleResize();
     window.addEventListener("resize", () => {
@@ -300,9 +280,4 @@ export async function fpv(canvasID, autoplay) {
     });
     
     renderLoop();
-
-    if (!autoplay) {
-	    canvas.addEventListener("mouseenter", startRenderLoop);
-        canvas.addEventListener("mouseleave", stopRenderLoop);
-    }
 }
