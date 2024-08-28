@@ -279,5 +279,11 @@ export async function fpv(canvasID) {
         handleResize();
     });
     
+    // remove html ui
+    const loading = document.getElementById("loading");
+    loading.remove();
+    const playButton = document.getElementById("play-svg");
+    playButton.style.display = "block";
+
     renderLoop();
 }
