@@ -279,11 +279,18 @@ export async function fpv(canvasID) {
         handleResize();
     });
     
-    // remove html ui
+    // remove loading ui
     const loading = document.getElementById("loading");
     loading.remove();
     const playButton = document.getElementById("play-svg");
     playButton.style.display = "block";
 
-    renderLoop();
+    // start game with play button
+    playButton.addEventListener("click", () => {
+        // remove play button
+        playButton.remove();
+        canvas.requestPointerLock();
+        player.enableControls(canvas);
+        renderLoop();  // black until start
+    });
 }
