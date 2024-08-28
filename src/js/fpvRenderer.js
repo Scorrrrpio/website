@@ -279,11 +279,14 @@ export async function fpv() {
     loading.remove();
     const playButton = document.getElementById("play-svg");
     playButton.style.display = "block";
+    const controlsText = document.getElementById("controls");
+    controlsText.style.display = "block";
 
     // start game with play button
     playButton.addEventListener("click", () => {
         // remove play button
         playButton.remove();
+        controlsText.style.display = "none";
         canvas.requestPointerLock();
         player.enableControls(canvas);
         renderLoop();  // black until start

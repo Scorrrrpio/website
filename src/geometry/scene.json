@@ -27,6 +27,17 @@
                     "s": [12, 1, 12]
                 },
                 {
+                    "p": [0, 10.25, 0],
+                    "r": [0, 0, 0],
+                    "s": [0.5, 0.5, 0.5],
+                    "texture": {
+                        "url": "media/cat-cube.png",
+                        "faces": ["front", "back", "left", "right", "top", "bottom"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
+                },
+                {
                     "p": [3.5, 5, 3.5],
                     "r": [0, 0, 0],
                     "s": [1, 6, 1]

@@ -8,3 +8,4 @@ working on some cool WebGPU stuff
 - WebGL fallback
 - URL link -> spawn coordinates
 - loading error feedback
+- controls on the home screen

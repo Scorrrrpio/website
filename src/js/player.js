@@ -92,6 +92,7 @@ export class Player {
     }
 
     enableControls(canvas) {
+        const controlsText = document.getElementById("controls");
         // keyboard input
         document.addEventListener("keydown", (event) => {
             if (document.pointerLockElement === canvas) {
@@ -111,18 +112,10 @@ export class Player {
                     case "Space":
                         this.inputs.space = true;
                         break;
-                    case "escape":
-                        // stop movement
-                        this.inputs.w = false;
-                        this.inputs.a = false;
-                        this.inputs.s = false;
-                        this.inputs.d = false;
-                        this.inputs.space = false;
-                        // release pointer lock on canvas
-                        document.exitPointerLock();
                 }
             }
         });
+
         document.addEventListener("keyup", (event) => {
             if (document.pointerLockElement === canvas) {
                 switch(event.code) {
@@ -144,6 +137,24 @@ export class Player {
                 }
             }
         });
+
+        // show controls
+        document.addEventListener("pointerlockchange", () => {
+            if (document.pointerLockElement === canvas) {
+                // show controls text
+                controlsText.style.display = "none";
+            }
+            else {
+                // stop movement
+                this.inputs.w = false;
+                this.inputs.a = false;
+                this.inputs.s = false;
+                this.inputs.d = false;
+                this.inputs.space = false;
+                // show controls text
+                controlsText.style.display = "block";
+            }
+        })
 
         // mouse movement
         document.addEventListener("mousemove", (event) => {
@@ -170,6 +181,9 @@ export class Player {
                 this.inputs.space = false;
                 // free cursor
                 canvas.requestPointerLock();
+                if (document.pointerLockElement === canvas) {
+                    controlsText.style.display = "none";
+                }
             }
         });
 
