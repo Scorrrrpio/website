@@ -150,15 +150,6 @@
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
-                },
-                {
-                    "p": [5.5, 4.5, -19.5],
-                    "r": [0, 0, 0],
-                    "s": [1, 1, 1],
-                    "href": "https://x.com/amkoz__",
-                    "ghost": true,
-                    "vertexShader": "shaders/basicVertex.wgsl",
-                    "fragmentShader": "shaders/debugFragment.wgsl"
                 }
             ]
         },

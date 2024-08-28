@@ -6,6 +6,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 module.exports = {
 	entry: {
 		projects: "./src/js/projects.js",
+		fpv: "./src/js/fpvEntry.js",
 		playground: "./src/js/playground.js",
 		triangle: "./src/js/triangle.js",
 		wip: "./src/js/wip.js"
@@ -19,7 +20,7 @@ module.exports = {
 		new htmlWebpackPlugin({
 			template: "./src/index.html",
 			filename: "index.html",
-			chunks: ["triangle"]
+			chunks: ["fpv"]
 		}),
 		new htmlWebpackPlugin({
 			template: "./src/projects.html",

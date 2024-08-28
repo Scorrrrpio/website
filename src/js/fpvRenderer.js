@@ -4,9 +4,9 @@ import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
 
 // inspired by the sphere graphic from lokinet.org
-export async function fpv(canvasID) {
+export async function fpv() {
     // WEBGPU SETUP
-	const canvas = document.getElementById(canvasID);
+	const canvas = document.querySelector("canvas");
     const devicePixelRatio = window.devicePixelRatio || 1;
     canvas.width = canvas.clientWidth * devicePixelRatio;
     canvas.height = canvas.clientHeight * devicePixelRatio;
