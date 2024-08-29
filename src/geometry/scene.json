@@ -161,19 +161,26 @@
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
-                }
-            ]
-        },
-        {
-            "file": "geometry/lokiSphere.ply",
-            "vertexShader": "shaders/sphereVertex.wgsl",
-            "fragmentShader": "shaders/sphereFragment.wgsl",
-            "collision": "sphere",
-            "instances": [
+                },
                 {
-                    "p": [0, 7.5, -85],
+                    "p": [60, 2.5, -8],
                     "r": [0, 0, 0],
-                    "s": [10, 10, 10]
+                    "s": [2, 2, 2],
+                    "animation": "spinY",
+                    "vertexShader": "shaders/cubeVertex.wgsl",
+                    "fragmentShader": "shaders/cubeToyFragment.wgsl"
+                },
+                {
+                    "p": [60, 2.5, 8],
+                    "r": [0, 0, 0],
+                    "s": [2, 2, 2],
+                    "animation": "spinY",
+                    "texture": {
+                        "url": "media/LogoB.png",
+                        "faces": ["front", "back"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
                 }
             ]
         },
@@ -192,6 +199,21 @@
                     "p": [8, 0, -60],
                     "r": [0, 0, 0],
                     "s": [2, 2, 2]
+                },
+                {
+                    "p": [60, 0, -8],
+                    "r": [0, 0, 0],
+                    "s": [1, 1, 1]
+                },
+                {
+                    "p": [60, 0, 0],
+                    "r": [0, 0, 0],
+                    "s": [2, 2, 2]
+                },
+                {
+                    "p": [60, 0, 8],
+                    "r": [0, 0, 0],
+                    "s": [1, 1, 1]
                 }
             ]
         },
@@ -220,6 +242,28 @@
                     "p": [-64, 0.5, 0],
                     "r": [0, 0, 0],
                     "s": [1, 1, 1]
+                }
+            ]
+        },
+        {
+            "file": "geometry/lokiSphere.ply",
+            "vertexShader": "shaders/sphereVertex.wgsl",
+            "fragmentShader": "shaders/sphereFragment.wgsl",
+            "collision": "sphere",
+            "instances": [
+                {
+                    "p": [0, 7.5, -85],
+                    "r": [0, 0, 0],
+                    "s": [10, 10, 10]
+                },
+                {
+                    "p": [60, 7, 0],
+                    "r": [1.57079632679, 0, 0],
+                    "s": [4, 4, 4],
+                    "animation": "lokiSpin",
+                    "vertexShader": "shaders/lokiSphereVertex.wgsl",
+                    "fragmentShader": "shaders/lokiSphereFragment.wgsl",
+                    "cullMode": "none"
                 }
             ]
         }

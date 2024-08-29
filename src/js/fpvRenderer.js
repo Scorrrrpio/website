@@ -4,6 +4,7 @@ import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
+import { lokiSpin, spinY } from "./animations";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
@@ -108,14 +109,23 @@ export async function fpv() {
     // HUD
     const hud = generateHUD(device, format, projectionBuffer, MULTISAMPLE);
 
-
     // RENDER LOOP
+    let frame = 0;
 	function renderLoop() {
-        // create input texture the size of canvas
-        canvasTexture = context.getCurrentTexture();
-
         // update camera
         player.move(aabbBoxes);
+
+        // update animations
+        for (const renderable of renderables) {
+            switch (renderable.animation) {
+                case "spinY":
+                    spinY(renderable);
+                    break;
+                case "lokiSpin":
+                    lokiSpin(renderable);
+                    break;
+            }
+        }
 
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of renderables) {
@@ -126,6 +136,9 @@ export async function fpv() {
 
 		// create GPUCommandEncoder
 		const encoder = device.createCommandEncoder();
+
+        // create input texture the size of canvas
+        canvasTexture = context.getCurrentTexture();
 
 		// begin render pass
 		const pass = encoder.beginRenderPass({
@@ -168,6 +181,7 @@ export async function fpv() {
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
 
+        frame++;
         requestAnimationFrame(renderLoop);
 	}
 

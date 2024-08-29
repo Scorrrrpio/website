@@ -2,7 +2,7 @@ import { AssetLoadError } from "./errors";
 import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 
-function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, multisamples) {
+function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, multisamples) {
     return device.createRenderPipeline({
 		label: "FPV Pipeline",
 		layout: device.createPipelineLayout({
@@ -40,11 +40,11 @@ function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBuffe
 		primitive: {
             topology: topology,
             frontFace: "ccw",
-            cullMode: "back",
+            cullMode: cullMode,
         },
         depthStencil: {
             format: "depth24plus",
-            depthWriteEnabled: true,
+            depthWriteEnabled: cullMode === "back",
             depthCompare: "less",
         },
         multisample: {
@@ -285,13 +285,24 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 });
             }
 
+            // override cull mode
+            const cullMode = instance.cullMode ? instance.cullMode : "back";
+
             // load texture
             let texture;
             if (instance.texture) {
                 // read image from texture url
                 const img = new Image();
                 img.src = instance.texture.url;
-                await img.decode();
+                try {
+                    await img.decode();
+                }
+                catch (error) {
+                    if (error.name === "EncodingError") {
+                        throw new AssetLoadError("Failed to load image: " + instance.texture.url);
+                    }
+                    else { throw error; }
+                };
 
                 // convert to bmp
                 const imgBmp = await createImageBitmap(img);
@@ -361,6 +372,9 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 });
             }
 
+            // animation
+            const animation = instance.animation;
+
             // add to renderables list
             renderables.push({
                 id: renderables.length,
@@ -378,8 +392,10 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     fragmentShaderModule,
                     format,
                     topology,
+                    cullMode,
                     multisamples),
                 collisionMesh: collisionMesh,
+                animation: animation,
             });
         }
     }
