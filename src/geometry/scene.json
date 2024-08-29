@@ -176,8 +176,8 @@
                     "s": [2, 2, 2],
                     "animation": "spinY",
                     "texture": {
-                        "url": "media/LogoB.png",
-                        "faces": []
+                        "program": "helloTriangle",
+                        "faces": ["front", "back", "left", "right"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"

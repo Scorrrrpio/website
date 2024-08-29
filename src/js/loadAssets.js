@@ -1,4 +1,5 @@
 import { AssetLoadError } from "./errors";
+import { textureTriangle } from "./helloTriangle";
 import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 
@@ -291,23 +292,37 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             const cullMode = instance.cullMode ? instance.cullMode : "back";
 
             // TEXTURE
-            let texture;
             if (instance.texture) {
-                const imgBmp = await loadImageToBMP(instance.texture.url);
-
                 // TODO I don't understand textures well enough to compress this code
-                // create texture on device
-                texture = device.createTexture({
-                    label: "Instance Texture",
-                    size: [imgBmp.width, imgBmp.height, 1],
-                    format: "rgba8unorm",
-                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-                });
-                device.queue.copyExternalImageToTexture(
-                    { source: imgBmp },
-                    { texture: texture },
-                    [imgBmp.width, imgBmp.height, 1],
-                );
+                let texture;
+                if (instance.texture.url) {
+                    // image texture
+                    const imgBmp = await loadImageToBMP(instance.texture.url);
+                    // create texture on device
+                    texture = device.createTexture({
+                        label: "Instance Texture",
+                        size: [imgBmp.width, imgBmp.height, 1],
+                        format: "rgba8unorm",
+                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+                    });
+                    device.queue.copyExternalImageToTexture(
+                        { source: imgBmp },
+                        { texture: texture },
+                        [imgBmp.width, imgBmp.height, 1],
+                    );
+                }
+                else if (instance.texture.program) {
+                    // program texture
+                    const textureSize = [256, 256];
+                    texture = device.createTexture({
+                        label: "Hello Triangle Texture",
+                        size: textureSize,
+                        format: 'rgba8unorm',
+                        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+                    });
+                    // Maybe?
+                    textureTriangle(texture, device);
+                }
 
                 // create texture sampler
                 const sampler = device.createSampler({
