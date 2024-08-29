@@ -1,3 +1,4 @@
+import { AssetLoadError } from "./errors";
 import { plyToTriangleList } from "./plyReader";  // TODO line-list
 import { mat4 } from "gl-matrix";
 
@@ -150,7 +151,7 @@ function createVBAttributes(properties) {
 
 async function loadShader(url) {
     const response = await fetch(url);
-    if (!response) { throw new Error("Failed to load shader: ", url); }
+    if (!response.ok) { throw new AssetLoadError("Failed to load shader: " + url); }
     return await response.text();
 }
 

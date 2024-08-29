@@ -2,6 +2,7 @@
 import { wgpuSetup } from "./wgpuSetup";
 import { Player } from "./player";
 import { assetsToBuffers } from "./loadAssets";
+import { AssetLoadError } from "./errors";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
@@ -20,7 +21,7 @@ export async function fpv() {
     // Scene assets as JSON
     // TODO glTF if things get dicey
     const assetsResponse = await fetch("geometry/scene.json");
-    if (!assetsResponse.ok) { throw new Error("Failed to load scene"); }
+    if (!assetsResponse.ok) { throw new AssetLoadError("Failed to load scene json"); }
     const assets = await assetsResponse.json();
     // TODO what if objects are added at runtime?
     const { renderables, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device, format, TOPOLOGY, MULTISAMPLE);

@@ -57,7 +57,7 @@ header p, header a {
 	justify-content: center;
 }
 
-.no-webgpu p {
+.no-webgpu p, .loading-failed p, .error-message p {
 	margin: 0;
 	padding: 0;
 }

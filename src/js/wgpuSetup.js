@@ -1,17 +1,15 @@
-import { noWGPU } from "./noWGPU";
+import { UnsupportedWebGPUError } from "./errors";
 
 export async function wgpuSetup(canvas) {
 	// check for browser WebGPU compatibility
 	if (!navigator.gpu) {
-		noWGPU(canvas);
-		throw new Error("WebGPU is not supported in this browser");
+		throw new UnsupportedWebGPUError("WebGPU is not supported in this browser");
 	}
 
 	// request GPUAdapter
 	const adapter = await navigator.gpu.requestAdapter();
 	if (!adapter) {
-		noWGPU(canvas);
-		throw new Error("No appropriate GPUAdapter found");
+		throw new UnsupportedWebGPUError("No appropriate GPUAdapter found");
 	}
 
 	// request device
