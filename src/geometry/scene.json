@@ -177,7 +177,7 @@
                     "animation": "spinY",
                     "texture": {
                         "url": "media/LogoB.png",
-                        "faces": ["front", "back"]
+                        "faces": []
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
