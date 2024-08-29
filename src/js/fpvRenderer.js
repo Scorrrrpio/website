@@ -1,7 +1,7 @@
 // imports
 import { wgpuSetup } from "./wgpuSetup";
 import { Player } from "./player";
-import { assetsToBuffers } from "./loadAssets";
+import { loadAssets } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
 import { lokiSpin, spinY } from "./animations";
@@ -17,16 +17,33 @@ export async function fpv() {
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
-    // GEOMETRY
+    // CONSTANTS
     const TOPOLOGY = "triangle-list";
     const MULTISAMPLE = 4;
+    // UNIFORM BUFFERS
+    // create uniform buffers for MVP matrices
+    const viewBuffer = device.createBuffer({
+        label: "View Uniform",
+        size: 64,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    const projectionBuffer = device.createBuffer({
+        label: "Projection Uniform",
+        size: 64,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+
+    // GEOMETRY
     // Scene assets as JSON
     // TODO glTF if things get dicey
     const assetsResponse = await fetch("geometry/scene.json");
     if (!assetsResponse.ok) { throw new AssetLoadError("Failed to load scene json"); }
     const assets = await assetsResponse.json();
     // TODO what if objects are added at runtime?
-    const { renderables, viewBuffer, projectionBuffer } = await assetsToBuffers(assets, device, format, TOPOLOGY, MULTISAMPLE);
+    const renderables = await loadAssets(
+        assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE
+    );
     
     const aabbBoxes = [];
     // TODO not ideal for potentially moving boxes

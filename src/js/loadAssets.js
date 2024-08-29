@@ -116,6 +116,23 @@ function createBindGroupLayout(device, label, texture, sampler) {
     return device.createBindGroupLayout(BGLDescriptor);
 }
 
+function createBindGroup(device, label, layout, ...resources) {
+    const bgDescriptor = {
+        label: label,
+        layout: layout,
+        entries: [],
+    };
+    let binding = 0;
+    for (const resource of resources) {
+        bgDescriptor.entries.push({
+            binding: binding,
+            resource: resource,
+        });
+        binding++;
+    }
+    return device.createBindGroup(bgDescriptor);
+}
+
 function createVBAttributes(properties) {
     const attributes = [];
     let offset = 0;
@@ -155,158 +172,130 @@ async function loadShader(url) {
     return await response.text();
 }
 
-export async function assetsToBuffers(assets, device, format, topology, multisamples) {
-    // UNIFORM BUFFERS
-    // create uniform buffers for MVP matrices
-    const viewBuffer = device.createBuffer({
-        label: "View Uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+async function createShaderModule(device, url, label) {
+    const shaderCode = await loadShader(url);
+    const shaderModule = device.createShaderModule({
+        label: label,
+        code: shaderCode,
     });
-    const projectionBuffer = device.createBuffer({
-        label: "Projection Uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
+    return shaderModule;
+}
 
+function createModelMatrix(position, rotation, scale) {
+    const model = mat4.create();
+    mat4.translate(model, model, position);
+    mat4.rotateX(model, model, rotation[0]);
+    mat4.rotateY(model, model, rotation[1]);
+    mat4.rotateZ(model, model, rotation[2]);
+    mat4.scale(model, model, scale);
+    return model;
+}
 
+function transformCollision(mesh, position, rotation, scale, href, ghost) {
+    if (!mesh) return null;
+    const newMesh = {
+        min: [
+            mesh.min[0] * scale[0] + position[0],
+            mesh.min[1] * scale[1] + position[1],
+            mesh.min[2] * scale[2] + position[2],
+        ],
+        max: [
+            mesh.max[0] * scale[0] + position[0],
+            mesh.max[1] * scale[1] + position[1],
+            mesh.max[2] * scale[2] + position[2],
+        ],
+    };
+    newMesh.href = href;
+    newMesh.ghost = ghost;
+    return newMesh;
+}
+
+async function loadImageToBMP(url) {
+    // read image from texture url
+    const img = new Image();
+    img.src = url;
+    try {
+        await img.decode();
+    }
+    catch (error) {
+        if (error.name === "EncodingError") {
+            throw new AssetLoadError("Failed to load image: " + url);
+        }
+        else { throw error; }
+    };
+    // convert to bmp
+    return await createImageBitmap(img);
+}
+
+export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples) {
     // BIND GROUP LAYOUT
     const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout");
-
 
     // RENDERABLES
     const renderables = [];
     for (const asset of assets.objects) {  // each object in scene
-        // read .ply file
+        // ASSET FAMILY DEFAULT VALUES
+        // vertices from ply file
         const data = await plyToTriangleList(asset.file);
-
-        // SHADERS
-        // vertex shader
-        const vertexShaderCode = await loadShader(asset.vertexShader);
-        const baseVertexShaderModule = device.createShaderModule({
-            label: "Default Vertex Shader",
-            code: vertexShaderCode,
-        });
-        // fragment shader
-        const fragmentShaderCode = await loadShader(asset.fragmentShader);
-        const baseFragmentShaderModule = device.createShaderModule({
-            label: "Default Fragment Shader",
-            code: fragmentShaderCode,
-        });
-
-        // generate default collision mesh for geometry
-        // TODO other types (sphere, mesh)
+        // shaders from wgsl files
+        const baseVertexShaderModule = await createShaderModule(device, asset.vertexShader, "Base Vertex Shader");
+        const baseFragmentShaderModule = await createShaderModule(device, asset.fragmentShader, "Base Fragment Shader");
+        // collision mesh based on geometry
         let baseMesh;
         if (asset.collision === "aabb") {
+            // TODO other types (sphere, mesh)
+            // sphere should be easy: radius to furthest point
             baseMesh = createAABB(data);
         }
 
+
+        // INSTANCE-SPECIFIC VALUES
         for (const instance of asset.instances) {
-            // create vertex buffer
+            // VERTEX BUFFER
             const vb = device.createBuffer({
                 label: asset.file,
                 size: data.floats.byteLength,
                 usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             });
-            // write data
             device.queue.writeBuffer(vb, 0, data.floats);
             // create vertex buffer atrributes array
-            const vertexBufferAttributes = createVBAttributes(data.properties);
+            const vbAttributes = createVBAttributes(data.properties);
 
-            // generate model matrix
-            const model = mat4.create();
-            mat4.translate(model, model, instance.p);
-            mat4.rotateX(model, model, instance.r[0]);
-            mat4.rotateY(model, model, instance.r[1]);
-            mat4.rotateZ(model, model, instance.r[2]);
-            mat4.scale(model, model, instance.s);
-            // create model matrix uniform buffer for object
+            // MODEL MATRIX
+            const model = createModelMatrix(instance.p, instance.r, instance.s);
             const modelBuffer = device.createBuffer({
                 label: "Model Uniform " + renderables.length,
                 size: 64,
                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
             });
 
-            // create bind group for MVP matrices
+            // BIND GROUP
             let bindGroupLayout = baseBindGroupLayout;
-            let bindGroup = device.createBindGroup({
-                label: "MVP bind group " + renderables.length,
-                layout: bindGroupLayout,
-                entries: [{
-                    binding: 0,
-                    resource: { buffer: modelBuffer },
-                }, {
-                    binding: 1,
-                    resource: { buffer: viewBuffer },
-                }, {
-                    binding: 2,
-                    resource: { buffer: projectionBuffer },
-                }],
-            });
+            let bindGroup = createBindGroup(
+                device, "Base Bind Group " + renderables.length, bindGroupLayout,
+                {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}  // MVP
+            );
 
-            // transform collision mesh
-            let collisionMesh;
-            if (baseMesh) {
-                collisionMesh = {
-                    min: [
-                        baseMesh.min[0] * instance.s[0] + instance.p[0],
-                        baseMesh.min[1] * instance.s[1] + instance.p[1],
-                        baseMesh.min[2] * instance.s[2] + instance.p[2],
-                    ],
-                    max: [
-                        baseMesh.max[0] * instance.s[0] + instance.p[0],
-                        baseMesh.max[1] * instance.s[1] + instance.p[1],
-                        baseMesh.max[2] * instance.s[2] + instance.p[2],
-                    ],
-                };
-                if (instance.href) {
-                    collisionMesh.href = instance.href;
-                }
-                if (instance.ghost) {
-                    collisionMesh.ghost = true;
-                }
-            }
+            // TRANSFORM COLLISION MESH
+            const collisionMesh = transformCollision(baseMesh, instance.p, instance.r, instance.s, instance.href, instance.ghost);
 
-            // override shaders
+            // OVERRIDE SHADERS
             let vertexShaderModule = baseVertexShaderModule;
             let fragmentShaderModule = baseFragmentShaderModule;
             if (instance.vertexShader && instance.fragmentShader) {
-                // vertex shader
-                const overrideVertex = await loadShader(instance.vertexShader);
-                vertexShaderModule = device.createShaderModule({
-                    label: "FPV Vertex Shader OVERRIDE",
-                    code: overrideVertex,
-                });
-                // fragment shader
-                const overrideFragment = await loadShader(instance.fragmentShader);
-                fragmentShaderModule = device.createShaderModule({
-                    label: "FPV Fragment Shader OVERRIDE",
-                    code: overrideFragment,
-                });
+                vertexShaderModule = await createShaderModule(device, instance.vertexShader, "Vertex Shader Override");
+                fragmentShaderModule = await createShaderModule(device, instance.fragmentShader, "Fragment Shader Override");
             }
 
-            // override cull mode
+            // OVERRIDE CULL MODE
             const cullMode = instance.cullMode ? instance.cullMode : "back";
 
-            // load texture
+            // TEXTURE
             let texture;
             if (instance.texture) {
-                // read image from texture url
-                const img = new Image();
-                img.src = instance.texture.url;
-                try {
-                    await img.decode();
-                }
-                catch (error) {
-                    if (error.name === "EncodingError") {
-                        throw new AssetLoadError("Failed to load image: " + instance.texture.url);
-                    }
-                    else { throw error; }
-                };
+                const imgBmp = await loadImageToBMP(instance.texture.url);
 
-                // convert to bmp
-                const imgBmp = await createImageBitmap(img);
-
+                // TODO I don't understand textures well enough to compress this code
                 // create texture on device
                 texture = device.createTexture({
                     label: "Instance Texture",
@@ -343,36 +332,16 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                 });
                 device.queue.writeBuffer(faceIDsBuffer, 0, faceIDs);
 
-                // override bind group layout
+                // OVERRIDE BIND GROUP
                 bindGroupLayout = createBindGroupLayout(device, "Texture Bind Group Layout", texture, sampler);
-
-                // override bind group
-                bindGroup = device.createBindGroup({
-                    label: "MVP bind group " + renderables.length,
-                    layout: bindGroupLayout,
-                    entries: [{
-                        binding: 0,
-                        resource: { buffer: modelBuffer },
-                    }, {
-                        binding: 1,
-                        resource: { buffer: viewBuffer },
-                    }, {
-                        binding: 2,
-                        resource: { buffer: projectionBuffer },
-                    }, {
-                        binding: 3,
-                        resource: texture.createView(),
-                    }, {
-                        binding: 4,
-                        resource: sampler,
-                    }, {
-                        binding: 5,
-                        resource: { buffer: faceIDsBuffer },
-                    }],
-                });
+                bindGroup = createBindGroup(
+                    device, "OVERRIDE Bind Group", bindGroupLayout,
+                    {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP
+                    texture.createView(), sampler, {buffer: faceIDsBuffer}  // texture
+                );
             }
 
-            // animation
+            // ANIMATION
             const animation = instance.animation;
 
             // add to renderables list
@@ -388,7 +357,7 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
                     bindGroupLayout,
                     vertexShaderModule,
                     data.properties.length,
-                    vertexBufferAttributes,
+                    vbAttributes,
                     fragmentShaderModule,
                     format,
                     topology,
@@ -400,5 +369,5 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
         }
     }
 
-    return { renderables, viewBuffer, projectionBuffer };
+    return renderables;
 }
