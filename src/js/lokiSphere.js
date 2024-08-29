@@ -255,7 +255,6 @@ export async function lokiSphere(canvasID, autoplay) {
 			}],
 		});
 
-        // TODO what is this?
         pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// render triangle

@@ -48,7 +48,7 @@ async function readPly(url, topology) {
             // read header
             // data format
             if (parts[0] == "format" && parts[1] === "binary") {
-                throw new Error("Binary .ply files not supported");  // TODO binary support
+                throw new Error("Binary .ply files not supported");
             }
             // element count
             else if (parts[0] == "element") {
@@ -103,7 +103,7 @@ export async function plyToTriangleList(url) {
     return vertices;
 }
 
-// TODO overhaul to bring in line with triangle-list
+// TODO overhaul?
 export async function plyToLineList(url) {
     const data = await readPly(url, "line-list");
     // generate Float32Array

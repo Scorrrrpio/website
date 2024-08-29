@@ -84,34 +84,33 @@ export async function cube(canvasID, autoplay) {
 	const vertexShaderCode = `
     struct vertexOut {
         @builtin(position) position: vec4f,
-        @location(0) color: vec4f
+        @location(0) rawPos: vec4f
     };
 
     @group(0) @binding(0) var<uniform> mvp: mat4x4<f32>;
 
-    // nightmare code using color to store position
+    // nightmare code using rawPos to store position
     @vertex
-    fn vertexMain(@location(0) pos: vec3f, @location(1) color: vec4f) -> vertexOut {
+    fn vertexMain(@location(0) pos: vec3f, @location(1) rawPos: vec4f) -> vertexOut {
         var output: vertexOut;
         output.position = mvp * vec4f(pos, 1);
-        output.color = vec4f(pos, 1);
+        output.rawPos = vec4f(pos, 1);
         return output;
     }`;
 
-    // TODO figure out how to use position
     // fragment shader
     const fragmentShaderCode = `
         struct vertexOut {
             @builtin(position) position: vec4f,
-            @location(0) color: vec4f
+            @location(0) rawPos: vec4f
         };
 
         @fragment
         fn fragmentMain(fragData: vertexOut) -> @location(0) vec4f {
-            if ((fragData.color.x >= 0 && fragData.color.y >= 0 && fragData.color.z >= 0) ||
-                (fragData.color.x >= 0 && fragData.color.y < 0  && fragData.color.z < 0 ) ||
-                (fragData.color.x < 0  && fragData.color.y < 0  && fragData.color.z >= 0) ||
-                (fragData.color.x < 0  && fragData.color.y >= 0 && fragData.color.z < 0 )) {
+            if ((fragData.rawPos.x >= 0 && fragData.rawPos.y >= 0 && fragData.rawPos.z >= 0) ||
+                (fragData.rawPos.x >= 0 && fragData.rawPos.y < 0  && fragData.rawPos.z < 0 ) ||
+                (fragData.rawPos.x < 0  && fragData.rawPos.y < 0  && fragData.rawPos.z >= 0) ||
+                (fragData.rawPos.x < 0  && fragData.rawPos.y >= 0 && fragData.rawPos.z < 0 )) {
                 return vec4f(1.0, 1.0, 1.0, 1.0);
             }
             else {

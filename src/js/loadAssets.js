@@ -1,5 +1,5 @@
 import { AssetLoadError } from "./errors";
-import { plyToTriangleList } from "./plyReader";  // TODO line-list
+import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 
 function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, multisamples) {
@@ -365,7 +365,7 @@ export async function assetsToBuffers(assets, device, format, topology, multisam
             renderables.push({
                 id: renderables.length,
                 vertexBuffer: vb,
-                vertexCount: data.floats.length / data.properties.length,  // TODO hardcoded length
+                vertexCount: data.floats.length / data.properties.length,
                 model: model,
                 modelBuffer: modelBuffer,
                 bindGroup: bindGroup,

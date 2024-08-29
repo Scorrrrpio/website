@@ -39,7 +39,6 @@ export class Player {
 
     // movement
     maxSpeed = 0.2;
-    // TODO momentum?
 
     // jumping
     jumpSpeed = 0;

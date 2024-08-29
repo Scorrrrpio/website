@@ -210,7 +210,6 @@ export async function cameraPlayground(canvasID, autoplay, allowControl) {
                     const deltaX = event.clientX - lastMouseX;
                     const deltaY = event.clientY - lastMouseY;
 
-                    // TODO update if sluggish
                     // update spherical coordinates
                     azimuth -= deltaX * camRotationSpeed;
                     elevation += deltaY * camRotationSpeed;
@@ -462,9 +461,6 @@ export async function cameraPlayground(canvasID, autoplay, allowControl) {
                 resolveTarget: canvasTexture.createView(),
 			}],
 		});
-
-        // TODO what is this?
-        //pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);
 
 		// render triangle
 		pass.setPipeline(pipeline);
