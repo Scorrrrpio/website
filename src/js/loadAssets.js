@@ -182,7 +182,7 @@ async function createShaderModule(device, url, label) {
     return shaderModule;
 }
 
-function createModelMatrix(position, rotation, scale) {
+export function createModelMatrix(position, rotation, scale) {
     const model = mat4.create();
     mat4.translate(model, model, position);
     mat4.rotateX(model, model, rotation[0]);
@@ -380,6 +380,11 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     multisamples),
                 collisionMesh: collisionMesh,
                 animation: animation,
+                transforms: {
+                    position: instance.p,
+                    rotation: instance.r,
+                    scale: instance.s,
+                },
             });
         }
     }

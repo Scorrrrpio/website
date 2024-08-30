@@ -1,19 +1,21 @@
-import { mat4 } from "gl-matrix";
+import { createModelMatrix } from "./loadAssets";
 
-function createRotationMatrix(angleX, angleY, angleZ) {
-    const rotationMatrix = mat4.create();
-    mat4.rotateX(rotationMatrix, rotationMatrix, angleX);
-    mat4.rotateY(rotationMatrix, rotationMatrix, angleY);
-    mat4.rotateZ(rotationMatrix, rotationMatrix, angleZ);
-    return rotationMatrix;
-}
-
-const spinYMatrix = createRotationMatrix(0, 0.02, 0)
 export function spinY(renderable) {
-    mat4.multiply(renderable.model, renderable.model, spinYMatrix);
+    renderable.transforms.rotation[1] += 0.02;
+    renderable.model = createModelMatrix(
+        renderable.transforms.position,
+        renderable.transforms.rotation,
+        renderable.transforms.scale,
+    )
 }
 
-const lokiSpinMatrix = createRotationMatrix(-0.001, 0.005, -0.0005);
 export function lokiSpin(renderable) {
-    mat4.multiply(renderable.model, renderable.model, lokiSpinMatrix);
+    renderable.transforms.rotation[0] -= 0.001;
+    renderable.transforms.rotation[1] += 0.005;
+    renderable.transforms.rotation[2] -= 0.0005;
+    renderable.model = createModelMatrix(
+        renderable.transforms.position,
+        renderable.transforms.rotation,
+        renderable.transforms.scale,
+    )
 }

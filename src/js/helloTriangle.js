@@ -217,15 +217,8 @@ export async function helloTriangle(canvasID, autoplay) {
 }
 
 
-
+// TODO separate into another file?
 export async function textureTriangle(texture, device) {
-	// BOILERPLATE AND SETUP
-	// locate canvas
-	//const devicePixelRatio = window.devicePixelRatio || 1;
-    //canvas.width = canvas.clientWidth * devicePixelRatio;
-    //canvas.height = canvas.clientHeight * devicePixelRatio;
-
-
 	// GEOMETRY
 	const vertices = new Float32Array([
 		// X,  Y,    R    G    B    A

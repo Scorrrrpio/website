@@ -8,3 +8,4 @@ working on some cool WebGPU stuff
 - text rendering
 - render hello triangle to texture
 - better animation solution
+- weird collisions with elevated objects

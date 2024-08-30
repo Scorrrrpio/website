@@ -127,7 +127,6 @@ export async function fpv() {
     const hud = generateHUD(device, format, projectionBuffer, MULTISAMPLE);
 
     // RENDER LOOP
-    let frame = 0;
 	function renderLoop() {
         // update camera
         player.move(aabbBoxes);
@@ -198,7 +197,6 @@ export async function fpv() {
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
 
-        frame++;
         requestAnimationFrame(renderLoop);
 	}
 
