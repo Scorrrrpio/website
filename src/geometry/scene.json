@@ -27,17 +27,6 @@
                     "s": [12, 1, 12]
                 },
                 {
-                    "p": [0, 10.25, 0],
-                    "r": [0, 0, 0],
-                    "s": [0.5, 0.5, 0.5],
-                    "texture": {
-                        "url": "media/cat-cube.png",
-                        "faces": ["front", "back", "left", "right", "top", "bottom"]
-                    },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
-                },
-                {
                     "p": [3.5, 5, 3.5],
                     "r": [0, 0, 0],
                     "s": [1, 6, 1]
@@ -128,12 +117,13 @@
                     "s": [2, 6, 12]
                 },
                 {
+                    
                     "p": [-8, 3, -60],
                     "r": [0, 0, 0],
                     "s": [2, 2, 2],
                     "href": "https://x.com/amkoz__",
                     "texture": {
-                        "url": "media/x-texture.png",
+                        "url": "media/x.png",
                         "faces": ["front", "back", "right", "left"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
@@ -145,19 +135,8 @@
                     "s": [2, 2, 2],
                     "href": "https://github.com/Scorrrrpio/",
                     "texture": {
-                        "url": "media/github-texture.png",
+                        "url": "media/github.png",
                         "faces": ["front", "back", "right", "left"]
-                    },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
-                },
-                {
-                    "p": [0, 4, -64],
-                    "r": [0, 0, 0],
-                    "s": [8, 8, 2],
-                    "texture": {
-                        "url": "media/about-texture.png",
-                        "faces": ["front"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
@@ -178,6 +157,36 @@
                     "texture": {
                         "program": "helloTriangle",
                         "faces": ["front", "back", "left", "right"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
+                }
+            ]
+        },
+        {
+            "file": "geometry/cubeWrap.ply",
+            "vertexShader": "shaders/cubeVertex.wgsl",
+            "fragmentShader": "shaders/cubeFragment.wgsl",
+            "collision": "aabb",
+            "instances": [
+                {
+                    "p": [0, 10.25, 0],
+                    "r": [0, 0, 0],
+                    "s": [0.5, 0.5, 0.5],
+                    "texture": {
+                        "url": "media/cat-cube.png",
+                        "faces": ["front", "back", "left", "right", "top", "bottom"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
+                },
+                {
+                    "p": [0, 4, -64],
+                    "r": [0, 0, 0],
+                    "s": [8, 8, 2],
+                    "texture": {
+                        "url": "media/about-texture.png",
+                        "faces": ["front"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"

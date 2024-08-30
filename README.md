@@ -7,3 +7,4 @@ working on some cool WebGPU stuff
 - WebGL fallback
 - text rendering
 - render hello triangle to texture
+- better animation solution
