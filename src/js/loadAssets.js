@@ -327,7 +327,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                         textureTriangle(texture, device);
                     }
                     else if (instance.texture.program === "text") {
-                        textToTexture(texture, device, "Hello World");
+                        textToTexture(texture, device, "Hello World\nOk Bye");
                     }
                 }
 

@@ -54,44 +54,54 @@ export async function textToTexture(outputTexture, device, text) {
     const fragmentModule = await createShaderModule(device, "shaders/textF.wgsl", "Text Fragment");
 
     // GEOMETRY
-    let xPos = -1;
-    let yPos = 1;
     const lineHeight = 35;
+    const lineSpace = 12;
+    const margin = 0.1;
+
+    let xPos = -outputTexture.width;
+    let yPos = outputTexture.height;
     const letterQuads = [];
-    /*
+
     for (const ch of text) {
         if (ch === "\n") {
             console.log("NEWLINE");
-            xPos = 0;
-            yPos += lineHeight;
+            xPos = -outputTexture.width;
+            yPos -= lineHeight;
+            yPos -= lineSpace;
         }
         else {
+            let x0 = xPos / outputTexture.width + margin;
+            let y1 = yPos / outputTexture.height - margin;
+            let x1 = (xPos + metadata[ch][0].width) / outputTexture.width + margin;
+            let y0 = (yPos - metadata[ch][0].height) / outputTexture.height - margin;
+            // TODO desperately needs a function
             console.log(ch, metadata[ch]);
             letterQuads.push(
                 // TOP LEFT
-                xPos, yPos, metadata[ch][0].u0, metadata[ch][0].v0,
+                x0, y1, metadata[ch][0].u0, metadata[ch][0].v0,
                 // BOTTOM LEFT
-                xPos, yPos - metadata[ch][0].height, metadata[ch][0].u0, metadata[ch][0].v1,
+                x0, y0, metadata[ch][0].u0, metadata[ch][0].v1,
                 // TOP RIGHT
-                xPos + metadata[ch][0].width, yPos, metadata[ch][0].u1, metadata[ch][0].v0,
+                x1, y1, metadata[ch][0].u1, metadata[ch][0].v0,
                 // BOTTOM RIGHT
-                xPos + metadata[ch][0].width, yPos - metadata[ch][0].height, metadata[ch][0].u1, metadata[ch][0].v1,
+                x1, y0, metadata[ch][0].u1, metadata[ch][0].v1,
                 // TOP RIGHT
-                xPos + metadata[ch][0].width, yPos, metadata[ch][0].u1, metadata[ch][0].v0,
+                x1, y1, metadata[ch][0].u1, metadata[ch][0].v0,
                 // BOTTOM LEFT
-                xPos, yPos - metadata[ch][0].height, metadata[ch][0].u0, metadata[ch][0].v1,
+                x0, y0, metadata[ch][0].u0, metadata[ch][0].v1,
             );
             xPos += metadata[ch][0].advance
         }
-    }*/
+    }
+    /*
     letterQuads.push(
-        -1, 1, metadata["A"][0].u0, metadata["A"][0].v0,  // TL
-        -1, -1, metadata["A"][0].u0, metadata["A"][0].v1,  // BL
-        1, 1, metadata["A"][0].u1, metadata["A"][0].v0,  // TR
-        1, -1, metadata["A"][0].u1, metadata["A"][0].v1,  // BR
-        1, 1, metadata["A"][0].u1, metadata["A"][0].v0,  // TR
-        -1, -1, metadata["A"][0].u0, metadata["A"][0].v1,  // BL
-    )
+        -1, 1, metadata["!"][0].u0, metadata["!"][0].v0,  // TL
+        -1, -1, metadata["!"][0].u0, metadata["!"][0].v1,  // BL
+        1, 1, metadata["!"][0].u1, metadata["!"][0].v0,  // TR
+        1, -1, metadata["!"][0].u1, metadata["!"][0].v1,  // BR
+        1, 1, metadata["!"][0].u1, metadata["!"][0].v0,  // TR
+        -1, -1, metadata["!"][0].u0, metadata["!"][0].v1,  // BL
+    )*/
     const vertices = Float32Array.from(letterQuads);
 
     // create vertex buffer
