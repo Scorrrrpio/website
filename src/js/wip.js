@@ -1,7 +1,7 @@
-import { fpv } from "./fpvRenderer";
+import { textToTexture } from "./renderText";
 
 console.log("WIP workspace");
-fpv("wip-workspace", true).catch((error) => {
+textToTexture().catch((error) => {
     if (error.name === "Error") {
         // unsupported WebGPU
         console.log(error.message);

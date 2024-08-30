@@ -2,7 +2,9 @@ import { AssetLoadError } from "./errors";
 import { textureTriangle } from "./helloTriangle";
 import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
+import { textToTexture } from "./renderText";
 
+// TODO make versatile (no MSAA)
 function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, multisamples) {
     return device.createRenderPipeline({
 		label: "FPV Pipeline",
@@ -80,6 +82,7 @@ function createAABB(data) {
     return aabb;
 }
 
+// TODO not reusable
 function createBindGroupLayout(device, label, texture, sampler) {
     const BGLDescriptor = {
         label: label,
@@ -117,7 +120,7 @@ function createBindGroupLayout(device, label, texture, sampler) {
     return device.createBindGroupLayout(BGLDescriptor);
 }
 
-function createBindGroup(device, label, layout, ...resources) {
+export function createBindGroup(device, label, layout, ...resources) {
     const bgDescriptor = {
         label: label,
         layout: layout,
@@ -173,7 +176,7 @@ async function loadShader(url) {
     return await response.text();
 }
 
-async function createShaderModule(device, url, label) {
+export async function createShaderModule(device, url, label) {
     const shaderCode = await loadShader(url);
     const shaderModule = device.createShaderModule({
         label: label,
@@ -315,13 +318,17 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     // program texture
                     const textureSize = [256, 256];
                     texture = device.createTexture({
-                        label: "Hello Triangle Texture",
+                        label: "Program Texture",
                         size: textureSize,
                         format: 'rgba8unorm',
                         usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
                     });
-                    // Maybe?
-                    textureTriangle(texture, device);
+                    if (instance.texture.program === "helloTriangle") {
+                        textureTriangle(texture, device);
+                    }
+                    else if (instance.texture.program === "text") {
+                        textToTexture(texture, device, "Hello World");
+                    }
                 }
 
                 // create texture sampler

@@ -160,6 +160,17 @@
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
+                },
+                {
+                    "p": [-20, 4, 0],
+                    "r": [0, 0, 0],
+                    "s": [2, 8, 8],
+                    "texture": {
+                        "program": "text",
+                        "faces": ["right"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
                 }
             ]
         },
