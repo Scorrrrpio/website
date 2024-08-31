@@ -117,6 +117,18 @@
                     "s": [2, 6, 12]
                 },
                 {
+                    "p": [0, 4, -64],
+                    "r": [0, 0, 0],
+                    "s": [8, 8, 2],
+                    "texture": {
+                        "program": "text",
+                        "content": "// ABOUT ME\n> Adrian Koziskie\n> Based in Toronto\n> UWO CS alum\n> Interest in Computer Graphics\n\n// ABOUT THIS PAGE\n> This place is my longtime\n  dream project\n> Built from the ground up\n  with WebGPU\n> Toy projects to the right",
+                        "faces": ["front"]
+                    },
+                    "vertexShader": "shaders/textureVertex.wgsl",
+                    "fragmentShader": "shaders/textureFragment.wgsl"
+                },
+                {
                     
                     "p": [-8, 3, -60],
                     "r": [0, 0, 0],
@@ -167,6 +179,7 @@
                     "s": [2, 8, 8],
                     "texture": {
                         "program": "text",
+                        "content": "Hello World",
                         "faces": ["right"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
@@ -187,17 +200,6 @@
                     "texture": {
                         "url": "media/cat-cube.png",
                         "faces": ["front", "back", "left", "right", "top", "bottom"]
-                    },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
-                },
-                {
-                    "p": [0, 4, -64],
-                    "r": [0, 0, 0],
-                    "s": [8, 8, 2],
-                    "texture": {
-                        "url": "media/about-texture.png",
-                        "faces": ["front"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"

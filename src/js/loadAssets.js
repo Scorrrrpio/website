@@ -4,10 +4,10 @@ import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 
-// TODO make versatile (no MSAA)
-function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, multisamples) {
-    return device.createRenderPipeline({
-		label: "FPV Pipeline",
+// TODO make versatile (no MSAA, no depth stencil)
+export function createPipeline(label, device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, depthTest, multisamples) {
+    const pipelineDescriptor = {
+		label: label,
 		layout: device.createPipelineLayout({
             label: "FPV Pipeline Layout",
             bindGroupLayouts: [bindGroupLayout],
@@ -45,15 +45,18 @@ function createPipeline(device, bindGroupLayout, vertexShaderModule, vertexBuffe
             frontFace: "ccw",
             cullMode: cullMode,
         },
-        depthStencil: {
+	};
+    if (multisamples) {
+        pipelineDescriptor.multisample = { count: multisamples };
+    }
+    if (depthTest) {
+        pipelineDescriptor.depthStencil = {
             format: "depth24plus",
             depthWriteEnabled: cullMode === "back",
             depthCompare: "less",
-        },
-        multisample: {
-            count: multisamples,
-        },
-	});
+        };
+    }
+    return device.createRenderPipeline(pipelineDescriptor);
 }
 
 function createAABB(data) {
@@ -137,21 +140,48 @@ export function createBindGroup(device, label, layout, ...resources) {
     return device.createBindGroup(bgDescriptor);
 }
 
-function createVBAttributes(properties) {
+export function createVBAttributes(properties) {
     const attributes = [];
     let offset = 0;
     let shaderLocation = 0;
-    // TODO upgrade this alongside .ply reader
+    // TODO upgrade this alongside .ply reader (e.g. different types)
     for (let i = 0; i < properties.length; i++) {
         const attribute = {};
-        if (i < properties.length - 2 && properties[i] === "x" && properties[i+1] === "y" && properties[i+1] === "y") {
-            attribute.format = "float32x3";
-            attribute.offset = 4 * offset;
-            attribute.shaderLocation = shaderLocation;
-            offset += 3;
-            i += 2;
+        if (properties[i] === "x") {
+            if (i < properties.length - 1 && properties[i+1] === "y") {
+                if (i < properties.length - 2 && properties[i+2] === "z") {
+                    // x, y, z
+                    attribute.format = "float32x3";
+                    attribute.offset = 4 * offset;
+                    attribute.shaderLocation = shaderLocation;
+                    offset += 3;
+                    i += 2;
+                }
+                else {
+                    // x, y
+                    attribute.format = "float32x2";
+                    attribute.offset = 4 * offset;
+                    attribute.shaderLocation = shaderLocation;
+                    offset += 2;
+                    i++;
+                }
+            }
+            else {
+                // x
+                attribute.format = "float32x2";
+                attribute.offset = 4 * offset;
+                attribute.shaderLocation = shaderLocation;
+                offset++;
+            }
         }
         else if (i < properties.length - 1 && properties[i] === "s" && properties[i+1] === "t") {
+            attribute.format = "float32x2";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset += 2;
+            i++;
+        }
+        else if (i < properties.length - 1 && properties[i] === "u" && properties[i+1] === "v") {
             attribute.format = "float32x2";
             attribute.offset = 4 * offset;
             attribute.shaderLocation = shaderLocation;
@@ -316,7 +346,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                 }
                 else if (instance.texture.program) {
                     // program texture
-                    const textureSize = [256, 256];
+                    const textureSize = [512, 512];
                     texture = device.createTexture({
                         label: "Program Texture",
                         size: textureSize,
@@ -327,7 +357,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                         textureTriangle(texture, device);
                     }
                     else if (instance.texture.program === "text") {
-                        textToTexture(texture, device, "Hello World\nOk Bye");
+                        textToTexture(texture, device, instance.texture.content);
                     }
                 }
 
@@ -375,6 +405,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                 modelBuffer: modelBuffer,
                 bindGroup: bindGroup,
                 pipeline: createPipeline(
+                    "FPV Render Pipeline",
                     device,
                     bindGroupLayout,
                     vertexShaderModule,
@@ -384,6 +415,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     format,
                     topology,
                     cullMode,
+                    true,
                     multisamples),
                 collisionMesh: collisionMesh,
                 animation: animation,

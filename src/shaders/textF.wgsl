@@ -8,6 +8,5 @@ struct vOut {
 
 @fragment
 fn fragmentMain(fragData: vOut) -> @location(0) vec4f {
-    //return vec4f(fragData.uv, 0, 1);
-    return vec4f(textureSample(texture, mySampler, fragData.uv).xyz, 1);
+    return textureSample(texture, mySampler, fragData.uv);
 }
