@@ -4,10 +4,10 @@ export async function generateHUD(device, format, projectionBuffer, multisamples
     // geometry
     const crosshair = new Float32Array([
         // X,    Y
-        -0.02,    0,
-         0.02,    0,
-           0, -0.02,
-           0,  0.02,
+        -0.00015,    0,
+         0.00015,    0,
+           0, -0.00015,
+           0,  0.00015,
     ]);
 
     // vertex buffer
