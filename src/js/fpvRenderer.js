@@ -75,7 +75,7 @@ export async function fpv() {
 
 
     // 4xMSAA TEXTURES
-    let canvasTexture = context.getCurrentTexture();
+    let canvasTexture = context.getCurrentTexture();  // TODO what is this?
     let msaaTexture = device.createTexture({
         format: canvasTexture.format,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -123,7 +123,8 @@ export async function fpv() {
 
 
     // HUD
-    const hud = generateHUD(device, format, projectionBuffer, MULTISAMPLE);
+    // TODO this needs depth testing and MSAA for some reason?
+    const hud = await generateHUD(device, canvasTexture.format, projectionBuffer, MULTISAMPLE);
 
     // RENDER LOOP
 	function renderLoop() {

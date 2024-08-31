@@ -1,5 +1,4 @@
-// TODO make versatile (no MSAA, no depth stencil)
-export function createPipeline(label, device, bindGroupLayout, vertexShaderModule, vertexBufferStride, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, depthTest, multisamples) {
+export function createPipeline(label, device, bindGroupLayout, vertexShaderModule, vbStrideBytes, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, depthTest, multisamples) {
     const pipelineDescriptor = {
 		label: label,
 		layout: device.createPipelineLayout({
@@ -10,7 +9,7 @@ export function createPipeline(label, device, bindGroupLayout, vertexShaderModul
 			module: vertexShaderModule,
 			entryPoint: "vertexMain",
 			buffers: [{
-				arrayStride: 4 * vertexBufferStride /*bytes*/,
+				arrayStride: 4 * vbStrideBytes /*bytes*/,
 				attributes: vertexBufferAttributes,
 			}],
 		},
