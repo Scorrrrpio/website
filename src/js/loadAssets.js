@@ -79,7 +79,7 @@ async function loadImageToBMP(url) {
 
 export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples) {
     // BIND GROUP LAYOUT
-    const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout");
+    const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
 
     // RENDERABLES
     const renderables = [];
@@ -170,10 +170,10 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                         usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
                     });
                     if (instance.texture.program === "helloTriangle") {
-                        textureTriangle(texture, device);
+                        textureTriangle(texture, device, format);
                     }
                     else if (instance.texture.program === "text") {
-                        textToTexture(texture, device, instance.texture.content);
+                        textToTexture(texture, device, format, instance.texture.content);
                     }
                 }
 
@@ -201,7 +201,18 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                 device.queue.writeBuffer(faceIDsBuffer, 0, faceIDs);
 
                 // OVERRIDE BIND GROUP
-                bindGroupLayout = createBindGroupLayout(device, "Texture Bind Group Layout", texture, sampler);
+                /*
+                if (texture && sampler) {
+                    BGLDescriptor.entries.push({
+                        binding: 5,
+                        visibility: GPUShaderStage.FRAGMENT,
+                        buffer: { type: "uniform" },
+                    });
+                }*/
+                bindGroupLayout = createBindGroupLayout(
+                    device, "Texture Bind Group Layout",
+                    "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
+                );
                 bindGroup = createBindGroup(
                     device, "OVERRIDE Bind Group", bindGroupLayout,
                     {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP

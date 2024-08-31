@@ -1,4 +1,4 @@
-import { createBindGroup, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
+import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
 export async function generateHUD(device, format, projectionBuffer, multisamples) {
     // geometry
@@ -26,16 +26,7 @@ export async function generateHUD(device, format, projectionBuffer, multisamples
 
     // bind group
     // TODO use helper for BGL
-    const hudBGL = device.createBindGroupLayout({
-        label: "HUD Bind Group Layout",
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" },
-            },
-        ],
-    });
+    const hudBGL = createBindGroupLayout(device, "HUD BGL", { visibility: GPUShaderStage.VERTEX, buffer: {type: "uniform"}});
     const hudBG = createBindGroup(device, "HUD Bind Group", hudBGL, { buffer: projectionBuffer });
 
     // pipeline

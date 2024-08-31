@@ -1,8 +1,10 @@
 // imports
 import { lerpVector } from "./lerp";
+import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-// TODO use WebGPU setup functions
-export async function textureTriangle(texture, device) {
+// TODO reconcile format
+export async function textureTriangle(texture, device, format2) {
+	const format = "rgba8unorm";
 	// GEOMETRY
 	const vertices = new Float32Array([
 		// X,  Y,    R    G    B    A
@@ -37,79 +39,33 @@ export async function textureTriangle(texture, device) {
 		usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
 	});
 	device.queue.writeBuffer(vertexBuffer, 0, vertices);
+	const vbAttributes = createVBAttributes(["x", "y", "r", "g", "b", "a"]);
+
+	// BIND GROUP
+	// TODO pointless
+	const BGL = createBindGroupLayout(device, "Hello Triangle Texture BGL");
+	const BG = createBindGroup(device, "hello Triangle BG", BGL);
 
 
 	// SHADERS
-	// vertex shader
-	const vertexShaderCode = `
-		struct vertexOut {
-			@builtin(position) position: vec4f,
-			@location(0) color: vec4f
-		};
-
-		@vertex
-		fn vertexMain(@location(0) pos: vec2f, @location(1) color: vec4f) -> vertexOut {
-			var output: vertexOut;
-			output.position = vec4f(pos, 0, 1);
-			output.color = color;
-			return output;
-		}`;
-
-	// fragment shader
-	const fragmentShaderCode = `
-		struct vertexOut {
-			@builtin(position) position: vec4f,
-			@location(0) color: vec4f
-		};
-
-		@fragment
-		fn fragmentMain(fragData: vertexOut) -> @location(0) vec4f {
-			return fragData.color;
-		}
-	`;
-
-	// create shader modules
-	const vertexShaderModule = device.createShaderModule({
-		label: "Triangle Vertex Shader",
-		code: vertexShaderCode
-	});
-	const fragmentShaderModule = device.createShaderModule({
-		label: "Triangle Fragment Shader",
-		code: fragmentShaderCode
-	});
-
+	const vertexModule = await createShaderModule(device, "shaders/helloTriangleV.wgsl", "Hello Triangle Vertex");
+	const fragmentModule = await createShaderModule(device, "shaders/helloTriangleF.wgsl", "Hello Triangle Fragment");
 
 	// PIPELINE
-	const pipeline = device.createRenderPipeline({
-		label: "Triangle Pipeline",
-		layout: "auto",
-		vertex: {
-			module: vertexShaderModule,
-			entryPoint: "vertexMain",
-			buffers: [{
-				arrayStride: 4 * 6 /*bytes*/,
-				attributes: [{
-					format: "float32x2",
-					offset: 0,
-					shaderLocation: 0
-				}, {
-					format: "float32x4",
-					offset: 4 * 2 /*bytes*/ ,
-					shaderLocation: 1
-				}]
-			}]
-		},
-		fragment: {
-			module: fragmentShaderModule,
-			entryPoint: "fragmentMain",
-			targets: [{
-				format: "rgba8unorm",
-			}]
-		},
-		primitive: {
-			topology: "triangle-list"
-		}
-	});
+	const pipeline = createPipeline(
+		"Hello Triangle Texture Pipeline",
+		device,
+		BGL,
+		vertexModule,
+		6,
+		vbAttributes,
+		fragmentModule,
+		format,
+		"triangle-list",
+		"none",
+		null,
+		null
+	);
 
 
 	// RENDER LOOP
@@ -148,6 +104,7 @@ export async function textureTriangle(texture, device) {
 		// render triangle
 		pass.setPipeline(pipeline);
 		pass.setVertexBuffer(0, vertexBuffer);
+		pass.setBindGroup(0, BG);
 		pass.draw(vertices.length / 6);  // 3 vertices
 
 		// end render pass

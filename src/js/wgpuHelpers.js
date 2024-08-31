@@ -2,7 +2,7 @@ export function createPipeline(label, device, bindGroupLayout, vertexShaderModul
     const pipelineDescriptor = {
 		label: label,
 		layout: device.createPipelineLayout({
-            label: "FPV Pipeline Layout",
+            label: label + " Layout",
             bindGroupLayouts: [bindGroupLayout],
         }),
 		vertex: {
@@ -53,39 +53,48 @@ export function createPipeline(label, device, bindGroupLayout, vertexShaderModul
 }
 
 // TODO not reusable
-export function createBindGroupLayout(device, label, texture, sampler) {
+export function createBindGroupLayout(device, label, ...entries) {
     const BGLDescriptor = {
         label: label,
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }, {
-            binding: 1,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }, {
-            binding: 2,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" },
-        }]
+        entries: []
     }
-    if (texture && sampler) {
-        BGLDescriptor.entries.push({
-            binding: 3,
-            visibility: GPUShaderStage.FRAGMENT,
-            texture: { sampleType: "float" },
-        });
-        BGLDescriptor.entries.push({
-            binding: 4,
-            visibility: GPUShaderStage.FRAGMENT,
-            sampler: { type: "filtering" },
-        });
-        BGLDescriptor.entries.push({
-            binding: 5,
-            visibility: GPUShaderStage.FRAGMENT,
-            buffer: { type: "uniform" },
-        });
+    let binding = 0;
+    for (const entry of entries) {
+        if (entry === "MVP") {
+            BGLDescriptor.entries.push({
+                binding: binding++,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: { type: "uniform" },
+            });
+            BGLDescriptor.entries.push({
+                binding: binding++,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: { type: "uniform" },
+            });
+            BGLDescriptor.entries.push({
+                binding: binding++,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: { type: "uniform" },
+            });
+        }
+        else if (entry === "texture") {
+            BGLDescriptor.entries.push({
+                binding: binding++,
+                visibility: GPUShaderStage.FRAGMENT,
+                texture: { sampleType: "float" },
+            });
+        }
+        else if (entry === "sampler") {
+            BGLDescriptor.entries.push({
+                binding: binding++,
+                visibility: GPUShaderStage.FRAGMENT,
+                sampler: { type: "filtering" },
+            });
+        }
+        else {
+            entry.binding = binding++;
+            BGLDescriptor.entries.push(entry);
+        }
     }
     return device.createBindGroupLayout(BGLDescriptor);
 }
@@ -107,6 +116,7 @@ export function createBindGroup(device, label, layout, ...resources) {
     return device.createBindGroup(bgDescriptor);
 }
 
+// TODO group properties in input
 export function createVBAttributes(properties) {
     const attributes = [];
     let offset = 0;
@@ -140,6 +150,13 @@ export function createVBAttributes(properties) {
                 attribute.shaderLocation = shaderLocation;
                 offset++;
             }
+        }
+        else if (i < properties.length - 3 && properties[i] === "r" && properties[i+1] === "g" && properties[i+2] === "b" && properties[i+3] === "a") {
+            attribute.format = "float32x4";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset += 4;
+            i += 3;
         }
         else if (i < properties.length - 1 && properties[i] === "s" && properties[i+1] === "t") {
             attribute.format = "float32x2";

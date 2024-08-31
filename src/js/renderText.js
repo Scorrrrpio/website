@@ -1,7 +1,8 @@
 import { AssetLoadError } from "./errors";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-export async function textToTexture(outputTexture, device, text) {
+// TODO reconcile formats
+export async function textToTexture(outputTexture, device, format2, text) {
     // CONSTANTS
     // TODO as parameters
     const atlasUrl = "media/text/hackAtlas64.png";
