@@ -73,7 +73,7 @@ export class Player {
             ],
             max: [
                 pos[0] + this.boxRadius,
-                pos[1] + 1,
+                pos[1] + this.cameraOffset[1],
                 pos[2] + this.boxRadius,
             ],
         };
@@ -81,12 +81,9 @@ export class Player {
 
     #checkCollision(box1, box2) {
         return (
-            box1.min[0] <= box2.max[0] &&
-            box1.max[0] >= box2.min[0] &&
-            box1.min[1] < box2.max[1] &&
-            box1.max[1] >= box2.min[1] &&
-            box1.min[2] <= box2.max[2] &&
-            box1.max[2] >= box2.min[2]
+            box1.min[0] <= box2.max[0] && box1.max[0] >= box2.min[0] &&
+            box1.min[1] < box2.max[1] && box1.max[1] >= box2.min[1] &&
+            box1.min[2] <= box2.max[2] && box1.max[2] >= box2.min[2]
         );
     }
 
