@@ -36,7 +36,6 @@ export async function fpv() {
 
     // GEOMETRY
     // Scene assets as JSON
-    // TODO glTF if things get dicey
     const assetsResponse = await fetch("geometry/scene.json");
     if (!assetsResponse.ok) { throw new AssetLoadError("Failed to load scene json"); }
     const assets = await assetsResponse.json();

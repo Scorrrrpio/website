@@ -1,5 +1,5 @@
 import { AssetLoadError } from "./errors";
-import { textureTriangle } from "./helloTriangle";
+import { textureTriangle } from "./textureTriangle";
 import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";

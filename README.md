@@ -6,4 +6,3 @@ working on some cool WebGPU stuff
 - favicon
 - WebGL fallback
 - better animation solution?
-- weird collisions with elevated objects
