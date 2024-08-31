@@ -1,5 +1,5 @@
 import { AssetLoadError } from "./errors";
-import { createBindGroup, createPipeline, createShaderModule, createVBAttributes } from "./loadAssets";
+import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
 export async function textToTexture(outputTexture, device, text) {
     // CONSTANTS
