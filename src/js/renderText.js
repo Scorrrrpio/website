@@ -7,7 +7,6 @@ export async function textToTexture(outputTexture, device, format, text) {
     // TODO as parameters
     const atlasUrl = "media/text/hackAtlas64.png";
     const metadataUrl = "media/text/hackMetadata64.json";
-    //const format = "rgba8unorm";
     const fontSize = 48;
     const MULTISAMPLE = 4;
 

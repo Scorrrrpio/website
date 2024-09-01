@@ -11,14 +11,14 @@ struct VertexOutput {
 @group(0) @binding(5) var<uniform> faceIDs: array<vec4<u32>, 6>;  // [front, back, left, right, top, bottom]
 
 fn drawGrid(pos: vec3f, evenScale: vec3f, colour: vec3f, clear: vec4f) -> vec4f {
-    var gridPos = (abs(pos) + 0.5 * evenScale) % 1;
-    if ((gridPos.x < 0.01 || gridPos.x >= 0.99) && abs(pos.x) % 1 != 0.5 * evenScale.x) {
+    var gridPos = (abs(pos) + 0.5 * evenScale) % 1.0;
+    if ((gridPos.x < 0.01 || gridPos.x >= 0.99) && abs(pos.x) % 1.0 != 0.5 * evenScale.x) {
         return vec4f(colour.r / 32.0, colour.g / 8.0, 1 - colour.r / 32 - colour.g / 32, 1);
     }
-    if ((gridPos.z < 0.01 || gridPos.z >= 0.99) && abs(pos.z) % 1 != 0.5 * evenScale.z) {
+    if ((gridPos.z < 0.01 || gridPos.z >= 0.99) && abs(pos.z) % 1.0 != 0.5 * evenScale.z) {
         return vec4f(colour.r / 32.0, colour.g / 8.0, 1 - colour.r / 32 - colour.g / 32, 1);
     }
-    if ((gridPos.y < 0.01 || gridPos.y >= 0.99) && abs(pos.y) % 1 != 0.5 * evenScale.y) {
+    if ((gridPos.y < 0.01 || gridPos.y >= 0.99) && abs(pos.y) % 1.0 != 0.5 * evenScale.y) {
         return vec4f(colour.r / 32.0, colour.g / 8.0, 1 - colour.r / 32 - colour.g / 32, 1);
     }
     return clear;
@@ -56,7 +56,7 @@ fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
     }
 
     gridPos *=  fragData.scale;
-    evenScale = fragData.scale % 2;
+    evenScale = fragData.scale % 2.0;
 
     return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), vec4f(0, 0, 0, 1));
 }

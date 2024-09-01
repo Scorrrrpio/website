@@ -4,7 +4,6 @@ import { createBindGroup, createBindGroupLayout, createPipeline, createShaderMod
 
 // TODO reconcile format
 export async function textureTriangle(texture, device, format) {
-	//const format = "rgba8unorm";
 	// GEOMETRY
 	const vertices = new Float32Array([
 		// X,  Y,    R    G    B    A
