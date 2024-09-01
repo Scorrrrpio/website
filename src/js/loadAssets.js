@@ -151,7 +151,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     texture = device.createTexture({
                         label: "Instance Texture",
                         size: [imgBmp.width, imgBmp.height, 1],
-                        format: "rgba8unorm",
+                        format: format,
                         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
                     });
                     device.queue.copyExternalImageToTexture(
@@ -166,7 +166,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     texture = device.createTexture({
                         label: "Program Texture",
                         size: textureSize,
-                        format: 'rgba8unorm',
+                        format: format,
                         usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
                     });
                     if (instance.texture.program === "helloTriangle") {

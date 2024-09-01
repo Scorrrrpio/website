@@ -3,8 +3,8 @@ import { lerpVector } from "./lerp";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
 // TODO reconcile format
-export async function textureTriangle(texture, device, format2) {
-	const format = "rgba8unorm";
+export async function textureTriangle(texture, device, format) {
+	//const format = "rgba8unorm";
 	// GEOMETRY
 	const vertices = new Float32Array([
 		// X,  Y,    R    G    B    A

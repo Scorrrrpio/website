@@ -2,12 +2,12 @@ import { AssetLoadError } from "./errors";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
 // TODO reconcile formats
-export async function textToTexture(outputTexture, device, format2, text) {
+export async function textToTexture(outputTexture, device, format, text) {
     // CONSTANTS
     // TODO as parameters
     const atlasUrl = "media/text/hackAtlas64.png";
     const metadataUrl = "media/text/hackMetadata64.json";
-    const format = "rgba8unorm";
+    //const format = "rgba8unorm";
     const fontSize = 48;
     const MULTISAMPLE = 4;
 
