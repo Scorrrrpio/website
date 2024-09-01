@@ -7,13 +7,13 @@ struct VertexOutput {
 
 fn drawGrid(pos: vec3f, evenScale: vec3f, colour: vec3f, clear: vec4f) -> vec4f {
     var gridPos = (abs(pos) + 0.5 * evenScale) % 1.0;
-    if ((gridPos.x < 0.01 || gridPos.x >= 0.99) && abs(pos.x) % 1.0 != 0.5 * evenScale.x) {
+    if ((gridPos.x < 0.01 || gridPos.x > 0.99) && abs(pos.x) % 1.0 != 0.5 * evenScale.x) {
         return vec4f(colour.r / 32.0, colour.g / 8.0, 1 - colour.r / 32 - colour.g / 32, 1);
     }
-    if ((gridPos.z < 0.01 || gridPos.z >= 0.99) && abs(pos.z) % 1.0 != 0.5 * evenScale.z) {
+    if ((gridPos.z < 0.01 || gridPos.z > 0.99) && abs(pos.z) % 1.0 != 0.5 * evenScale.z) {
         return vec4f(colour.r / 32.0, colour.g / 8.0, 1 - colour.r / 32 - colour.g / 32, 1);
     }
-    if ((gridPos.y < 0.01 || gridPos.y >= 0.99) && abs(pos.y) % 1.0 != 0.5 * evenScale.y) {
+    if ((gridPos.y < 0.01 || gridPos.y > 0.99) && abs(pos.y) % 1.0 != 0.5 * evenScale.y) {
         return vec4f(colour.r / 32.0, colour.g / 8.0, 1 - colour.r / 32 - colour.g / 32, 1);
     }
     return clear;
