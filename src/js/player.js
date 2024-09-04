@@ -336,6 +336,7 @@ export class Player {
         movement[1] += this.jumpSpeed;
         this.jumpSpeed -= this.gravity;
 
+        this.grounded = false;
         // collision handling
         for (const box of boxes) {
             if (!(box.ghost)) {

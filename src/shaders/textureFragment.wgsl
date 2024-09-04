@@ -30,27 +30,27 @@ fn fragmentMain(fragData: VertexOutput) -> @location(0) vec4f {
     var gridPos = fragData.rawPos;
     var evenScale = vec3f(1, 1, 1);
 
-    if (faceIDs[0].x == 1u && fragData.rawPos.z == 0.5) {
+    if (faceIDs[0].x == 1u && fragData.rawPos.z >= 0.5) {
         // front
         return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), texCol);
     }
-    if (faceIDs[1].x == 1u && fragData.rawPos.z == -0.5) {
+    if (faceIDs[1].x == 1u && fragData.rawPos.z <= -0.5) {
         // back
         return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), texCol);
     }
-    if (faceIDs[2].x == 1u && fragData.rawPos.x == -0.5) {
+    if (faceIDs[2].x == 1u && fragData.rawPos.x <= -0.5) {
         // left
         return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), texCol);
     }
-    if (faceIDs[3].x == 1u && fragData.rawPos.x == 0.5) {
+    if (faceIDs[3].x == 1u && fragData.rawPos.x >= 0.5) {
         // right
         return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), texCol);
     }
-    if (faceIDs[4].x == 1u && fragData.rawPos.y == 0.5) {
+    if (faceIDs[4].x == 1u && fragData.rawPos.y >= 0.5) {
         // top
         return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), texCol);
     }
-    if (faceIDs[5].x == 1u && fragData.rawPos.y == -0.5) {
+    if (faceIDs[5].x == 1u && fragData.rawPos.y <= -0.5) {
         // bottom
         return drawGrid(gridPos, evenScale, abs(fragData.worldPos) + vec3f(0, 0, 8.0), texCol);
     }

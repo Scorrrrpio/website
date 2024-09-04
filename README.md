@@ -6,3 +6,5 @@ working on some cool WebGPU stuff
 - favicon
 - WebGL fallback
 - better animation solution?
+- shader rewrite
+- aim snapping

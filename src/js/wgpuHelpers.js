@@ -1,3 +1,5 @@
+import { AssetLoadError } from "./errors";
+
 export function createPipeline(label, device, bindGroupLayout, vertexShaderModule, vbStrideBytes, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, depthTest, multisamples) {
     const pipelineDescriptor = {
 		label: label,
