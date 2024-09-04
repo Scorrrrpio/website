@@ -55,7 +55,7 @@ export async function fpv() {
     function urlToSpawn() {
         const spawns = {
             "default": {
-                p: [0, 20.001, 0],
+                p: [0, 2.001, 0],
                 r: [0, 0, 0],
             },
             "bio": {
