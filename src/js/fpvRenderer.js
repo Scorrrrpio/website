@@ -5,6 +5,7 @@ import { loadAssets } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
 import { lokiSpin, move, spinY } from "./animations";
+import { createDebugGeometry } from "./collision";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
@@ -20,6 +21,7 @@ export async function fpv() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";
     const MULTISAMPLE = 4;
+    const DEBUG = false;
     // UNIFORM BUFFERS
     // create uniform buffers for MVP matrices
     const viewBuffer = device.createBuffer({
@@ -43,6 +45,10 @@ export async function fpv() {
     const renderables = await loadAssets(
         assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE
     );
+    // Create debug geometry
+    if (DEBUG) {
+        createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, MULTISAMPLE);
+    }
 
     // PLAYER
     // spawn coordinates
@@ -184,8 +190,20 @@ export async function fpv() {
             pass.draw(vertexCount);
         }
 
+        // render debug content
+        if (DEBUG) {
+            for (const {debugPipeline, debugVB, debugBG, debugVertexCount } of renderables) {
+                if (debugVertexCount) {
+                    pass.setPipeline(debugPipeline);
+                    pass.setBindGroup(0, debugBG);
+                    pass.setVertexBuffer(0, debugVB);
+                    pass.draw(debugVertexCount);
+                }
+            }
+        }
+
+        // render HUD
         if (document.pointerLockElement === canvas) {
-            // render HUD
             pass.setPipeline(hud.pipeline);
             pass.setBindGroup(0, hud.bindGroup);
             pass.setVertexBuffer(0, hud.vertexBuffer);
