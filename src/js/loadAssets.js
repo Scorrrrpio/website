@@ -4,51 +4,9 @@ import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
+import { createAABBMesh, transformCollisionMesh } from "./collision";
 
-function createAABB(data) {
-    const xIndex = data.properties.indexOf("x");
-    const yIndex = data.properties.indexOf("y");
-    const zIndex = data.properties.indexOf("z");
-
-    const aabb = {
-        min: [Infinity, Infinity, Infinity],
-        max: [-Infinity, -Infinity, -Infinity],
-    };
-    for (const i in data.floats) {
-        if (i % data.properties.length === xIndex) {
-            if (data.floats[i] < aabb.min[0]) { aabb.min[0] = data.floats[i]; }
-            if (data.floats[i] > aabb.max[0]) { aabb.max[0] = data.floats[i]; }
-        }
-        if (i % data.properties.length === yIndex) {
-            if (data.floats[i] < aabb.min[1]) { aabb.min[1] = data.floats[i]; }
-            if (data.floats[i] > aabb.max[1]) { aabb.max[1] = data.floats[i]; }
-        }
-        if (i % data.properties.length === zIndex) {
-            if (data.floats[i] < aabb.min[2]) { aabb.min[2] = data.floats[i]; }
-            if (data.floats[i] > aabb.max[2]) { aabb.max[2] = data.floats[i]; }
-        }
-    }
-    return aabb;
-}
-
-function transformCollision(mesh, position, rotation, scale, href, ghost) {
-    if (!mesh) return null;
-    const newMesh = {
-        min: [
-            mesh.min[0] * scale[0] + position[0],
-            mesh.min[1] * scale[1] + position[1],
-            mesh.min[2] * scale[2] + position[2],
-        ],
-        max: [
-            mesh.max[0] * scale[0] + position[0],
-            mesh.max[1] * scale[1] + position[1],
-            mesh.max[2] * scale[2] + position[2],
-        ],
-    };
-    newMesh.href = href;
-    newMesh.ghost = ghost;
-    return newMesh;
-}
+// TODO move functions to physics.js
 
 export function createModelMatrix(position, rotation, scale) {
     const model = mat4.create();
@@ -95,7 +53,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         if (asset.collision === "aabb") {
             // TODO other types (sphere, mesh)
             // sphere should be easy: radius to furthest point
-            baseMesh = createAABB(data);
+            baseMesh = createAABBMesh(data);
         }
 
 
@@ -127,7 +85,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             );
 
             // TRANSFORM COLLISION MESH
-            const collisionMesh = transformCollision(baseMesh, instance.p, instance.r, instance.s, instance.href, instance.ghost);
+            const collisionMesh = transformCollisionMesh(baseMesh, model, instance.href, instance.ghost);
 
             // OVERRIDE SHADERS
             let vertexShaderModule = baseVertexShaderModule;
@@ -201,14 +159,6 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                 device.queue.writeBuffer(faceIDsBuffer, 0, faceIDs);
 
                 // OVERRIDE BIND GROUP
-                /*
-                if (texture && sampler) {
-                    BGLDescriptor.entries.push({
-                        binding: 5,
-                        visibility: GPUShaderStage.FRAGMENT,
-                        buffer: { type: "uniform" },
-                    });
-                }*/
                 bindGroupLayout = createBindGroupLayout(
                     device, "Texture Bind Group Layout",
                     "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
@@ -243,7 +193,9 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     topology,
                     cullMode,
                     true,
-                    multisamples),
+                    multisamples
+                ),
+                baseMesh: baseMesh,
                 collisionMesh: collisionMesh,
                 animation: animation,
                 transforms: {

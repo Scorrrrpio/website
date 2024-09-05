@@ -4,7 +4,7 @@ import { Player } from "./player";
 import { loadAssets } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
-import { lokiSpin, spinY } from "./animations";
+import { lokiSpin, move, spinY } from "./animations";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
@@ -43,12 +43,6 @@ export async function fpv() {
     const renderables = await loadAssets(
         assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE
     );
-    
-    const aabbBoxes = [];
-    // TODO not ideal for potentially moving boxes
-    for (const { collisionMesh } of renderables) {
-        if (collisionMesh) { aabbBoxes.push(collisionMesh); }
-    }
 
     // PLAYER
     // spawn coordinates
@@ -128,9 +122,6 @@ export async function fpv() {
 
     // RENDER LOOP
 	function renderLoop() {
-        // update camera
-        player.move(aabbBoxes);
-
         // update animations
         for (const renderable of renderables) {
             switch (renderable.animation) {
@@ -140,8 +131,18 @@ export async function fpv() {
                 case "lokiSpin":
                     lokiSpin(renderable);
                     break;
+                case "move":
+                    //console.log(renderable.collisionMesh);
+                    move(renderable);
+                    //console.log(renderable.collisionMesh);
+                    //console.log("BLOCK");
+                    break;
             }
         }
+
+        // update camera
+        const aabbBoxes = renderables.map(renderable => renderable.collisionMesh);
+        player.move(aabbBoxes);
 
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of renderables) {

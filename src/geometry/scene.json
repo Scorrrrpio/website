@@ -172,6 +172,7 @@
                     "r": [0, 0, 0],
                     "s": [2, 2, 2],
                     "animation": "spinY",
+                    "ghost": "true",
                     "vertexShader": "shaders/cubeVertex.wgsl",
                     "fragmentShader": "shaders/cubeToyFragment.wgsl"
                 },
@@ -188,16 +189,25 @@
                     "fragmentShader": "shaders/textureFragment.wgsl"
                 },
                 {
-                    "p": [-20, 4, 0],
+                    "p": [-32, 4, -8],
                     "r": [0, 0, 0],
-                    "s": [2, 8, 8],
+                    "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
                         "content": "Hello World",
-                        "faces": ["right"]
+                        "faces": ["front"]
                     },
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
+                },
+                {
+                    "p": [-20, 0.5, 0],
+                    "r": [0, 0, 0],
+                    "s": [2, 1, 2],
+                    "animation": "move",
+                    "vertexShader": "shaders/basicVertex.wgsl",
+                    "fragmentShader": "shaders/debugF.wgsl",
+                    "href": "https://x.com/amkoz__"
                 }
             ]
         },

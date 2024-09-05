@@ -233,49 +233,51 @@ export class Player {
         let closestDist = Infinity;
         // TODO review
         for (const box of boxes) {
-            let intersect = true;
+            if (box) {
+                let intersect = true;
 
-            let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
-            let tmax = (box.max[0] - rayOrigin[0]) / rayDirection[0];
+                let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
+                let tmax = (box.max[0] - rayOrigin[0]) / rayDirection[0];
 
-            if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
+                if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
 
-            let tymin, tymax;
-            if (rayDirection[1] !== 0) {
-                tymin = (box.min[1] - rayOrigin[1]) / rayDirection[1];
-                tymax = (box.max[1] - rayOrigin[1]) / rayDirection[1];
+                let tymin, tymax;
+                if (rayDirection[1] !== 0) {
+                    tymin = (box.min[1] - rayOrigin[1]) / rayDirection[1];
+                    tymax = (box.max[1] - rayOrigin[1]) / rayDirection[1];
 
-                if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
-            } else {
-                tymin = -Infinity;
-                tymax = Infinity;
-            }
+                    if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
+                } else {
+                    tymin = -Infinity;
+                    tymax = Infinity;
+                }
 
-            if ((tmin > tymax) || (tymin > tmax)) intersect = false;
+                if ((tmin > tymax) || (tymin > tmax)) intersect = false;
 
-            if (tymin > tmin) tmin = tymin;
-            if (tymax < tmax) tmax = tymax;
+                if (tymin > tmin) tmin = tymin;
+                if (tymax < tmax) tmax = tymax;
 
-            let tzmin, tzmax;
-            if (rayDirection[2] !== 0) {
-                tzmin = (box.min[2] - rayOrigin[2]) / rayDirection[2];
-                tzmax = (box.max[2] - rayOrigin[2]) / rayDirection[2];
+                let tzmin, tzmax;
+                if (rayDirection[2] !== 0) {
+                    tzmin = (box.min[2] - rayOrigin[2]) / rayDirection[2];
+                    tzmax = (box.max[2] - rayOrigin[2]) / rayDirection[2];
 
-                if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
-            } else {
-                tzmin = -Infinity;
-                tzmax = Infinity;
-            }
+                    if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
+                } else {
+                    tzmin = -Infinity;
+                    tzmax = Infinity;
+                }
 
-            if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
+                if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
 
-            if (tzmin > tmin) tmin = tzmin;
-            if (tzmax < tmax) tmax = tzmax;
+                if (tzmin > tmin) tmin = tzmin;
+                if (tzmax < tmax) tmax = tzmax;
 
-            if (intersect) {
-                if (tmin < closestDist) {
-                    closest = box;
-                    closestDist = tmin;
+                if (intersect) {
+                    if (tmin < closestDist) {
+                        closest = box;
+                        closestDist = tmin;
+                    }
                 }
             }
         }
@@ -339,7 +341,7 @@ export class Player {
         this.grounded = false;
         // collision handling
         for (const box of boxes) {
-            if (!(box.ghost)) {
+            if (box && !(box.ghost)) {
                 // predicted position
                 const nextPos = [
                     this.position[0] + movement[0],
