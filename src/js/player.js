@@ -79,14 +79,6 @@ export class Player {
         };
     }
 
-    #checkCollision(box1, box2) {
-        return (
-            box1.min[0] <= box2.max[0] && box1.max[0] >= box2.min[0] &&
-            box1.min[1] < box2.max[1] && box1.max[1] >= box2.min[1] &&
-            box1.min[2] <= box2.max[2] && box1.max[2] >= box2.min[2]
-        );
-    }
-
     enableControls(canvas) {
         const controlsText = document.getElementById("controls");
         // keyboard input
@@ -216,6 +208,14 @@ export class Player {
         });
     }
 
+    #checkCollision(box1, box2) {
+        return (
+            box1.min[0] <= box2.max[0] && box1.max[0] >= box2.min[0] &&
+            box1.min[1] < box2.max[1] && box1.max[1] >= box2.min[1] &&
+            box1.min[2] <= box2.max[2] && box1.max[2] >= box2.min[2]
+        );
+    }
+
     #raycast(boxes) {
         const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
         const forwardY = Math.sin(this.rotation[0]);
@@ -336,7 +336,7 @@ export class Player {
             }
         }
         movement[1] += this.jumpSpeed;
-        this.jumpSpeed -= this.gravity;
+        if (!this.grounded) { this.jumpSpeed -= this.gravity; }
 
         this.grounded = false;
         // collision handling
@@ -386,34 +386,53 @@ export class Player {
     #slide(box1, box2, movement) {
         // faces names are for player but based on world axes
         // x
+        let xCollision = false;
         if (box1.max[0] >= box2.max[0]) {  // left
+            //console.log("LEFT");
             //this.position[0] = box2.max[0] + this.boxRadius;
+            //movement[0] = Math.max(box2.velocity[0], movement[0]);
             movement[0] = Math.max(0, movement[0]);
+            xCollision = true;
         }
         else if (box1.min[0] <= box2.min[0]) {  // right
+            //console.log("RIGHT");
             //this.position[0] = box2.min[0] - this.boxRadius;
+            //movement[0] = Math.min(box2.velocity[0], movement[0]);
             movement[0] = Math.min(0, movement[0]);
+            xCollision = true;
+        }
+        // z
+        let zCollision = false;
+        if (box1.max[2] >= box2.max[2]) {  // front
+            //movement[2] = Math.max(box2.velocity[2], movement[2]);
+            movement[2] = Math.max(0, movement[2]);
+            zCollision = true;
+        }
+        else if (box1.min[2] <= box2.min[2]) {  // back
+            //movement[2] = Math.min(box2.velocity[2], movement[2]);
+            movement[2] = Math.min(0, movement[2]);
+            zCollision = true;
         }
         // y
+        console.log("HERE");
         if (box1.max[1] >= box2.max[1]) {  // bottom
-            if (this.position[1] > box2.max[1]) {
+            if (this.position[1] > box2.max[1]) {  // from above
                 movement[1] = Math.max(0, movement[1]);
                 this.grounded = true;
                 this.jumpSpeed = 0;
             }
+            //movement[1] = Math.max(box2.velocity[1], movement[1]);
+            // X and Z movement
+            //console.log(movement);
+            //movement[0] += Math.min(box2.velocity[0], movement[0]);
+            //movement[2] += box2.velocity[2];
+            //console.log(movement);
         }
         else if (box1.min[1] < box2.min[1]) {  // top
             if (this.position[1] + this.cameraOffset[1] < box2.min[1]) {
                 movement[1] = Math.min(0, movement[1]);
                 this.jumpSpeed = 0;
             }
-        }
-        // z
-        if (box1.max[2] >= box2.max[2]) {  // front
-            movement[2] = Math.max(0, movement[2]);
-        }
-        else if (box1.min[2] <= box2.min[2]) {  // back
-            movement[2] = Math.min(0, movement[2]);
         }
 
         return movement;

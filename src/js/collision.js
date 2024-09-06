@@ -1,7 +1,45 @@
 import { vec3 } from "gl-matrix";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-export function createAABBMesh(data) {
+class Mesh {
+    constructor(type, href, ghost) {
+        this.type = type;  // AABB, OBB, Sphere
+        this.href = href;
+        this.ghost = ghost;
+    }
+
+    static checkCollision(mesh1, mesh2) {
+        if (mesh1.ghost || mesh2.ghost) { return false; }
+    }
+}
+
+export class AABB extends Mesh {
+    constructor(min, max, href, ghost) {
+        super("AABB", href, ghost);
+        this.rawMin = min;
+        this.min = min;
+        this.rawMax = max;
+        this.max = max;
+    }
+
+    modelTransform(model) {
+        console.log(this);
+        this.min = [0, 0, 0];
+        this.max = [0, 0, 0];
+        vec3.transformMat4(this.min, this.rawMin, model);
+        vec3.transformMat4(this.max, this.rawMax, model);
+    }
+}
+
+export class SphereMesh extends Mesh {
+    constructor(origin, radius, href, ghost) {
+        super("SphereMesh", href, ghost);
+        this.origin = origin;
+        this.radius = radius;
+    }
+}
+
+export function vertsToAABB(data) {
     const xIndex = data.properties.indexOf("x");
     const yIndex = data.properties.indexOf("y");
     const zIndex = data.properties.indexOf("z");
@@ -27,7 +65,7 @@ export function createAABBMesh(data) {
     return aabb;
 }
 
-export function transformCollisionMesh(mesh, model, href, ghost) {
+export function transformCollisionMesh(mesh, model, velocity, href, ghost) {
     if (!mesh) return null;
     const newMesh = {
         min: [0, 0, 0],
@@ -35,6 +73,7 @@ export function transformCollisionMesh(mesh, model, href, ghost) {
     };
     vec3.transformMat4(newMesh.min, mesh.min, model);
     vec3.transformMat4(newMesh.max, mesh.max, model);
+    newMesh.velocity = velocity;
     newMesh.href = href;
     newMesh.ghost = ghost;
     return newMesh;
@@ -74,11 +113,6 @@ function aabbToVertices(aabb) {
 }
 
 export async function createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples) {
-    // debugBG
-    // debugPipeline
-    // debugVB
-    // debugVertexCount
-
     // SHADERS
     const debugVShader = await createShaderModule(device, "shaders/basicVertex.wgsl", "DEBUG Vertex Module");
     const debugFShader = await createShaderModule(device, "shaders/debugF.wgsl", "DEBUG Fragment Module");
@@ -87,7 +121,7 @@ export async function createDebugGeometry(renderables, device, format, viewBuffe
     const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
 
     for (const renderable of renderables) {
-        if (renderable.collisionMesh) {
+        if (renderable.collisionMesh && !renderable.collisionMesh.ghost) {
             // generate geometry (line-list)
             const vertexCount = 24;  // 12 edges, 2 vertices each
             const vertices = aabbToVertices(renderable.baseMesh);
@@ -99,7 +133,6 @@ export async function createDebugGeometry(renderables, device, format, viewBuffe
                 usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             });
             device.queue.writeBuffer(vb, 0, vertices);
-            // create vertex buffer atrributes array
             const vbAttributes = createVBAttributes(["x", "y", "z"]);
 
             // BIND GROUP

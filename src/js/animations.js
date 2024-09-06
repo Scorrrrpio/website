@@ -23,8 +23,11 @@ export function lokiSpin(renderable) {
 }
 
 export function move(renderable) {
-    const translationMatrix = mat4.create();
-    mat4.translate(translationMatrix, translationMatrix, [-0.01, 0, 0]);
-    mat4.multiply(renderable.model, renderable.model, translationMatrix);
-    renderable.collisionMesh = transformCollisionMesh(renderable.baseMesh, renderable.model, renderable.collisionMesh.href, renderable.collisionMesh.ghost);
+    /*
+    renderable.transforms.position[0] += renderable.collisionMesh.velocity[0];
+    renderable.transforms.position[1] += renderable.collisionMesh.velocity[1];
+    renderable.transforms.position[2] += renderable.collisionMesh.velocity[2];
+    renderable.model = createModelMatrix(renderable.transforms.position, renderable.transforms.rotation, renderable.transforms.scale);
+    renderable.collisionMesh = transformCollisionMesh(renderable.baseMesh, renderable.model, renderable.collisionMesh.velocity, renderable.collisionMesh.href, renderable.collisionMesh.ghost);
+    */
 }

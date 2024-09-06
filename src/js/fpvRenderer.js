@@ -45,6 +45,8 @@ export async function fpv() {
     const renderables = await loadAssets(
         assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE
     );
+    console.log(renderables);
+    // TODO move into loadAssets
     // Create debug geometry
     if (DEBUG) {
         createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, MULTISAMPLE);
@@ -138,10 +140,7 @@ export async function fpv() {
                     lokiSpin(renderable);
                     break;
                 case "move":
-                    //console.log(renderable.collisionMesh);
                     move(renderable);
-                    //console.log(renderable.collisionMesh);
-                    //console.log("BLOCK");
                     break;
             }
         }

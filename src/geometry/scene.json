@@ -185,6 +185,7 @@
                         "program": "helloTriangle",
                         "faces": ["front", "back", "left", "right"]
                     },
+                    "ghost": true,
                     "vertexShader": "shaders/textureVertex.wgsl",
                     "fragmentShader": "shaders/textureFragment.wgsl"
                 },
@@ -205,6 +206,7 @@
                     "r": [0, 0, 0],
                     "s": [2, 1, 2],
                     "animation": "move",
+                    "v": [0, 0.005, 0],
                     "vertexShader": "shaders/basicVertex.wgsl",
                     "fragmentShader": "shaders/debugF.wgsl",
                     "href": "https://x.com/amkoz__"

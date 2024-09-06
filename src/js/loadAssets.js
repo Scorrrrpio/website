@@ -4,7 +4,7 @@ import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
-import { createAABBMesh, transformCollisionMesh } from "./collision";
+import { AABB, vertsToAABB, transformCollisionMesh } from "./collision";
 
 // TODO move functions to physics.js
 
@@ -48,12 +48,13 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         // shaders from wgsl files
         const baseVertexShaderModule = await createShaderModule(device, asset.vertexShader, "Base Vertex Shader");
         const baseFragmentShaderModule = await createShaderModule(device, asset.fragmentShader, "Base Fragment Shader");
+        
         // collision mesh based on geometry
         let baseMesh;
         if (asset.collision === "aabb") {
+            baseMesh = vertsToAABB(data);
             // TODO other types (sphere, mesh)
             // sphere should be easy: radius to furthest point
-            baseMesh = createAABBMesh(data);
         }
 
 
@@ -85,7 +86,13 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             );
 
             // TRANSFORM COLLISION MESH
-            const collisionMesh = transformCollisionMesh(baseMesh, model, instance.href, instance.ghost);
+            const velocity = instance.v ? instance.v : [0, 0, 0];
+            //const collisionMesh = transformCollisionMesh(baseMesh, model, velocity, instance.href, instance.ghost);
+            let collisionMesh;
+            if (asset.collision === "aabb") {
+                collisionMesh = new AABB(baseMesh.min, baseMesh.max, instance.href, instance.ghost);
+                collisionMesh.modelTransform(model);
+            }
 
             // OVERRIDE SHADERS
             let vertexShaderModule = baseVertexShaderModule;
