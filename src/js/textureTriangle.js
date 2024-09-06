@@ -1,8 +1,7 @@
 // imports
 import { lerpVector } from "./lerp";
-import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
+import { createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-// TODO reconcile format
 export async function textureTriangle(texture, device, format) {
 	// GEOMETRY
 	const vertices = new Float32Array([
@@ -40,11 +39,6 @@ export async function textureTriangle(texture, device, format) {
 	device.queue.writeBuffer(vertexBuffer, 0, vertices);
 	const vbAttributes = createVBAttributes(["x", "y", "r", "g", "b", "a"]);
 
-	// BIND GROUP
-	// TODO pointless
-	const BGL = createBindGroupLayout(device, "Hello Triangle Texture BGL");
-	const BG = createBindGroup(device, "hello Triangle BG", BGL);
-
 
 	// SHADERS
 	const vertexModule = await createShaderModule(device, "shaders/helloTriangleV.wgsl", "Hello Triangle Vertex");
@@ -54,7 +48,7 @@ export async function textureTriangle(texture, device, format) {
 	const pipeline = createPipeline(
 		"Hello Triangle Texture Pipeline",
 		device,
-		BGL,
+		"auto",
 		vertexModule,
 		6,
 		vbAttributes,
@@ -74,7 +68,7 @@ export async function textureTriangle(texture, device, format) {
 		frames %= 1800;
 		if (frames < 600) {
 			// RBG to BRG
-			lerpVector(vertices, triangleRBG, triangleBGR, frames / 600);  // normalize
+			lerpVector(vertices, triangleRBG, triangleBGR, frames / 600);
 		}
 		else if (frames < 1200) {
 			// BGR to GBR
@@ -103,7 +97,6 @@ export async function textureTriangle(texture, device, format) {
 		// render triangle
 		pass.setPipeline(pipeline);
 		pass.setVertexBuffer(0, vertexBuffer);
-		pass.setBindGroup(0, BG);
 		pass.draw(vertices.length / 6);  // 3 vertices
 
 		// end render pass

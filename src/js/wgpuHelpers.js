@@ -3,7 +3,7 @@ import { AssetLoadError } from "./errors";
 export function createPipeline(label, device, bindGroupLayout, vertexShaderModule, vbStrideBytes, vertexBufferAttributes, fragmentShaderModule, format, topology, cullMode, depthTest, multisamples) {
     const pipelineDescriptor = {
 		label: label,
-		layout: device.createPipelineLayout({
+		layout: bindGroupLayout === "auto" ? "auto" : device.createPipelineLayout({
             label: label + " Layout",
             bindGroupLayouts: [bindGroupLayout],
         }),
@@ -54,7 +54,7 @@ export function createPipeline(label, device, bindGroupLayout, vertexShaderModul
     return device.createRenderPipeline(pipelineDescriptor);
 }
 
-// TODO not reusable
+// TODO this sucks!
 export function createBindGroupLayout(device, label, ...entries) {
     const BGLDescriptor = {
         label: label,

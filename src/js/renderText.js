@@ -1,7 +1,6 @@
 import { AssetLoadError } from "./errors";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-// TODO reconcile formats
 export async function textToTexture(outputTexture, device, format, text) {
     // CONSTANTS
     // TODO as parameters
@@ -105,23 +104,7 @@ export async function textToTexture(outputTexture, device, format, text) {
 
 
     // BIND GROUP and LAYOUT
-    // TODO rewrite createBindGroup
-    const BGL = device.createBindGroupLayout({
-        label: "Text BGL",
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture: { sampleType: "float" },
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { type: "filtering" },
-            },
-        ],
-    });
-
+    const BGL = createBindGroupLayout(device, "Text BGL", "texture", "sampler");
     const BG = createBindGroup(device, "Text Bind Group", BGL, texture.createView(), sampler);
 
 

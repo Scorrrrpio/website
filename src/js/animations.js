@@ -1,5 +1,4 @@
 import { createModelMatrix } from "./loadAssets";
-import { mat4 } from "gl-matrix";
 
 export function spinY(renderable) {
     renderable.transforms.rotation[1] += 0.02;

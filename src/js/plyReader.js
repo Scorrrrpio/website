@@ -102,25 +102,3 @@ export async function plyToTriangleList(url) {
     }
     return vertices;
 }
-
-// TODO overhaul?
-export async function plyToLineList(url) {
-    const data = await readPly(url, "line-list");
-    // generate Float32Array
-    const floatVerts = new Float32Array(data.topologyVerts * 3);
-    let vIndex = 0;
-    for (const face of data.faces) {
-        for (let i = 0; i < face.length; i++) {
-            // v0
-            floatVerts[vIndex++] = data.x[face[i]];
-            floatVerts[vIndex++] = data.y[face[i]];
-            floatVerts[vIndex++] = data.z[face[i]];
-            // v1
-            floatVerts[vIndex++] = data.x[face[(i+1) % face.length]];
-            floatVerts[vIndex++] = data.y[face[(i+1) % face.length]];
-            floatVerts[vIndex++] = data.z[face[(i+1) % face.length]];
-        }
-    }
-    data.vertFloats = floatVerts;
-    return data;
-}

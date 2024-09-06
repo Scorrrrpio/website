@@ -25,7 +25,6 @@ export async function generateHUD(device, format, projectionBuffer, multisamples
     const hudFragmentModule = await createShaderModule(device, "shaders/hudF.wgsl", "HUD Fragment");
 
     // bind group
-    // TODO use helper for BGL
     const hudBGL = createBindGroupLayout(device, "HUD BGL", { visibility: GPUShaderStage.VERTEX, buffer: {type: "uniform"}});
     const hudBG = createBindGroup(device, "HUD Bind Group", hudBGL, { buffer: projectionBuffer });
 

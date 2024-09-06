@@ -57,6 +57,7 @@ export class AABB extends Collider {
         this.max[2] += vector[2];
     }
 
+    // TODO this either doesn't work or is pointless (choose)
     tryMove(vector, boxes) {
         const projected = new AABB(this.min, this.max, this.href, this.ghost, this.velocity);
 

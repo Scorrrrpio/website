@@ -103,7 +103,6 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
 
             // TEXTURE
             if (instance.texture) {
-                // TODO I don't understand textures well enough to compress this code
                 let texture;
                 if (instance.texture.url) {
                     // image texture
