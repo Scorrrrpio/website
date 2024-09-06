@@ -4,9 +4,7 @@ import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
-import { AABB, vertsToAABB, transformCollisionMesh } from "./collision";
-
-// TODO move functions to physics.js
+import { AABB } from "./collision";
 
 export function createModelMatrix(position, rotation, scale) {
     const model = mat4.create();
@@ -35,7 +33,7 @@ async function loadImageToBMP(url) {
     return await createImageBitmap(img);
 }
 
-export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples) {
+export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
     // BIND GROUP LAYOUT
     const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
 
@@ -52,7 +50,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         // collision mesh based on geometry
         let baseMesh;
         if (asset.collision === "aabb") {
-            baseMesh = vertsToAABB(data);
+            baseMesh = AABB.vertsToAABB(data);
             // TODO other types (sphere, mesh)
             // sphere should be easy: radius to furthest point
         }
@@ -86,8 +84,6 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             );
 
             // TRANSFORM COLLISION MESH
-            const velocity = instance.v ? instance.v : [0, 0, 0];
-            //const collisionMesh = transformCollisionMesh(baseMesh, model, velocity, instance.href, instance.ghost);
             let collisionMesh;
             if (asset.collision === "aabb") {
                 collisionMesh = new AABB(baseMesh.min, baseMesh.max, instance.href, instance.ghost, instance.v);
@@ -214,5 +210,61 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         }
     }
 
+    // create debug geometry
+    if (debug) {
+        createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples);
+    }
+
     return renderables;
+}
+
+async function createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples) {
+    // SHADERS
+    const debugVShader = await createShaderModule(device, "shaders/basicVertex.wgsl", "DEBUG Vertex Module");
+    const debugFShader = await createShaderModule(device, "shaders/debugF.wgsl", "DEBUG Fragment Module");
+
+    // BGL
+    const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
+
+    for (const renderable of renderables) {
+        if (renderable.collisionMesh && !renderable.collisionMesh.ghost) {
+            // generate geometry (line-list)
+            const vertexCount = 24;  // 12 edges, 2 vertices each
+            const vertices = renderable.collisionMesh.toVertices();
+            
+            // VERTEX BUFFER
+            const vb = device.createBuffer({
+                label: "DEBUG VB",
+                size: vertices.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
+            device.queue.writeBuffer(vb, 0, vertices);
+            const vbAttributes = createVBAttributes(["x", "y", "z"]);
+
+            // BIND GROUP
+            const bg = createBindGroup(device, "DEBUG Bind Group", debugBGL, {buffer: renderable.modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer});
+
+            // PIPELINE
+            const pipeline = createPipeline(
+                "DEBUG Pipeline",
+                device,
+                debugBGL,
+                debugVShader,
+                3,
+                vbAttributes,
+                debugFShader,
+                format,
+                "line-list",
+                "none",
+                true,
+                multisamples
+            );
+
+            // add debug utilities to renderable object
+            renderable.debugVertexCount = vertexCount;
+            renderable.debugVB = vb;
+            renderable.debugBG = bg;
+            renderable.debugPipeline = pipeline;
+        }
+    }
 }

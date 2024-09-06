@@ -5,10 +5,15 @@ import { loadAssets } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
 import { lokiSpin, move, spinY } from "./animations";
-import { createDebugGeometry } from "./collision";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
+    // CONSTANTS
+    const TOPOLOGY = "triangle-list";
+    const MULTISAMPLE = 4;
+    const DEBUG = false;
+
+
     // WEBGPU SETUP
 	const canvas = document.querySelector("canvas");
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -18,10 +23,6 @@ export async function fpv() {
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
-    // CONSTANTS
-    const TOPOLOGY = "triangle-list";
-    const MULTISAMPLE = 4;
-    const DEBUG = false;
     // UNIFORM BUFFERS
     // create uniform buffers for MVP matrices
     const viewBuffer = device.createBuffer({
@@ -43,14 +44,8 @@ export async function fpv() {
     const assets = await assetsResponse.json();
     // TODO what if objects are added at runtime?
     const renderables = await loadAssets(
-        assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE
+        assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE, DEBUG
     );
-
-    // TODO move into loadAssets
-    // Create debug geometry
-    if (DEBUG) {
-        createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, MULTISAMPLE);
-    }
 
     // PLAYER
     // spawn coordinates
