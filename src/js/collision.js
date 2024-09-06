@@ -7,7 +7,7 @@ class Collider {
         this.verts = verts;
         this.href = href;
         this.ghost = ghost;
-        this.velocity = velocity;
+        this.velocity = velocity;  // TODO why?
     }
 
     translate(pos) {
@@ -18,6 +18,7 @@ class Collider {
         }
     }
 
+    // TODO check within subclasses non-static
     static checkCollision(mesh1, mesh2) {
         if (!mesh1 || !mesh2) { return false; }
         if (mesh1.ghost || mesh2.ghost) { return false; }
@@ -39,6 +40,7 @@ export class AABB extends Collider {
         this.max = max;
     }
 
+    // TODO no rotation
     modelTransform(model) {
         this.min = [0, 0, 0];
         this.max = [0, 0, 0];
@@ -46,15 +48,106 @@ export class AABB extends Collider {
         vec3.transformMat4(this.max, this.verts[1], model);
     }
 
-    translate(pos) {
-        this.min[0] += pos[0];
-        this.min[1] += pos[1];
-        this.min[2] += pos[2];
-        this.max[0] += pos[0];
-        this.max[1] += pos[1];
-        this.max[2] += pos[2];
+    translate(vector) {
+        this.min[0] += vector[0];
+        this.min[1] += vector[1];
+        this.min[2] += vector[2];
+        this.max[0] += vector[0];
+        this.max[1] += vector[1];
+        this.max[2] += vector[2];
     }
-    
+
+    yZero() {
+        if (this.min[1] < 0) {
+            this.max[1] -= this.min[1];
+            this.min[1] = 0;
+        }
+    }
+
+    tryMove(vector, boxes) {
+        const projected = new AABB(this.min, this.max, this.href, this.ghost, this.velocity);
+
+        for (const box of boxes) {  // TODO optimize (octree, etc.)
+            projected.translate(vector);  // proposed AABB position
+
+            // check collision
+            if (AABB.checkCollision(projected, box)) {
+                console.log("COLLISION DETECTED");
+                console.log(this.min);
+                // slide
+                vector = projected.#slide(vector, box);
+            }
+        }
+        this.translate(vector);
+        return vector;
+    }
+
+    #slide(vector, box) {
+        // y
+        if (this.max[1] >= box.max[1]) {  // bottom
+            //if (this.position[1] > box.max[1]) {  // from above
+                vector[1] = Math.max(0, vector[1]);
+            //}
+        }
+        else if (this.min[1] < box.min[1]) {  // top
+            //if (this.position[1] + this.cameraOffset[1] < box.min[1]) {
+                vector[1] = Math.min(0, vector[1]);
+            //}
+        }
+        // x
+        if (this.max[0] >= box.max[0]) {  // left
+            //vector[0] = Math.max(box.velocity[0], vector[0]);
+            vector[0] = Math.max(0, vector[0]);
+        }
+        else if (this.min[0] <= box.min[0]) {  // right
+            //vector[0] = Math.min(box.velocity[0], vector[0]);
+            vector[0] = Math.min(0, vector[0]);
+        }
+        // z
+        if (this.max[2] >= box.max[2]) {  // front
+            //vector[2] = Math.max(box.velocity[2], vector[2]);
+            vector[2] = Math.max(0, vector[2]);
+        }
+        else if (this.min[2] <= box.min[2]) {  // back
+            //vector[2] = Math.min(box.velocity[2], vector[2]);
+            vector[2] = Math.min(0, vector[2]);
+        }
+
+        return vector;
+    }
+
+    toVertices() {
+        const vertices = new Float32Array(72);
+        let vIndex = 0;
+        // face 1
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        // face 2
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        // connectors
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        return vertices;
+    }
 }
 
 export class SphereMesh extends Collider {
@@ -96,39 +189,7 @@ export function vertsToAABB(data) {
     return aabb;
 }
 
-function aabbToVertices(aabb) {
-    const vertices = new Float32Array(72);
-    let vIndex = 0;
-    // face 1
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.min[2];
-    // face 2
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.min[2];
-    // connectors
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.min[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.min[2];
-    vertices[vIndex++] = aabb.min[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.max[2];
-    vertices[vIndex++] = aabb.max[0]; vertices[vIndex++] = aabb.max[1]; vertices[vIndex++] = aabb.max[2];
-    return vertices;
-}
-
+// TODO move to loadAssets
 export async function createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples) {
     // SHADERS
     const debugVShader = await createShaderModule(device, "shaders/basicVertex.wgsl", "DEBUG Vertex Module");
@@ -141,7 +202,7 @@ export async function createDebugGeometry(renderables, device, format, viewBuffe
         if (renderable.collisionMesh && !renderable.collisionMesh.ghost) {
             // generate geometry (line-list)
             const vertexCount = 24;  // 12 edges, 2 vertices each
-            const vertices = aabbToVertices(renderable.baseMesh);
+            const vertices = renderable.collisionMesh.toVertices();
             
             // VERTEX BUFFER
             const vb = device.createBuffer({
