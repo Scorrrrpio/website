@@ -45,6 +45,7 @@ export async function fpv() {
     const renderables = await loadAssets(
         assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE
     );
+
     // TODO move into loadAssets
     // Create debug geometry
     if (DEBUG) {

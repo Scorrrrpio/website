@@ -1,40 +1,72 @@
 import { vec3 } from "gl-matrix";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-class Mesh {
-    constructor(type, href, ghost) {
+class Collider {
+    constructor(type, verts, href = null, ghost = false, velocity = [0, 0, 0]) {
         this.type = type;  // AABB, OBB, Sphere
+        this.verts = verts;
         this.href = href;
         this.ghost = ghost;
+        this.velocity = velocity;
+    }
+
+    translate(pos) {
+        for (const i in verts) {
+            verts[i][0] += pos[0];
+            verts[i][1] += pos[1];
+            verts[i][2] += pos[2];
+        }
     }
 
     static checkCollision(mesh1, mesh2) {
+        if (!mesh1 || !mesh2) { return false; }
         if (mesh1.ghost || mesh2.ghost) { return false; }
+        if (mesh1.type === "AABB" && mesh2.type === "AABB") {
+            // AABB and AABB
+            return (
+                mesh1.min[0] <= mesh2.max[0] && mesh1.max[0] >= mesh2.min[0] &&
+                mesh1.min[1] <= mesh2.max[1] && mesh1.max[1] >= mesh2.min[1] &&
+                mesh1.min[2] <= mesh2.max[2] && mesh1.max[2] >= mesh2.min[2]
+            );
+        }
     }
 }
 
-export class AABB extends Mesh {
-    constructor(min, max, href, ghost) {
-        super("AABB", href, ghost);
-        this.rawMin = min;
+export class AABB extends Collider {
+    constructor(min, max, href, ghost, velocity) {
+        super("AABB", [min, max], href, ghost, velocity);
         this.min = min;
-        this.rawMax = max;
         this.max = max;
     }
 
     modelTransform(model) {
         this.min = [0, 0, 0];
         this.max = [0, 0, 0];
-        vec3.transformMat4(this.min, this.rawMin, model);
-        vec3.transformMat4(this.max, this.rawMax, model);
+        vec3.transformMat4(this.min, this.verts[0], model);
+        vec3.transformMat4(this.max, this.verts[1], model);
     }
+
+    translate(pos) {
+        this.min[0] += pos[0];
+        this.min[1] += pos[1];
+        this.min[2] += pos[2];
+        this.max[0] += pos[0];
+        this.max[1] += pos[1];
+        this.max[2] += pos[2];
+    }
+    
 }
 
-export class SphereMesh extends Mesh {
-    constructor(origin, radius, href, ghost) {
-        super("SphereMesh", href, ghost);
+export class SphereMesh extends Collider {
+    constructor(origin, radius, href, ghost, velocity) {
+        super("SphereMesh", [origin], href, ghost, velocity);
         this.origin = origin;
         this.radius = radius;
+    }
+
+    modelTransform(model) {
+        this.origin = [0, 0, 0];
+        vec3.transformMat4(this.origin, this.verts[0], model);
     }
 }
 

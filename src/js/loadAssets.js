@@ -90,7 +90,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             //const collisionMesh = transformCollisionMesh(baseMesh, model, velocity, instance.href, instance.ghost);
             let collisionMesh;
             if (asset.collision === "aabb") {
-                collisionMesh = new AABB(baseMesh.min, baseMesh.max, instance.href, instance.ghost);
+                collisionMesh = new AABB(baseMesh.min, baseMesh.max, instance.href, instance.ghost, instance.v);
                 collisionMesh.modelTransform(model);
             }
 

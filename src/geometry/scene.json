@@ -206,7 +206,7 @@
                     "r": [0, 0, 0],
                     "s": [2, 1, 2],
                     "animation": "move",
-                    "v": [0, 0.005, 0],
+                    "v": [-0.01, 0, 0],
                     "vertexShader": "shaders/basicVertex.wgsl",
                     "fragmentShader": "shaders/debugF.wgsl",
                     "href": "https://x.com/amkoz__"

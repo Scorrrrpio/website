@@ -211,14 +211,6 @@ export class Player {
         });
     }
 
-    #checkCollision(box1, box2) {
-        return (
-            box1.min[0] <= box2.max[0] && box1.max[0] >= box2.min[0] &&
-            box1.min[1] < box2.max[1] && box1.max[1] >= box2.min[1] &&
-            box1.min[2] <= box2.max[2] && box1.max[2] >= box2.min[2]
-        );
-    }
-
     #raycast(boxes) {
         const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
         const forwardY = Math.sin(this.rotation[0]);
@@ -340,32 +332,32 @@ export class Player {
         }
         movement[1] += this.jumpSpeed;
         if (!this.grounded) { this.jumpSpeed -= this.gravity; }
-
         this.grounded = false;
+
+        // predicted position
+        const nextPos = [
+            this.position[0] + movement[0],
+            this.position[1] + movement[1],
+            this.position[2] + movement[2],
+        ];
+
+        // projected AABB after move
+        const { min, max } = this.#generateAABB(nextPos);
+        const nextAABB = new AABB(min, max);
+
         // collision handling
         for (const box of boxes) {
-            if (box && !(box.ghost)) {
-                // predicted position
-                const nextPos = [
-                    this.position[0] + movement[0],
-                    this.position[1] + movement[1],
-                    this.position[2] + movement[2],
-                ];
-
-                // AABB next frame
-                const { min, max } = this.#generateAABB(nextPos);
-                const nextAABB = new AABB(min, max);
-
-                if (this.#checkCollision(nextAABB, box)) {
-                    // modify movement
-                    movement = this.#slide(nextAABB, box, movement);
-                }
+            if (AABB.checkCollision(nextAABB, box)) {
+                // modify movement
+                movement = this.#slide(nextAABB, box, movement);
             }
         }
 
+        // actually move
         this.position[0] += movement[0];
         this.position[1] += movement[1];
         this.position[2] += movement[2];
+        this.aabb.translate(movement);
 
         // absolute floor
         this.position[1] = Math.max(0, this.position[1]);  // floor
