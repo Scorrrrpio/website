@@ -1,7 +1,6 @@
 import { vec3 } from "gl-matrix";
-import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-class Collider {
+class Collider {  // TODO why?
     constructor(type, verts, href = null, ghost = false, velocity = [0, 0, 0]) {
         this.type = type;  // AABB, OBB, Sphere
         this.verts = verts;
@@ -56,60 +55,7 @@ export class AABB extends Collider {
         this.max[1] += vector[1];
         this.max[2] += vector[2];
     }
-
-    // TODO this either doesn't work or is pointless (choose)
-    tryMove(vector, boxes) {
-        const projected = new AABB(this.min, this.max, this.href, this.ghost, this.velocity);
-
-        for (const box of boxes) {  // TODO optimize (octree, etc.)
-            projected.translate(vector);  // proposed AABB position
-
-            // check collision
-            if (AABB.checkCollision(projected, box)) {
-                console.log("COLLISION DETECTED");
-                console.log(this.min);
-                // slide
-                vector = projected.#slide(vector, box);
-            }
-        }
-        this.translate(vector);
-        return vector;
-    }
-
-    #slide(vector, box) {
-        // y
-        if (this.max[1] >= box.max[1]) {  // bottom
-            //if (this.position[1] > box.max[1]) {  // from above
-                vector[1] = Math.max(0, vector[1]);
-            //}
-        }
-        else if (this.min[1] < box.min[1]) {  // top
-            //if (this.position[1] + this.cameraOffset[1] < box.min[1]) {
-                vector[1] = Math.min(0, vector[1]);
-            //}
-        }
-        // x
-        if (this.max[0] >= box.max[0]) {  // left
-            //vector[0] = Math.max(box.velocity[0], vector[0]);
-            vector[0] = Math.max(0, vector[0]);
-        }
-        else if (this.min[0] <= box.min[0]) {  // right
-            //vector[0] = Math.min(box.velocity[0], vector[0]);
-            vector[0] = Math.min(0, vector[0]);
-        }
-        // z
-        if (this.max[2] >= box.max[2]) {  // front
-            //vector[2] = Math.max(box.velocity[2], vector[2]);
-            vector[2] = Math.max(0, vector[2]);
-        }
-        else if (this.min[2] <= box.min[2]) {  // back
-            //vector[2] = Math.min(box.velocity[2], vector[2]);
-            vector[2] = Math.min(0, vector[2]);
-        }
-
-        return vector;
-    }
-
+    
     toVertices() {
         const vertices = new Float32Array(72);
         let vIndex = 0;

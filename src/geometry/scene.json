@@ -291,6 +291,42 @@
             ]
         },
         {
+            "file": "geometry/gateway.ply",
+            "vertexShader": "shaders/cubeVertex.wgsl",
+            "fragmentShader": "shaders/gatewayF.wgsl",
+            "collision": "none",
+            "instances": [
+                {
+                    "p": [0, 0, 176],
+                    "r": [0, 0, 0],
+                    "s": [1, 1, 16]
+                }
+            ]
+        },
+        {
+            "file": "geometry/cube.ply",
+            "vertexShader": "shaders/basicVertex.wgsl",
+            "fragmentShader": "shaders/invisibleF.wgsl",
+            "collision": "aabb",
+            "instances": [
+                {
+                    "p": [0, 8, 128],
+                    "r": [0, 0, 0],
+                    "s": [32, 16, 2]
+                },
+                {
+                    "p": [-11.5, 8, 176],
+                    "r": [0, 0, 0],
+                    "s": [9, 16, 128]
+                },
+                {
+                    "p": [11.5, 8, 176],
+                    "r": [0, 0, 0],
+                    "s": [9, 16, 128]
+                }
+            ]
+        },
+        {
             "file": "geometry/lokiSphere.ply",
             "vertexShader": "shaders/sphereVertex.wgsl",
             "fragmentShader": "shaders/sphereFragment.wgsl",
