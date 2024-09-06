@@ -6,7 +6,7 @@ working on some cool WebGPU stuff
 - camera snapping
 - text wrapping
 - PHYSICS OVERHAUL
-    - AABBs to OBBs / more collision mesh classes?
+    - AABBs to OBBs / more collision mesh classes? (WIP)
     - account for multiple moving objects
 - give player model matrix + model
 - add objects to scene at runtime

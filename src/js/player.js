@@ -1,4 +1,5 @@
 import { Camera } from "./camera";
+import { AABB } from "./collision";
 
 function normalizeXZ(v, speed) {
     const magnitude = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
@@ -61,7 +62,9 @@ export class Player {
         this.pov = new Camera(canvas.width / canvas.height);  // default fov, near plane, far plane
         this.position = position;
         this.rotation = rotation;
-        this.#generateAABB(position);
+        // AABB
+        const { min, max } = this.#generateAABB(position);
+        this.aabb = new AABB(min, max);
     }
 
     #generateAABB(pos) {
@@ -349,12 +352,13 @@ export class Player {
                     this.position[2] + movement[2],
                 ];
 
-                // update AABB
-                const aabb = this.#generateAABB(nextPos);
+                // AABB next frame
+                const { min, max } = this.#generateAABB(nextPos);
+                const nextAABB = new AABB(min, max);
 
-                if (this.#checkCollision(aabb, box)) {
+                if (this.#checkCollision(nextAABB, box)) {
                     // modify movement
-                    movement = this.#slide(aabb, box, movement);
+                    movement = this.#slide(nextAABB, box, movement);
                 }
             }
         }
@@ -385,54 +389,37 @@ export class Player {
 
     #slide(box1, box2, movement) {
         // faces names are for player but based on world axes
-        // x
-        let xCollision = false;
-        if (box1.max[0] >= box2.max[0]) {  // left
-            //console.log("LEFT");
-            //this.position[0] = box2.max[0] + this.boxRadius;
-            //movement[0] = Math.max(box2.velocity[0], movement[0]);
-            movement[0] = Math.max(0, movement[0]);
-            xCollision = true;
-        }
-        else if (box1.min[0] <= box2.min[0]) {  // right
-            //console.log("RIGHT");
-            //this.position[0] = box2.min[0] - this.boxRadius;
-            //movement[0] = Math.min(box2.velocity[0], movement[0]);
-            movement[0] = Math.min(0, movement[0]);
-            xCollision = true;
-        }
-        // z
-        let zCollision = false;
-        if (box1.max[2] >= box2.max[2]) {  // front
-            //movement[2] = Math.max(box2.velocity[2], movement[2]);
-            movement[2] = Math.max(0, movement[2]);
-            zCollision = true;
-        }
-        else if (box1.min[2] <= box2.min[2]) {  // back
-            //movement[2] = Math.min(box2.velocity[2], movement[2]);
-            movement[2] = Math.min(0, movement[2]);
-            zCollision = true;
-        }
         // y
-        console.log("HERE");
         if (box1.max[1] >= box2.max[1]) {  // bottom
             if (this.position[1] > box2.max[1]) {  // from above
                 movement[1] = Math.max(0, movement[1]);
                 this.grounded = true;
                 this.jumpSpeed = 0;
             }
-            //movement[1] = Math.max(box2.velocity[1], movement[1]);
-            // X and Z movement
-            //console.log(movement);
-            //movement[0] += Math.min(box2.velocity[0], movement[0]);
-            //movement[2] += box2.velocity[2];
-            //console.log(movement);
         }
         else if (box1.min[1] < box2.min[1]) {  // top
             if (this.position[1] + this.cameraOffset[1] < box2.min[1]) {
                 movement[1] = Math.min(0, movement[1]);
                 this.jumpSpeed = 0;
             }
+        }
+        // x
+        if (box1.max[0] >= box2.max[0]) {  // left
+            //movement[0] = Math.max(box2.velocity[0], movement[0]);
+            movement[0] = Math.max(0, movement[0]);
+        }
+        else if (box1.min[0] <= box2.min[0]) {  // right
+            //movement[0] = Math.min(box2.velocity[0], movement[0]);
+            movement[0] = Math.min(0, movement[0]);
+        }
+        // z
+        if (box1.max[2] >= box2.max[2]) {  // front
+            //movement[2] = Math.max(box2.velocity[2], movement[2]);
+            movement[2] = Math.max(0, movement[2]);
+        }
+        else if (box1.min[2] <= box2.min[2]) {  // back
+            //movement[2] = Math.min(box2.velocity[2], movement[2]);
+            movement[2] = Math.min(0, movement[2]);
         }
 
         return movement;

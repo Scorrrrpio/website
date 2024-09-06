@@ -23,7 +23,6 @@ export class AABB extends Mesh {
     }
 
     modelTransform(model) {
-        console.log(this);
         this.min = [0, 0, 0];
         this.max = [0, 0, 0];
         vec3.transformMat4(this.min, this.rawMin, model);
@@ -63,20 +62,6 @@ export function vertsToAABB(data) {
         }
     }
     return aabb;
-}
-
-export function transformCollisionMesh(mesh, model, velocity, href, ghost) {
-    if (!mesh) return null;
-    const newMesh = {
-        min: [0, 0, 0],
-        max: [0, 0, 0],
-    };
-    vec3.transformMat4(newMesh.min, mesh.min, model);
-    vec3.transformMat4(newMesh.max, mesh.max, model);
-    newMesh.velocity = velocity;
-    newMesh.href = href;
-    newMesh.ghost = ghost;
-    return newMesh;
 }
 
 function aabbToVertices(aabb) {
@@ -138,7 +123,6 @@ export async function createDebugGeometry(renderables, device, format, viewBuffe
             // BIND GROUP
             const bg = createBindGroup(device, "DEBUG Bind Group", debugBGL, {buffer: renderable.modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer});
 
-            console
             // PIPELINE
             const pipeline = createPipeline(
                 "DEBUG Pipeline",

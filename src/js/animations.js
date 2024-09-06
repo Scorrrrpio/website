@@ -1,5 +1,4 @@
 import { createModelMatrix } from "./loadAssets";
-import { transformCollisionMesh } from "./collision";
 import { mat4 } from "gl-matrix";
 
 export function spinY(renderable) {
