@@ -13,4 +13,7 @@ working on some cool WebGPU stuff
 - holdable objects
 - favicon
 - improve unavailable WebGPU text
-- better animation solution?
+- better animation solution? (functions)
+
+# NOTES
+- blender cube .ply export: Forward Y, Up Z
