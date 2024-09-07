@@ -9,7 +9,7 @@ function readPlyHeader(lines) {
     metadata.elements = [];
 
     let dataStart = 0;
-    let element;
+    let elem = -1;
     for (const line of lines) {
         dataStart++;
         if (line === "end_header") { break; }
@@ -19,16 +19,16 @@ function readPlyHeader(lines) {
             metadata.formatVersion = parts[2];
         }
         else if (parts[0] === "element") {
-            metadata.elements[parts[1]] = {
+            metadata.elements.push({
+                name: parts[1],
                 count: Number(parts[2]),
                 properties: [],
-            };
-            element = parts[1];
+            });
+            elem++;
         }
         else if (parts[0] === "property") {
             if (parts[1] === "list") {
-                // TODO handle list
-                metadata.elements[element].properties.push({
+                metadata.elements[elem].properties.push({
                     type: parts[1],
                     countType: parts[2],
                     listType: parts[3],
@@ -36,7 +36,7 @@ function readPlyHeader(lines) {
                 });
             }
             else {
-                metadata.elements[element].properties.push({
+                metadata.elements[elem].properties.push({
                     name: parts[2],
                     type: parts[1],
                 });
@@ -51,29 +51,64 @@ function readASCII(lines, metadata) {
     const data = {};
 
     let i = metadata.dataStart;
-    for (const element in metadata.elements) {
-        data[element] = [];
-        for (let j = 0; j < metadata.elements[element].count; j++) {
-            if (metadata.elements[element].properties[0].type === "list") {
+    for (const element of metadata.elements) {
+        data[element.name] = [];
+        for (let j = 0; j < element.count; j++) {
+            if (element.properties[0].type === "list") {
                 const parts = lines[i+j].split(" ");
-                data[element].push(parts.slice(1, parts[0] + 1));
+                data[element.name].push(parts.slice(1, parts[0] + 1));
             }
             else {
-                data[element].push(lines[i+j].split(" "));
+                data[element.name].push(lines[i+j].split(" "));
             }
         }
-        i += metadata.elements[element].count;
+        i += element.count;
     }
 
     return data;
 }
 
-function readBinary(lines, metadata) {}  // TODO
+function readBinary(buffer, metadata) {
+    const littleEndian = metadata.format === "binary_little_endian";
+    const view = new DataView(buffer);
+    const data = {};
+
+    let offset = 0;
+    for (const element of metadata.elements) {
+        data[element.name] = [];
+        for (let i = 0; i < element.count; i++) {
+            const instance = [];
+            for (const property of element.properties) {
+                // TODO handle types
+                if (property.type === "list") {
+                    const count = view.getUint8(offset, littleEndian);
+                    offset += 1;
+                    for (let j = 0; j < count; j++) {
+                        instance.push(
+                            view.getUint32(offset, littleEndian)
+                        );
+                        offset += 4;
+                    }
+                }
+                else {
+                    instance.push(
+                        view.getFloat32(offset, littleEndian)
+                    );
+                    offset += 4;
+                }
+            }
+            data[element.name].push(instance);
+        }
+    }
+
+    return data;
+}
 
 async function readPly(url) {
     // fetch ply file from server;
     const response = await fetch(url);
-    const text = await response.text();
+    const buffer = await response.arrayBuffer();
+    const text = new TextDecoder().decode(buffer);
 
     // separate into lines
     const lines = text.split("\n");
@@ -83,11 +118,17 @@ async function readPly(url) {
 
     // read data
     let data;
-    if (metadata.format === "ascii") {
-        data = readASCII(lines, metadata);
+    if (metadata.format === "ascii") { data = readASCII(lines, metadata); }
+    else if (metadata.format === "binary_little_endian" || metadata.format === "binary_big_endian") {
+        // TODO BIG REVIEW
+        const endHeaderIndex = text.indexOf("end_header") + "end_header".length;
+        const afterHeader = text.slice(endHeaderIndex).match(/^\r?\n/);
+        const binaryStart = endHeaderIndex + (afterHeader ? afterHeader[0].length : 0);
+
+        //const binaryStart = new TextEncoder().encode(lines.slice(0, metadata.dataStart).join("\n")).length;
+        //metadata.binaryStart = binaryStart;
+        data = readBinary(buffer.slice(binaryStart), metadata);
     }
-    else if (metadata.format === "binary_little_endian") {}
-    else if (metadata.format === "binary_big_endian") {}
     else { throw new AssetLoadError("Invalid ply format"); }
 
     return { data, metadata };
@@ -98,7 +139,9 @@ export async function plyToTriangleList(url) {
 
     // generate Float32Array
     const vertices = {};  // TODO include other data (e.g. material)
-    vertices.properties = metadata.elements.vertex.properties.map(p => p.name);
+    // TODO property types
+    // TODO group properties
+    vertices.properties = metadata.elements[0].properties.map(p => p.name);
     const topologyVerts = data.face.reduce((sum, a) => sum + (a.length - 2) * 3, 0);
     vertices.floats = new Float32Array(topologyVerts * vertices.properties.length);
     let vIndex = 0;
@@ -107,7 +150,7 @@ export async function plyToTriangleList(url) {
         // handle polygons with fan of triangles
         for (let i = 1; i < face.length - 1; i++) {
             // v0
-            for (const property in vertices.properties) {
+            for (const property in vertices.properties) {  // TODO can probably cleaner
                 vertices.floats[vIndex++] = data.vertex[face[0]][property];
             }
             // vi
@@ -120,5 +163,6 @@ export async function plyToTriangleList(url) {
             }
         }
     }
+
     return vertices;
 }

@@ -377,7 +377,7 @@ export class Player {
 
         // cast interaction ray
         if (this.inputs.leftMouse) {
-            this.#raycast(boxes);
+            this.#raycast(boxes);  // TODO not snappy
         }
     }
 
