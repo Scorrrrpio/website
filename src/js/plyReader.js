@@ -69,18 +69,17 @@ function readASCII(lines, metadata) {
 }
 
 function parseProperty(type, view, offset, littleEndian) {
-    let value;
-    switch(type) {
-        case ("float"):  case ("float32"): value = view.getFloat32(offset, littleEndian); break;
-        case ("double"): case ("float64"): value = view.getFloat64(offset, littleEndian); break;
-        case ("char"):   case ("int8"):    value = view.getInt8(offset, littleEndian);    break;
-        case ("short"):  case ("int16"):   value = view.getInt16(offset, littleEndian);   break;
-        case ("int"):    case ("int32"):   value = view.getInt32(offset, littleEndian);   break;
-        case ("uchar"):  case ("uint8"):   value = view.getUint8(offset, littleEndian);   break;
-        case ("ushort"): case ("uint16"):  value = view.getUint16(offset, littleEndian);  break;
-        case ("uint"):   case ("uint32"):  value = view.getUint32(offset, littleEndian);  break;
+    const readers = {
+        float: view.getFloat32.bind(view),  float32: view.getFloat32.bind(view),
+        double: view.getFloat64.bind(view), float64: view.getFloat64.bind(view),
+        char: view.getInt8.bind(view),      int8: view.getInt8.bind(view),
+        short: view.getInt16.bind(view),    int16: view.getInt16.bind(view),
+        int: view.getInt32.bind(view),      int32: view.getInt32.bind(view),
+        uchar: view.getUint8.bind(view),    uint8: view.getUint8.bind(view),
+        ushort: view.getUint16.bind(view),  uint16: view.getUint16.bind(view),
+        uint: view.getUint32.bind(view),    uint32: view.getUint32.bind(view),
     }
-    return value;
+    return readers[type]?.(offset, littleEndian);
 }
 
 function readBinary(buffer, metadata) {
@@ -159,13 +158,15 @@ async function readPly(url) {
 export async function plyToTriangleList(url) {
     const { data, metadata } = await readPly(url);
 
-    // generate Float32Array
-    const vertices = {};  // TODO include other data (e.g. material)
-    // TODO property types
-    // TODO group properties
+    const vertices = {};
+    // TODO include other data (e.g. material)
+    // TODO property types (not just F32)
+    // TODO group properties for BGL
+    // IDEA construct vertices.properties during parsing
+    // (e.g. for float float float int int float since it would need 2 buffers)
     vertices.properties = metadata.elements[0].properties.map(p => p.name);
     const topologyVerts = data.face.reduce((sum, a) => sum + (a.length - 2) * 3, 0);
-    vertices.floats = new Float32Array(topologyVerts * vertices.properties.length);
+    vertices.floats = new Float32Array(topologyVerts * vertices.properties.length);  // generate Float32Array
     let vIndex = 0;
     for (const face of data.face) {
         // TODO selectable triangulation behaviour
@@ -185,6 +186,13 @@ export async function plyToTriangleList(url) {
             }
         }
     }
+
+    /*
+    console.log(metadata);
+    console.log(data);
+    console.log(vertices);
+    throw new Error("STOP");
+    */
 
     return vertices;
 }

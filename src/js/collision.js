@@ -89,7 +89,7 @@ export class AABB extends Collider {
         return vertices;
     }
 
-    static vertsToAABB(data) {
+    static createMesh(data) {
         const xIndex = data.properties.indexOf("x");
         const yIndex = data.properties.indexOf("y");
         const zIndex = data.properties.indexOf("z");
@@ -127,5 +127,11 @@ export class SphereMesh extends Collider {
         this.origin[0] += vector[0];
         this.origin[1] += vector[1];
         this.origin[2] += vector[2];
+    }
+
+    static createMesh(data) {
+        const origin = [0, 0, 0];
+        // compute max radius
+        //throw new Error("Cannot create sphere mesh");
     }
 }

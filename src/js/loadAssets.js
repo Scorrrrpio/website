@@ -4,7 +4,7 @@ import { plyToTriangleList } from "./plyReader";
 import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
-import { AABB } from "./collision";
+import { AABB, SphereMesh } from "./collision";
 
 export function createModelMatrix(position, rotation, scale) {
     const model = mat4.create();
@@ -48,12 +48,11 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         const baseFragmentShaderModule = await createShaderModule(device, asset.fragmentShader, "Base Fragment Shader");
         
         // collision mesh based on geometry
-        let baseMesh;
-        if (asset.collision === "aabb") {
-            baseMesh = AABB.vertsToAABB(data);
-            // TODO other types (sphere, mesh)
-            // sphere should be easy: radius to furthest point
+        const meshGenerators = {
+            aabb: AABB.createMesh,
+            sphere: SphereMesh.createMesh,  // TODO other types (sphere, mesh)
         }
+        const baseMesh = meshGenerators[asset.collision]?.(data);
 
 
         // INSTANCE-SPECIFIC VALUES
