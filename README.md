@@ -14,6 +14,7 @@ working on some cool WebGPU stuff
 - favicon
 - improve unavailable WebGPU text
 - better animation solution? (functions)
+- CSS reduction
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z

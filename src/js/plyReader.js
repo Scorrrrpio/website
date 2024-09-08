@@ -68,10 +68,36 @@ function readASCII(lines, metadata) {
     return data;
 }
 
+function parseProperty(type, view, offset, littleEndian) {
+    let value;
+    switch(type) {
+        case ("float"):  case ("float32"): value = view.getFloat32(offset, littleEndian); break;
+        case ("double"): case ("float64"): value = view.getFloat64(offset, littleEndian); break;
+        case ("char"):   case ("int8"):    value = view.getInt8(offset, littleEndian);    break;
+        case ("short"):  case ("int16"):   value = view.getInt16(offset, littleEndian);   break;
+        case ("int"):    case ("int32"):   value = view.getInt32(offset, littleEndian);   break;
+        case ("uchar"):  case ("uint8"):   value = view.getUint8(offset, littleEndian);   break;
+        case ("ushort"): case ("uint16"):  value = view.getUint16(offset, littleEndian);  break;
+        case ("uint"):   case ("uint32"):  value = view.getUint32(offset, littleEndian);  break;
+    }
+    return value;
+}
+
 function readBinary(buffer, metadata) {
     const littleEndian = metadata.format === "binary_little_endian";
     const view = new DataView(buffer);
     const data = {};
+
+    const advance = {
+        "float": 4,  "float32": 4,
+        "double": 8, "float64": 8,
+        "char": 1,   "int8": 1,
+        "short": 2,  "int16": 2,
+        "int": 4,    "int32": 4,
+        "uchar": 1,  "uint8": 1,
+        "ushort": 2, "uint16": 2,
+        "uint": 4,   "uint32": 4
+    };
 
     let offset = 0;
     for (const element of metadata.elements) {
@@ -81,20 +107,16 @@ function readBinary(buffer, metadata) {
             for (const property of element.properties) {
                 // TODO handle types
                 if (property.type === "list") {
-                    const count = view.getUint8(offset, littleEndian);
-                    offset += 1;
+                    const count = parseProperty(property.countType, view, offset, littleEndian);
+                    offset += advance[property.countType];
                     for (let j = 0; j < count; j++) {
-                        instance.push(
-                            view.getUint32(offset, littleEndian)
-                        );
-                        offset += 4;
+                        instance.push(parseProperty(property.listType, view, offset, littleEndian));
+                        offset += advance[property.listType];
                     }
                 }
                 else {
-                    instance.push(
-                        view.getFloat32(offset, littleEndian)
-                    );
-                    offset += 4;
+                    instance.push(parseProperty(property.type, view, offset, littleEndian));
+                    offset += advance[property.type];
                 }
             }
             data[element.name].push(instance);
