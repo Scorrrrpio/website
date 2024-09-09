@@ -1,6 +1,19 @@
 {
     "objects": [
         {
+            "file": "geometry/cubeNightmare.ply",
+            "vertexShader": "shaders/cubeVertex.wgsl",
+            "fragmentShader": "shaders/cubeFragment.wgsl",
+            "collision": "none",
+            "instances": [
+                {
+                    "p": [0, 4, -20],
+                    "r": [0, 0, 0],
+                    "s": [2, 2, 2]
+                }
+            ]
+        },
+        {
             "file": "geometry/cubeB.ply",
             "vertexShader": "shaders/cubeVertex.wgsl",
             "fragmentShader": "shaders/cubeFragment.wgsl",

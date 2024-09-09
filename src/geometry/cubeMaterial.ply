@@ -1,0 +1,56 @@
+ply
+format ascii 1.0
+comment Created in Blender version 4.2.1 LTS
+element vertex 22
+property float x
+property float y
+property float z
+property float s
+property float t
+element face 6
+property list uchar uint vertex_indices
+element material 3
+property uchar ambient_red
+property uchar ambient_green
+property uchar ambient_blue
+property float ambient_coeff
+property uchar diffuse_red
+property uchar diffuse_green
+property uchar diffuse_blue
+property float diffuse_coeff
+property uchar specular_red
+property uchar specular_green
+property uchar specular_blue
+property float specular_power
+end_header
+-0.5 0.5 0.5 0 0
+0.5 0.5 0.5 1 0
+0.5 0.5 -0.5 1 1
+-0.5 0.5 -0.5 0 1
+-0.5 -0.5 -0.5 1 0
+-0.5 0.5 -0.5 1 1
+0.5 0.5 -0.5 0 1
+0.5 -0.5 -0.5 0 0
+0.5 -0.5 -0.5 1 0
+0.5 0.5 -0.5 1 1
+0.5 0.5 0.5 0 1
+0.5 -0.5 0.5 0 0
+-0.5 -0.5 0.5 1 0
+-0.5 -0.5 -0.5 1 1
+0.5 -0.5 -0.5 0 1
+-0.5 -0.5 0.5 1 0
+-0.5 0.5 0.5 1 1
+-0.5 -0.5 -0.5 0 0
+0.5 -0.5 0.5 1 0
+0.5 0.5 0.5 1 1
+-0.5 0.5 0.5 0 1
+-0.5 -0.5 0.5 0 0
+4 0 1 2 3
+4 4 5 6 7
+4 8 9 10 11
+4 11 12 13 14
+4 15 16 3 17
+4 18 19 20 21
+1 0 0 0.5 1 0 0 0.5 1 0 0 0.5
+0 1 0 0.5 0 1 0 0.5 0 1 0 0.5
+0 0 1 0.5 0 0 1 0.5 0 0 1 0.5

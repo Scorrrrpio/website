@@ -15,6 +15,8 @@ working on some cool WebGPU stuff
 - improve unavailable WebGPU text
 - better animation solution? (functions)
 - CSS reduction
+- UV debug shader
+- conditional js imports (debugging)
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z
