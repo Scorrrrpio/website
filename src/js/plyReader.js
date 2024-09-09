@@ -72,8 +72,8 @@ function readASCII(lines, metadata) {
             data[element.name][property.name] = [];
         }
 
-        for (let j = 0; j < element.count; j++) {
-            const parts = lines[startLine+j].split(" ").map(Number);
+        for (let i = 0; i < element.count; i++) {
+            const parts = lines[startLine+i].split(" ").map(Number);
             let readIndex = 0;
             for (const property of element.properties) {
                 if (property.type === "list") {
@@ -109,7 +109,6 @@ function parseProperty(type, view, offset, littleEndian) {
     return Number(readers[type]?.(offset, littleEndian));
 }
 
-// TODO refactor to match ASCII
 function readBinary(buffer, metadata) {
     const littleEndian = metadata.format === "binary_little_endian";
     const view = new DataView(buffer);
@@ -128,28 +127,32 @@ function readBinary(buffer, metadata) {
 
     let offset = 0;
     for (const element of metadata.elements) {
-        data[element.name] = [];
+        data[element.name] = {};
+        for (const property of element.properties) {
+            data[element.name][property.name] = [];
+        }
+        
         for (let i = 0; i < element.count; i++) {
-            const instance = [];
             for (const property of element.properties) {
                 if (property.type === "list") {
+                    const list = []
                     const count = parseProperty(property.countType, view, offset, littleEndian);
                     offset += advance[property.countType];
-                    instance.push(count);
+                    list.push(count);
                     if (count > property.maxSize) {
                         property.maxSize = count;
                     }
                     for (let j = 0; j < count; j++) {
-                        instance.push(parseProperty(property.listType, view, offset, littleEndian));
+                        list.push(parseProperty(property.listType, view, offset, littleEndian));
                         offset += advance[property.listType];
                     }
+                    data[element.name][property.name].push(list)
                 }
                 else {
-                    instance.push(parseProperty(property.type, view, offset, littleEndian));
+                    data[element.name][property.name].push(parseProperty(property.type, view, offset, littleEndian));
                     offset += advance[property.type];
                 }
             }
-            data[element.name].push(instance);
         }
     }
 
@@ -230,9 +233,6 @@ function createTypedArrays(element, count) {
 export async function plyToTriangleList(url) {
     const { data, metadata } = await readPly(url);
 
-    console.log("METADATA\n", metadata);
-    console.log("DATA\n", data);
-
     // TODO group properties for BGL
     const plyData = {};
     for (const element of metadata.elements) {
@@ -245,73 +245,77 @@ export async function plyToTriangleList(url) {
         const elem = {};
         elem.properties = element.properties;
         elem.values = {};
-        const count = element.name === "vertex" ? data.face.vertex_indices.reduce((sum, a) => sum + (a[0] - 2) * 3, 0) : element.count;
 
-        // Generate TypedArrays
-        createTypedArrays(elem, count);
+        if (element.name === "vertex") {
+            // Generate TypedArrays
+            const instances = data.face.vertex_indices.reduce((sum, a) => sum + (a[0] - 2) * 3, 0);
+            createTypedArrays(elem, instances);
 
-        for (let i = 0; i < count; i++) {
-            for (const property of element.properties) {
-                const t = property.type;
-                if (t === "list") {
-                    const ct = property.countType;
-                    const count = data[element.name][property.name][i][0];
-                    elem.values[ct].data[indices[ct]++] = count;
-                    const lt = property.listType;
-                    for (let j = 0; j < property.maxSize; j++) {
-                        if (j < count) {
-                            elem.values[lt].data[indices[lt]++] = data[element.name][property.name][i][j+1];
-                        }
-                        else {
-                            // fill to maxSize with 0s
-                            elem.values[lt].data[indices[lt]++] = 0;
+            // TODO edge
+            if (data.face && data.face.vertex_indices) {
+                for (const face of data.face.vertex_indices) {  // faces of mesh
+                    for (let i = 2; i < face.length - 1; i++) {  // triangles of face
+                        const triVerts = [face[1], face[i], face[i+1]];
+                        for (const vert of triVerts) {  // vertices of triangle
+                            for (const property of element.properties) {  // property of vertex
+                                const t = property.type;
+                                if (t === "list") {
+                                    const ct = property.countType;
+                                    const count = data[element.name][property.name][vert][0];
+                                    elem.values[ct].data[indices[ct]++] = count;
+                                    const lt = property.listType;
+                                    for (let j = 0; j < property.maxSize; j++) {  // element of list
+                                        if (j < count) {
+                                            elem.values[lt].data[indices[lt]++] = data[element.name][property.name][vert][j+1];
+                                        }
+                                        else {
+                                            // fill to maxSize with 0s
+                                            elem.values[lt].data[indices[lt]++] = 0;
+                                        }
+                                    }
+                                }
+                                else {
+                                    elem.values[t].data[indices[t]++] = data[element.name][property.name][vert];
+                                }
+                            }
                         }
                     }
                 }
-                else {
-                    elem.values[t].data[indices[t]++] = data[element.name][property.name][i];
+            }
+            else { throw new AssetLoadError("Failed to generate geometry for ", url, ". Missing required element (face) or required property (vertex_indices)."); }
+        }
+        else {
+            // Generate TypedArrays
+            const instances = element.count
+            createTypedArrays(elem, instances);
+
+            for (let i = 0; i < instances; i++) {
+                for (const property of element.properties) {
+                    const t = property.type;
+                    if (t === "list") {
+                        const ct = property.countType;
+                        const count = data[element.name][property.name][i][0];
+                        elem.values[ct].data[indices[ct]++] = count;
+                        const lt = property.listType;
+                        for (let j = 0; j < property.maxSize; j++) {
+                            if (j < count) {
+                                elem.values[lt].data[indices[lt]++] = data[element.name][property.name][i][j+1];
+                            }
+                            else {
+                                // fill to maxSize with 0s
+                                elem.values[lt].data[indices[lt]++] = 0;
+                            }
+                        }
+                    }
+                    else {
+                        elem.values[t].data[indices[t]++] = data[element.name][property.name][i];
+                    }
                 }
             }
         }
 
         plyData[element.name] = elem;
     }
-
-
-    // OLD CODE THAT WORKS
-    /*
-    const vertices = {};
-    vertices.properties = metadata.elements[0].properties.map(p => p.name);
-    const topologyVerts = data.face.reduce((sum, a) => sum + (a.length - 3) * 3, 0);
-    vertices.floats = new Float32Array(topologyVerts * vertices.properties.length);  // generate Float32Array
-    let vIndex = 0;
-    for (const face of data.face) {
-        // TODO selectable triangulation behaviour
-        // handle polygons with fan of triangles
-        for (let i = 2; i < face[0]; i++) {
-            // v0
-            for (const property in vertices.properties) {  // TODO can probably cleaner
-                vertices.floats[vIndex++] = data.vertex[face[1]][property];
-            }
-            // vi
-            for (const property in vertices.properties) {
-                vertices.floats[vIndex++] = data.vertex[face[i]][property];
-            }
-            // v(i+1)
-            for (const property in vertices.properties) {
-                vertices.floats[vIndex++] = data.vertex[face[i+1]][property];
-            }
-        }
-    }*/
-
-    //console.log("VERTICES\n", vertices);
-    console.log("PLY DATA\n", plyData);
-    //throw new Error("STOP");
-
-    // EXPECTED
-    // properties ["x", "y", "z", ...]
-    // floats [0.5, 0.5, 0.5, ...]
-    //return vertices;
 
     return plyData;
 }

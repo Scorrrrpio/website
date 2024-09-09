@@ -89,27 +89,27 @@ export class AABB extends Collider {
         return vertices;
     }
 
-    static createMesh(data) {
-        const xIndex = data.properties.indexOf("x");
-        const yIndex = data.properties.indexOf("y");
-        const zIndex = data.properties.indexOf("z");
+    static createMesh(data, properties) {
+        const xIndex = properties.indexOf("x");
+        const yIndex = properties.indexOf("y");
+        const zIndex = properties.indexOf("z");
     
         const aabb = {
             min: [Infinity, Infinity, Infinity],
             max: [-Infinity, -Infinity, -Infinity],
         };
-        for (const i in data.floats) {
-            if (i % data.properties.length === xIndex) {
-                if (data.floats[i] < aabb.min[0]) { aabb.min[0] = data.floats[i]; }
-                if (data.floats[i] > aabb.max[0]) { aabb.max[0] = data.floats[i]; }
+        for (const i in data) {
+            if (i % properties.length === xIndex) {
+                if (data[i] < aabb.min[0]) { aabb.min[0] = data[i]; }
+                if (data[i] > aabb.max[0]) { aabb.max[0] = data[i]; }
             }
-            if (i % data.properties.length === yIndex) {
-                if (data.floats[i] < aabb.min[1]) { aabb.min[1] = data.floats[i]; }
-                if (data.floats[i] > aabb.max[1]) { aabb.max[1] = data.floats[i]; }
+            if (i % properties.length === yIndex) {
+                if (data[i] < aabb.min[1]) { aabb.min[1] = data[i]; }
+                if (data[i] > aabb.max[1]) { aabb.max[1] = data[i]; }
             }
-            if (i % data.properties.length === zIndex) {
-                if (data.floats[i] < aabb.min[2]) { aabb.min[2] = data.floats[i]; }
-                if (data.floats[i] > aabb.max[2]) { aabb.max[2] = data.floats[i]; }
+            if (i % properties.length === zIndex) {
+                if (data[i] < aabb.min[2]) { aabb.min[2] = data[i]; }
+                if (data[i] > aabb.max[2]) { aabb.max[2] = data[i]; }
             }
         }
         return aabb;
@@ -129,7 +129,7 @@ export class SphereMesh extends Collider {
         this.origin[2] += vector[2];
     }
 
-    static createMesh(data) {
+    static createMesh(data, properties) {
         const origin = [0, 0, 0];
         // compute max radius
         //throw new Error("Cannot create sphere mesh");

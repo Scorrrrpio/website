@@ -46,13 +46,16 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         // shaders from wgsl files
         const baseVertexShaderModule = await createShaderModule(device, asset.vertexShader, "Base Vertex Shader");
         const baseFragmentShaderModule = await createShaderModule(device, asset.fragmentShader, "Base Fragment Shader");
+
+        // TODO replace
+        const floats = data.vertex.values.float32;
         
         // collision mesh based on geometry
         const meshGenerators = {
             aabb: AABB.createMesh,
             sphere: SphereMesh.createMesh,  // TODO other types (sphere, mesh)
         }
-        const baseMesh = meshGenerators[asset.collision]?.(data);
+        const baseMesh = meshGenerators[asset.collision]?.(floats.data, floats.properties);
 
 
         // INSTANCE-SPECIFIC VALUES
@@ -60,12 +63,12 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             // VERTEX BUFFER
             const vb = device.createBuffer({
                 label: asset.file,
-                size: data.floats.byteLength,
+                size: floats.data.byteLength,
                 usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             });
-            device.queue.writeBuffer(vb, 0, data.floats);
+            device.queue.writeBuffer(vb, 0, floats.data);
             // create vertex buffer atrributes array
-            const vbAttributes = createVBAttributes(data.properties);
+            const vbAttributes = createVBAttributes(floats.properties);
 
             // MODEL MATRIX
             const model = createModelMatrix(instance.p, instance.r, instance.s);
@@ -178,7 +181,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             renderables.push({
                 id: renderables.length,
                 vertexBuffer: vb,
-                vertexCount: data.floats.length / data.properties.length,
+                vertexCount: floats.data.length / floats.properties.length,
                 model: model,
                 modelBuffer: modelBuffer,
                 bindGroup: bindGroup,
@@ -187,7 +190,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     device,
                     bindGroupLayout,
                     vertexShaderModule,
-                    data.properties.length,
+                    floats.properties.length,
                     vbAttributes,
                     fragmentShaderModule,
                     format,
