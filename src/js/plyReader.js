@@ -65,28 +65,32 @@ function readPlyHeader(lines) {
 function readASCII(lines, metadata) {
     const data = {};
 
-    let i = metadata.dataStart;
+    let startLine = metadata.dataStart;
     for (const element of metadata.elements) {
-        data[element.name] = [];
+        data[element.name] = {};
+        for (const property of element.properties) {
+            data[element.name][property.name] = [];
+        }
+
         for (let j = 0; j < element.count; j++) {
-            const instance = [];
-            const parts = lines[i+j].split(" ").map(Number);
+            const parts = lines[startLine+j].split(" ").map(Number);
             let readIndex = 0;
-            for (let k = 0; k < element.properties.length; k++) {
-                if (element.properties[k].type === "list") {
-                    instance.push(...parts.slice(readIndex, readIndex + parts[readIndex] + 1).map(Number));
-                    if (parts[readIndex] > element.properties[k].maxSize) {
-                        element.properties[k].maxSize = Number(parts[readIndex]);
+            for (const property of element.properties) {
+                if (property.type === "list") {
+                    if (parts[readIndex] > property.maxSize) {
+                        property.maxSize = parts[readIndex];
                     }
-                    readIndex += Number(parts[readIndex]) + 1;
+                    data[element.name][property.name].push(
+                        parts.slice(readIndex, readIndex + parts[readIndex] + 1).map(Number)
+                    );
+                    readIndex += parts[readIndex] + 1;
                 }
                 else {
-                    instance.push(parts[readIndex++]);
+                    data[element.name][property.name].push(parts[readIndex++]);
                 }
             }
-            data[element.name].push(instance);
         }
-        i += element.count;
+        startLine += element.count
     }
     return data;
 }
@@ -105,6 +109,7 @@ function parseProperty(type, view, offset, littleEndian) {
     return Number(readers[type]?.(offset, littleEndian));
 }
 
+// TODO refactor to match ASCII
 function readBinary(buffer, metadata) {
     const littleEndian = metadata.format === "binary_little_endian";
     const view = new DataView(buffer);
@@ -240,22 +245,22 @@ export async function plyToTriangleList(url) {
         const elem = {};
         elem.properties = element.properties;
         elem.values = {};
+        const count = element.name === "vertex" ? data.face.vertex_indices.reduce((sum, a) => sum + (a[0] - 2) * 3, 0) : element.count;
 
         // Generate TypedArrays
-        createTypedArrays(elem, element.count);
+        createTypedArrays(elem, count);
 
-        for (let i = 0; i < element.count; i++) {
-            let readIndex = 0;
-            for (const p of element.properties) {
-                const t = p.type;
+        for (let i = 0; i < count; i++) {
+            for (const property of element.properties) {
+                const t = property.type;
                 if (t === "list") {
-                    const ct = p.countType;
-                    const count = data[element.name][i][readIndex++]
+                    const ct = property.countType;
+                    const count = data[element.name][property.name][i][0];
                     elem.values[ct].data[indices[ct]++] = count;
-                    const lt = p.listType;
-                    for (let j = 0; j < p.maxSize; j++) {
+                    const lt = property.listType;
+                    for (let j = 0; j < property.maxSize; j++) {
                         if (j < count) {
-                            elem.values[lt].data[indices[lt]++] = data[element.name][i][readIndex++];
+                            elem.values[lt].data[indices[lt]++] = data[element.name][property.name][i][j+1];
                         }
                         else {
                             // fill to maxSize with 0s
@@ -264,7 +269,7 @@ export async function plyToTriangleList(url) {
                     }
                 }
                 else {
-                    elem.values[t].data[indices[t]++] = data[element.name][i][readIndex++];
+                    elem.values[t].data[indices[t]++] = data[element.name][property.name][i];
                 }
             }
         }
@@ -301,99 +306,12 @@ export async function plyToTriangleList(url) {
 
     //console.log("VERTICES\n", vertices);
     console.log("PLY DATA\n", plyData);
-    throw new Error("STOP");
+    //throw new Error("STOP");
 
     // EXPECTED
     // properties ["x", "y", "z", ...]
     // floats [0.5, 0.5, 0.5, ...]
+    //return vertices;
 
-    // REFACTOR
-    /*
-    {
-        elements: [
-            {
-
-            },
-            ...
-        ]
-    }
-    */
-    return vertices;
+    return plyData;
 }
-
-/*
-        if (element.name === "vertex") {
-            // vertex connections are defined by face or edge element
-            if (data.face) {
-                // generate faces
-                const vertex = {};
-                //vertex.properties = element.properties.map(p => p.name);
-                vertex.properties = element.properties;
-                vertex.values = {};
-
-                // Generate TypedArrays
-                // TODO wtf happens when there are list properties
-                // computes number of verts for triangle-list with triangle fan triangulation
-                const vertexCount = data.face.reduce((sum, a) => sum + (a.length - 3) * 3, 0);
-                createTypedArrays(vertex, vertexCount);
-
-                // Populate TypedArrays
-                for (const face of data.face) {
-                    // TODO selectable triangulation behaviour
-                    // handle polygons with fan of triangles
-                    for (let i = 2; i < face[0]; i++) {
-                        // v0
-                        for (const p in vertex.properties) {  // TODO can probably cleaner
-                            const t = vertex.properties[p].type;  // TODO handle list?
-                            vertex.values[t].data[indices[t]++] = data.vertex[face[1]][p];
-                        }
-                        // vi
-                        for (const p in vertex.properties) {
-                            const t = vertex.properties[p].type;
-                            vertex.values[t].data[indices[t]++] = data.vertex[face[i]][p];
-                        }
-                        // v(i+1)
-                        for (const p in vertex.properties) {
-                            const t = vertex.properties[p].type;
-                            vertex.values[t].data[indices[t]++] = data.vertex[face[i+1]][p];
-                        }
-                    }
-                }
-
-                plyData.vertex = vertex;
-            }
-            else if (data.edge) {
-                // TODO ?
-                throw new AssetLoadError("Unsupported ply elements for triangle-list topology.");
-            }
-            else { throw new AssetLoadError("Failed to load asset from ", url, ". Missing face and edge definitions"); }
-        }
-        else {
-            const elem = {};
-            elem.properties = element.properties;
-            elem.values = {};
-
-            // Generate TypedArrays
-            createTypedArrays(elem, element.count);
-
-            for (let i = 0; i < element.count; i++) {
-                let offset = 0;
-                for (const p in elem.properties) {
-                    const t = elem.properties[p].type;
-                    if (t === "list") {
-                        const ct = elem.properties[p].countType;
-                        elem.values[ct].data[indices[ct]++] = data[element.name][i][p];
-                        const lt = elem.properties[p].listType;
-                        for (let j = 1; j <= elem.properties[p].maxSize; j++) {
-                            elem.values[lt].data[indices[lt]++] = data[element.name][i][Number(p)+j];
-                        }
-                        offset += p.maxSize;
-                    }
-                    else {
-                        elem.values[t].data[indices[t]++] = data[element.name][i][p];
-                    }
-                }
-            }
-
-            plyData[element.name] = elem;
-        }*/
