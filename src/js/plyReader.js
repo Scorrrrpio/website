@@ -1,13 +1,8 @@
 import { AssetLoadError } from "./errors";
 
 function readPlyHeader(lines) {
-    if (lines[0] != "ply") {
-        throw new AssetLoadError("Invalid ply file");
-    }
+    if (lines[0] != "ply") throw new AssetLoadError("Invalid ply file");
 
-    function normalizeType(name) {
-        return typeAlias[name] || name;
-    }
     const typeAlias = {
         float: "float32",
         double: "float64",
@@ -18,18 +13,24 @@ function readPlyHeader(lines) {
         ushort: "uint16",
         uint: "uint32",
     }
+    function normalizeType(name) {
+        return typeAlias[name] || name;
+    }
 
     const metadata = {};
     metadata.elements = [];
 
     let dataStart = 0;
-    let elem = -1;
+    let element = -1;
     for (const line of lines) {
         dataStart++;
-        if (line === "end_header") { break; }
+        if (line === "end_header") {
+            metadata.dataStart = dataStart;
+            return metadata;
+        }
         const parts = line.split(" ");
         if (parts[0] === "format") {
-            metadata.format = parts[1];  // ascii, binary_little_endian, binary_big_endian
+            metadata.format = parts[1];
             metadata.formatVersion = parts[2];
         }
         else if (parts[0] === "element") {
@@ -38,11 +39,11 @@ function readPlyHeader(lines) {
                 count: Number(parts[2]),
                 properties: [],
             });
-            elem++;
+            element++;
         }
         else if (parts[0] === "property") {
             if (parts[1] === "list") {
-                metadata.elements[elem].properties.push({
+                metadata.elements[element].properties.push({
                     type: parts[1],
                     countType: normalizeType(parts[2]),
                     listType: normalizeType(parts[3]),
@@ -51,15 +52,14 @@ function readPlyHeader(lines) {
                 });
             }
             else {
-                metadata.elements[elem].properties.push({
+                metadata.elements[element].properties.push({
                     name: parts[2],
                     type: normalizeType(parts[1]),
                 });
             }
         }
     }
-    metadata.dataStart = dataStart;
-    return metadata;
+    throw new AssetLoadError("Invalid ply header: missing end_header");
 }
 
 function readASCII(lines, metadata) {
@@ -115,14 +115,9 @@ function readBinary(buffer, metadata) {
     const data = {};
 
     const advance = {
-        float32: 4,
-        float64: 8,
-        int8: 1,
-        int16: 2,
-        int32: 4,
-        uint8: 1,
-        uint16: 2,
-        uint32: 4,
+        float32: 4, float64: 8,
+        int8: 1, int16: 2, int32: 4,
+        uint8: 1, uint16: 2, uint32: 4,
     };
 
     let offset = 0;
@@ -175,13 +170,7 @@ async function readPly(url) {
     let data;
     if (metadata.format === "ascii") { data = readASCII(lines, metadata); }
     else if (metadata.format === "binary_little_endian" || metadata.format === "binary_big_endian") {
-        // TODO BIG REVIEW
-        const endHeaderIndex = text.indexOf("end_header") + "end_header".length;
-        const afterHeader = text.slice(endHeaderIndex).match(/^\r?\n/);
-        const binaryStart = endHeaderIndex + (afterHeader ? afterHeader[0].length : 0);
-
-        //const binaryStart = new TextEncoder().encode(lines.slice(0, metadata.dataStart).join("\n")).length;
-        //metadata.binaryStart = binaryStart;
+        const binaryStart = text.indexOf("end_header") + "end_header\n".length;
         data = readBinary(buffer.slice(binaryStart), metadata);
     }
     else { throw new AssetLoadError("Invalid ply format"); }
@@ -200,10 +189,6 @@ function createTypedArrays(element, count) {
             typeCounts[property.countType].push(property.name + "_count");
             for (let i = 0; i < property.maxSize; i++) {
                 typeCounts[property.listType].push(property.name);
-            }
-            if (element.name === "vertex") {
-                // TODO fixed length for list based on longest?
-                throw new AssetLoadError("Cannot process list parameters in vertex element. Check ply files.");
             }
         }
         else {
@@ -229,12 +214,12 @@ function createTypedArrays(element, count) {
     }
 }
 
-// TODO this does too much, readPly does to little
 export async function plyToTriangleList(url) {
     const { data, metadata } = await readPly(url);
 
-    // TODO group properties for BGL
     const plyData = {};
+    plyData.url = url;
+
     for (const element of metadata.elements) {
         const indices = {
             float32: 0, float64: 0,
@@ -251,7 +236,6 @@ export async function plyToTriangleList(url) {
             const instances = data.face.vertex_indices.reduce((sum, a) => sum + (a[0] - 2) * 3, 0);
             createTypedArrays(elem, instances);
 
-            // TODO edge
             if (data.face && data.face.vertex_indices) {
                 for (const face of data.face.vertex_indices) {  // faces of mesh
                     for (let i = 2; i < face.length - 1; i++) {  // triangles of face

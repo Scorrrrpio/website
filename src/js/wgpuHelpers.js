@@ -124,6 +124,7 @@ export function createVBAttributes(properties) {
     let offset = 0;
     let shaderLocation = 0;
     // TODO upgrade this alongside .ply reader (e.g. different types)
+    // int -> sint
     for (let i = 0; i < properties.length; i++) {
         const attribute = {};
         if (properties[i] === "x") {
@@ -180,6 +181,7 @@ export function createVBAttributes(properties) {
             attribute.shaderLocation = shaderLocation;
             offset++;
         }
+        attribute.label = properties[i];
         attributes.push(attribute);
         shaderLocation++;
     }

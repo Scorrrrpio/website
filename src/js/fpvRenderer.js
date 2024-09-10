@@ -11,7 +11,7 @@ export async function fpv() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";
     const MULTISAMPLE = 4;
-    const DEBUG = true;
+    const DEBUG = false;
 
 
     // WEBGPU SETUP
