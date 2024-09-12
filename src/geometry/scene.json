@@ -1,7 +1,7 @@
 {
     "objects": [
         {
-            "file": "geometry/cubeB.ply",
+            "file": "geometry/cube.ply",
             "vertexShader": "shaders/cubeVertex.wgsl",
             "fragmentShader": "shaders/cubeFragment.wgsl",
             "collision": "aabb",

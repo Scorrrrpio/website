@@ -3,6 +3,7 @@ struct VertexOutput {
     @location(1) worldPos: vec3<f32>,
     @location(2) scale: vec3<f32>,
     @location(3) uv: vec2<f32>,
+    @location(4) normals: vec3<f32>,
     @builtin(position) position: vec4<f32>
 };
 

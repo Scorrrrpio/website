@@ -127,61 +127,58 @@ export function createVBAttributes(properties) {
     // int -> sint
     for (let i = 0; i < properties.length; i++) {
         const attribute = {};
-        if (properties[i] === "x") {
-            if (i < properties.length - 1 && properties[i+1] === "y") {
-                if (i < properties.length - 2 && properties[i+2] === "z") {
-                    // x, y, z
-                    attribute.format = "float32x3";
-                    attribute.offset = 4 * offset;
-                    attribute.shaderLocation = shaderLocation;
-                    offset += 3;
-                    i += 2;
-                }
-                else {
-                    // x, y
-                    attribute.format = "float32x2";
-                    attribute.offset = 4 * offset;
-                    attribute.shaderLocation = shaderLocation;
-                    offset += 2;
-                    i++;
-                }
-            }
-            else {
-                // x
-                attribute.format = "float32x2";
-                attribute.offset = 4 * offset;
-                attribute.shaderLocation = shaderLocation;
-                offset++;
-            }
+        if (i < properties.length - 2 && properties[i] === "x" && properties[i+1] === "y" && properties[i+2] === "z") {
+            // xyz
+            attribute.label = "xyz";
+            attribute.format = "float32x3";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset += 3;
+            i += 2;
+        }
+        else if (i < properties.length - 1 && properties[i] === "x" && properties[i+1] === "y") {
+            // xy (used for HUD)
+            attribute.label = "xy";
+            attribute.format = "float32x2";
+            attribute.offset = 4 * offset;
+            attribute.shaderLocation = shaderLocation;
+            offset += 2;
+            i ++;
         }
         else if (i < properties.length - 3 && properties[i] === "r" && properties[i+1] === "g" && properties[i+2] === "b" && properties[i+3] === "a") {
+            // rgba
+            attribute.label = "rgba";
             attribute.format = "float32x4";
             attribute.offset = 4 * offset;
             attribute.shaderLocation = shaderLocation;
             offset += 4;
             i += 3;
         }
-        else if (i < properties.length - 1 && properties[i] === "s" && properties[i+1] === "t") {
+        else if (i < properties.length - 1 && ((properties[i] === "s" && properties[i+1] === "t") || (properties[i] === "u" && properties[i+1] === "v"))) {
+            // st
+            attribute.label = "uv";
             attribute.format = "float32x2";
             attribute.offset = 4 * offset;
             attribute.shaderLocation = shaderLocation;
             offset += 2;
             i++;
         }
-        else if (i < properties.length - 1 && properties[i] === "u" && properties[i+1] === "v") {
-            attribute.format = "float32x2";
+        else if (i < properties.length - 2 && properties[i] === "nx" && properties[i+1] === "ny" && properties[i+2] === "nz") {
+            // vertex normals
+            attribute.label = "nxnynz";
+            attribute.format = "float32x3";
             attribute.offset = 4 * offset;
             attribute.shaderLocation = shaderLocation;
-            offset += 2;
-            i++;
+            offset += 3;
+            i += 2;
         }
         else {
-            attribute.format = "float32x1";
+            attribute.label = properties[i];
+            attribute.format = "float32";
             attribute.offset = 4 * offset;
             attribute.shaderLocation = shaderLocation;
             offset++;
         }
-        attribute.label = properties[i];
         attributes.push(attribute);
         shaderLocation++;
     }

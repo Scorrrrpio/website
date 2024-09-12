@@ -3,6 +3,7 @@ struct VertexOutput {
     @location(1) worldPos: vec3<f32>,
     @location(2) scale: vec3<f32>,
     @location(3) uv: vec2<f32>,
+    @location(4) normals: vec3<f32>,
     @builtin(position) position: vec4<f32>
 };
 
@@ -12,7 +13,8 @@ struct VertexOutput {
 
 @vertex
 fn vertexMain(@location(0) pos: vec3<f32>,
-@location(1) uv: vec2<f32>,
+@location(1) normals: vec3<f32>,
+@location(2) uv: vec2<f32>,
 @builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
     var output: VertexOutput;
     var mvp = projection * view * model;

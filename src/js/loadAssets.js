@@ -33,6 +33,8 @@ async function loadImageToBMP(url) {
     return await createImageBitmap(img);
 }
 
+// TODO scene class?
+// only fetch each asset once
 export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
     // BIND GROUP LAYOUT
     const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
@@ -41,14 +43,19 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
     const renderables = [];
     for (const asset of assets.objects) {  // each object in scene
         // ASSET FAMILY DEFAULT VALUES
-        // vertices from ply file
-        const data = await plyToTriangleList(asset.file);
-        // shaders from wgsl files
-        const baseVertexShaderModule = await createShaderModule(device, asset.vertexShader, "Base Vertex Shader");
-        const baseFragmentShaderModule = await createShaderModule(device, asset.fragmentShader, "Base Fragment Shader");
+        const [data, baseVertexShaderModule, baseFragmentShaderModule] = await Promise.all([
+            plyToTriangleList(asset.file),  // vertices from ply file
+            createShaderModule(device, asset.vertexShader, "Base Vertex Shader"),  // shaders from wgsl files
+            createShaderModule(device, asset.fragmentShader, "Base Fragment Shader")
+        ]);
 
+        //console.log("DATA\n", data);
         // TODO replace
+        const vertexProperties = data.vertex.properties;
+        //console.log(vertexProperties);
         const floats = data.vertex.values.float32;
+
+        //throw new Error("DEBUGGING");
         
         // collision mesh based on geometry
         const meshGenerators = {
@@ -57,6 +64,9 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         }
         const baseMesh = meshGenerators[asset.collision]?.(floats.data, floats.properties);
 
+        // vertex buffer atrributes array
+        const vbAttributes = createVBAttributes(floats.properties);
+        //console.log("VB ATTRIBUTES\n", vbAttributes);  // TODO grouping
 
         // INSTANCE-SPECIFIC VALUES
         for (const instance of asset.instances) {
@@ -67,8 +77,6 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                 usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             });
             device.queue.writeBuffer(vb, 0, floats.data);
-            // create vertex buffer atrributes array
-            const vbAttributes = createVBAttributes(floats.properties);
 
             // MODEL MATRIX
             const model = createModelMatrix(instance.p, instance.r, instance.s);
@@ -96,8 +104,10 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             let vertexShaderModule = baseVertexShaderModule;
             let fragmentShaderModule = baseFragmentShaderModule;
             if (instance.vertexShader && instance.fragmentShader) {
-                vertexShaderModule = await createShaderModule(device, instance.vertexShader, "Vertex Shader Override");
-                fragmentShaderModule = await createShaderModule(device, instance.fragmentShader, "Fragment Shader Override");
+                [vertexShaderModule, fragmentShaderModule] = await Promise.all([  // TODO move this await later?
+                    createShaderModule(device, instance.vertexShader, "Vertex Shader Override"),
+                    createShaderModule(device, instance.fragmentShader, "Fragment Shader Override")
+                ]);
             }
 
             // OVERRIDE CULL MODE
