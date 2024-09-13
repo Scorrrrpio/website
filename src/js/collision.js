@@ -2,7 +2,7 @@ import { vec3 } from "gl-matrix";
 
 class Collider {  // TODO why?
     constructor(type, verts, href = null, ghost = false, velocity = [0, 0, 0]) {
-        this.type = type;  // AABB, OBB, Sphere
+        this.type = type;  // AABB, OBB, Sphere  TODO REMOVE
         this.verts = verts;
         this.href = href;
         this.ghost = ghost;
@@ -17,18 +17,8 @@ class Collider {  // TODO why?
         }
     }
 
-    // TODO check within subclasses non-static
-    static checkCollision(mesh1, mesh2) {
-        if (!mesh1 || !mesh2) { return false; }
-        if (mesh1.ghost || mesh2.ghost) { return false; }
-        if (mesh1.type === "AABB" && mesh2.type === "AABB") {
-            // AABB and AABB
-            return (
-                mesh1.min[0] <= mesh2.max[0] && mesh1.max[0] >= mesh2.min[0] &&
-                mesh1.min[1] <= mesh2.max[1] && mesh1.max[1] >= mesh2.min[1] &&
-                mesh1.min[2] <= mesh2.max[2] && mesh1.max[2] >= mesh2.min[2]
-            );
-        }
+    static checkCollision(other) {
+        throw new Error("checkCollision must be implemented by subclasses of Collider");
     }
 }
 
@@ -113,6 +103,18 @@ export class AABB extends Collider {
             }
         }
         return aabb;
+    }
+
+    checkCollision(other) {
+        if (!other) { return false; }  // TODO why does this happen
+        if (this.ghost || other.ghost) { return false; }
+        if (other instanceof AABB) {
+            return (
+                this.min[0] <= other.max[0] && this.max[0] >= other.min[0] &&
+                this.min[1] <= other.max[1] && this.max[1] >= other.min[1] &&
+                this.min[2] <= other.max[2] && this.max[2] >= other.min[2]
+            );
+        }
     }
 }
 

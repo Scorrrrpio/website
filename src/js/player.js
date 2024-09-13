@@ -1,5 +1,5 @@
 import { Camera } from "./camera";
-import { AABB } from "./collision";
+import { AABB, SphereMesh } from "./collision";
 
 function normalizeXZ(v, speed) {
     const magnitude = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
@@ -356,7 +356,7 @@ export class Player {
         const nextAABB = new AABB(min, max);
 
         for (const box of boxes) {
-            if (AABB.checkCollision(nextAABB, box)) {
+            if (nextAABB.checkCollision(box)) {
                 // modify movement
                 movement = this.#slide(nextAABB, box, movement);
             }
