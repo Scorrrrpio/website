@@ -14,7 +14,6 @@ working on some cool WebGPU stuff
 - favicon
 - improve unavailable WebGPU text
 - better animation solution? (functions)
-- CSS reduction
 - DEBUGGING OVERHAUL
     - conditional js imports
     - Global variables

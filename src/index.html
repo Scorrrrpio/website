@@ -6,25 +6,23 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
+		<canvas style="height: 100%; width: 100%;"></canvas>
 		<p id="loading">> Loading...</p>
 		<svg width="100" height="100" id="play-svg" style="display: none">
 			<circle class="play-button" cx="50" cy="50" r="40" stroke="white" stroke-width="1" fill="black" />
 			<polygon class="play-button" points="70,50 40,30 40,70" stroke="white" stroke-width="1" fill="white" />
 		</svg>
 		<p id="controls" style="display: none">WASD to move / Space to jump / Mouse to look / Click to interact / ESC to exit</p>
-		<div class="full-page">
-			<canvas style="height: 100%; width: 100%;"></canvas>
-			<div class="no-webgpu" style="display: none">
-				<p>> Your browser does not support WebGPU</p>
-				<p>> See <a href="https://x.com/amkoz__/">x.com</a> for screenshots</p>
-			</div>
-			<div class="loading-failed" style="display: none">
-				<p>> Failed to load assets from the server</p>
-			</div>
-			<div class="error-message" style="display: none">
-				<p>> An error occurred</p>
-				<p>> Try refreshing</p>
-			</div>
+		<div class="no-webgpu" style="display: none">
+			<p>> Your browser does not support WebGPU</p>
+			<p>> See <a href="https://x.com/amkoz__/">x.com</a> for screenshots</p>
+		</div>
+		<div class="loading-failed" style="display: none">
+			<p>> Failed to load assets from the server</p>
+		</div>
+		<div class="error-message" style="display: none">
+			<p>> An error occurred</p>
+			<p>> Try refreshing</p>
 		</div>
 	</body>
 </html>

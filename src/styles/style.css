@@ -12,67 +12,18 @@ body {
 	margin: 0;
 	overflow-x: hidden;
 	overflow-y: hidden;
-}
-
-header {
-	padding: 0;
-	display: flex;
-	justify-content: space-between;
-	background-color: black;
-}
-
-header p, header a {
-	font-size: 1em;
-	margin: 1em;
-	text-decoration: none;
-}
-
-#projects-link {
-	margin-left: auto;
-	margin-right: 0;
-}
-
-
-/* home splash */
-#hello-triangle {
-	width: 180px;
-	height: 180px;
-}
-
-.content-wrapper-vertical {
-	width: 100vw;
-	height: 80vh;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 }
 
-.full-page {
-	width: 100vw;
-	height: 100vh;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-}
-
-.no-webgpu p, .loading-failed p, .error-message p {
+p {
 	margin: 0;
 	padding: 0;
 }
 
-#play-svg {
-	position: absolute;
-	width: 100px;
-	height: 100px;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	z-index: 100;
-}
-
-#loading {
+#loading, #play-svg {
 	position: absolute;
 	margin: 0px;
 	top: 50%;
@@ -92,99 +43,6 @@ header p, header a {
 	text-align: center;
 }
 
-circle.play-button {
-	box-shadow: 10px 5px 5px white;
-}
-
 .play-button:hover {
 	cursor: pointer;
-}
-
-
-/* info */
-#bio {
-	width: 100vh;
-	margin: 16px;
-	text-align: left;
-}
-
-#bio ul {
-	list-style-type: "> ";
-	margin-left: 1.2em;
-	padding-left: 0;
-}
-
-#bio ul li a {
-	width: 0%;
-}
-
-#bio p, #bio b, #bio a {
-	display: block;
-	margin: 0;
-	text-decoration: none;
-}
-
-#bio a:hover {
-	text-decoration: underline;
-}
-
-#bio b {
-	margin-top: 1em;
-}
-
-
-/* projects */
-.project-grid {
-	width: 90%;
-	height: 90%;
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	grid-auto-rows: 16em;
-	gap: 1em;
-}
-
-.project {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: space-between;
-	overflow: hidden;
-	text-decoration: none;
-}
-
-.project-visual {
-	background-color: black;
-	height: 12em;
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	overflow: hidden;
-}
-
-.project-visual img {
-	height: 100%;
-}
-
-.project-visual .no-webgpu {
-	margin-right: auto;
-	align-self: baseline;
-}
-
-.project-info {
-	min-width: 100%;
-}
-
-.project b, .project p {
-	width: 100%;
-	margin: 0 0.5em;
-	padding: 0;
-}
-
-
-/* playground */
-#playground {
-	width: 100%;
-	height: 100%;
 }
