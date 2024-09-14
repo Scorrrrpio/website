@@ -16,7 +16,9 @@ working on some cool WebGPU stuff
 - better animation solution? (functions)
 - CSS reduction
 - UV debug shader
-- conditional js imports (debugging)
+- DEBUGGING OVERHAUL
+    - conditional js imports
+    - Global variables
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z

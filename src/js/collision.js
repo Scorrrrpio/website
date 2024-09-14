@@ -1,8 +1,7 @@
 import { vec3 } from "gl-matrix";
 
 class Collider {  // TODO why?
-    constructor(type, verts, href = null, ghost = false, velocity = [0, 0, 0]) {
-        this.type = type;  // AABB, OBB, Sphere  TODO REMOVE
+    constructor(verts, href = null, ghost = false, velocity = [0, 0, 0]) {
         this.verts = verts;
         this.href = href;
         this.ghost = ghost;
@@ -24,7 +23,7 @@ class Collider {  // TODO why?
 
 export class AABB extends Collider {
     constructor(min, max, href, ghost, velocity, debug=false) {
-        super("AABB", [min, max], href, ghost, velocity);
+        super([min, max], href, ghost, velocity);
         this.min = min;
         this.max = max;
     }
@@ -120,7 +119,7 @@ export class AABB extends Collider {
 
 export class SphereMesh extends Collider {
     constructor(origin, radius, href, ghost, velocity) {
-        super("SphereMesh", [origin], href, ghost, velocity);
+        super([origin], href, ghost, velocity);
         this.origin = origin;
         this.radius = radius;
     }

@@ -1,5 +1,5 @@
 import { Camera } from "./camera";
-import { AABB, SphereMesh } from "./collision";
+import { AABB } from "./collision";
 
 function normalizeXZ(v, speed) {
     const magnitude = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
@@ -63,23 +63,22 @@ export class Player {
         this.position = position;
         this.rotation = rotation;
         // AABB
-        const { min, max } = this.#generateAABB(position);
-        this.aabb = new AABB(min, max);
+        this.aabb = new AABB(...this.#generateAABB(position));
     }
-
+    
     #generateAABB(pos) {
-        return {
-            min: [
+        return [
+            [
                 pos[0] - this.boxRadius,
                 pos[1],
                 pos[2] - this.boxRadius,
             ],
-            max: [
+            [
                 pos[0] + this.boxRadius,
                 pos[1] + this.cameraOffset[1],
                 pos[2] + this.boxRadius,
             ],
-        };
+        ];
     }
 
     enableControls(canvas) {
@@ -153,6 +152,21 @@ export class Player {
                 const deltaX = event.movementX;
                 const deltaY = event.movementY;
 
+                // TODO browser issue
+                // random spikes for movementX/movementY when usng mouse
+                // see https://unadjusted-movement.glitch.me/ for visualization
+                /*
+                if (deltaX > 100 || deltaX < -100) {
+                    console.log("DELTA X:", deltaX);
+                    console.log("DELTA Y:", deltaY);
+                    console.log("ROTATION:", this.rotation);
+                    this.rotation[1] += this.xSense * deltaX;  // yaw
+                    this.rotation[0] += this.ySense * deltaY;  // pitch
+                    console.log("ROTATION AFTER:", this.rotation);
+                    debugger;
+                }
+                */
+
                 this.rotation[1] += this.xSense * deltaX;  // yaw
                 this.rotation[0] += this.ySense * deltaY;  // pitch
 
@@ -171,7 +185,10 @@ export class Player {
                 this.inputs.d = false;
                 this.inputs.space = false;
                 // free cursor
-                canvas.requestPointerLock();
+                canvas.requestPointerLock({ unadjustedMovement: true }).catch((error) => {
+                    if (error.name === "NotSupportedError") { canvas.requestPointerLock(); }
+                    else throw error;
+                });
                 if (document.pointerLockElement === canvas) {
                     controlsText.style.display = "none";
                 }
@@ -343,7 +360,6 @@ export class Player {
         }
         
         // collision handling
-        //movement = this.aabb.tryMove(movement, boxes);
         // predicted position
         const nextPos = [
             this.position[0] + movement[0],
@@ -352,8 +368,7 @@ export class Player {
         ];
 
         // projected AABB after move
-        const { min, max } = this.#generateAABB(nextPos);
-        const nextAABB = new AABB(min, max);
+        const nextAABB = new AABB(...this.#generateAABB(nextPos));
 
         for (const box of boxes) {
             if (nextAABB.checkCollision(box)) {
