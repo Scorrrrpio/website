@@ -184,11 +184,19 @@ export class Player {
                 this.inputs.s = false;
                 this.inputs.d = false;
                 this.inputs.space = false;
-                // free cursor
-                canvas.requestPointerLock({ unadjustedMovement: true }).catch((error) => {
-                    if (error.name === "NotSupportedError") { canvas.requestPointerLock(); }
-                    else throw error;
-                });
+
+                // request pointer lock (and handle browser differences)
+                // chromium returns Promise, firefox returns undefined
+                const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
+                if (lockPromise) {
+                    lockPromise.catch((error) => {
+                        if (error.name === "NotSupportedError") {
+                            canvas.requestPointerLock();
+                        }
+                        else throw error;
+                    })
+                }
+
                 if (document.pointerLockElement === canvas) {
                     controlsText.style.display = "none";
                 }

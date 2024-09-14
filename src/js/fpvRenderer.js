@@ -231,13 +231,20 @@ export async function fpv() {
         // remove play button
         playButton.remove();
         controlsText.style.display = "none";
-        canvas.requestPointerLock({ unadjustedMovement: true }).catch((error) => {
-            if (error.name === "NotSupportedError") {
-                console.log("Cannot disable mouse acceleration in this browser");
-                canvas.requestPointerLock();
-            }
-            else throw error;
-        });
+
+        // request pointer lock (and handle browser differences)
+                // chromium returns Promise, firefox returns undefined
+        const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
+        if (lockPromise) {
+            lockPromise.catch((error) => {
+                if (error.name === "NotSupportedError") {
+                    console.log("Cannot disable mouse acceleration in this browser");
+                    canvas.requestPointerLock();
+                }
+                else throw error;
+            })
+        }
+        
         player.enableControls(canvas);
         renderLoop();  // black until start
     });
