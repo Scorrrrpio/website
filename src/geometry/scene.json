@@ -7,6 +7,13 @@
             "collision": "aabb",
             "instances": [
                 {
+                    "p": [0, 6, -20],
+                    "r": [0, 0, 0],
+                    "s": [2, 2, 2],
+                    "vertexShader": "shaders/debugV.wgsl",
+                    "fragmentShader": "shaders/debugUVF.wgsl"
+                },
+                {
                     "p": [0, 0.5, 0],
                     "r": [0, 0, 0],
                     "s": [12, 1, 12]
