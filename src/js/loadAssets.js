@@ -6,7 +6,7 @@ import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
 
-export function createModelMatrix(position, rotation, scale) {
+export function createModelMatrix(position = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1]) {
     const model = mat4.create();
     mat4.translate(model, model, position);
     mat4.rotateX(model, model, rotation[0]);
@@ -49,13 +49,8 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             createShaderModule(device, asset.fragmentShader, "Base Fragment Shader")
         ]);
 
-        //console.log("DATA\n", data);
-        // TODO replace
-        const vertexProperties = data.vertex.properties;
-        //console.log(vertexProperties);
+        // TODO change ply reader AGAIN
         const floats = data.vertex.values.float32;
-
-        //throw new Error("DEBUGGING");
         
         // collision mesh based on geometry
         const meshGenerators = {
@@ -104,7 +99,7 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             let vertexShaderModule = baseVertexShaderModule;
             let fragmentShaderModule = baseFragmentShaderModule;
             if (instance.vertexShader && instance.fragmentShader) {
-                [vertexShaderModule, fragmentShaderModule] = await Promise.all([  // TODO move this await later?
+                [vertexShaderModule, fragmentShaderModule] = await Promise.all([
                     createShaderModule(device, instance.vertexShader, "Vertex Shader Override"),
                     createShaderModule(device, instance.fragmentShader, "Fragment Shader Override")
                 ]);
@@ -213,9 +208,9 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                 collisionMesh: collisionMesh,
                 animation: animation,
                 transforms: {
-                    position: instance.p,
-                    rotation: instance.r,
-                    scale: instance.s,
+                    position: instance.p || [0, 0, 0],
+                    rotation: instance.r || [0, 0, 0],
+                    scale: instance.s || [1, 1, 1],
                 },
             });
         }
