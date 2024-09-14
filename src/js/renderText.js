@@ -57,39 +57,53 @@ export async function textToTexture(outputTexture, device, format, text) {
     // GEOMETRY
     const atlasHeight = 64;
     const scale = fontSize / atlasHeight;
-    const margin = 0.1;
+    const margin = 32;
 
-    let xPos = -outputTexture.width;
-    let yPos = outputTexture.height - fontSize;
+    // recall uv [0, 0] is bottom left corner
+    let xPos = -outputTexture.width + margin;  // [-1, 1] x coord and x increases
+    let yPos = outputTexture.height - fontSize - margin;  // top (with space for glyph) and y decreases
     const letterQuads = [];
 
-    // TODO autowrapping?
-    for (const ch of text) {
-        if (ch === "\n") {
-            xPos = -outputTexture.width;
+    const words = text.split(" ");
+    for (let word of words) {
+        let wordLength = 0;
+        for (const ch of word) {
+            if (ch != "\n") { wordLength += metadata[ch].advance * scale; }
+            else break;
+        }
+        if (xPos + wordLength > outputTexture.width) {
+            xPos = -outputTexture.width + margin;
             yPos -= fontSize;
         }
-        else {
-            let x0 = (xPos + metadata[ch].x * scale) / outputTexture.width + margin;
-            let y1 = (yPos + metadata[ch].y * scale) / outputTexture.height - margin;
-            let x1 = (xPos + (metadata[ch].x + metadata[ch].width) * scale) / outputTexture.width + margin;
-            let y0 = (yPos + (metadata[ch].y - metadata[ch].height) * scale) / outputTexture.height - margin;
-            // TODO desperately needs a function
-            letterQuads.push(
-                // TOP LEFT
-                x0, y1, metadata[ch].u0, metadata[ch].v0,
-                // BOTTOM LEFT
-                x0, y0, metadata[ch].u0, metadata[ch].v1,
-                // TOP RIGHT
-                x1, y1, metadata[ch].u1, metadata[ch].v0,
-                // BOTTOM RIGHT
-                x1, y0, metadata[ch].u1, metadata[ch].v1,
-                // TOP RIGHT
-                x1, y1, metadata[ch].u1, metadata[ch].v0,
-                // BOTTOM LEFT
-                x0, y0, metadata[ch].u0, metadata[ch].v1,
-            );
-            xPos += (metadata[ch].advance) * scale;
+        word += " ";
+        for (const ch of word) {
+            if (yPos - fontSize < -outputTexture.height - fontSize + margin) { break; }
+            if (ch === "\n") {
+                xPos = -outputTexture.width + margin;
+                yPos -= fontSize;
+            }
+            else {
+                let x0 = (xPos + metadata[ch].x * scale) / outputTexture.width;
+                let y1 = (yPos + metadata[ch].y * scale) / outputTexture.height;
+                let x1 = (xPos + (metadata[ch].x + metadata[ch].width) * scale) / outputTexture.width;
+                let y0 = (yPos + (metadata[ch].y - metadata[ch].height) * scale) / outputTexture.height;
+                // TODO desperately needs a function
+                letterQuads.push(
+                    // TOP LEFT
+                    x0, y1, metadata[ch].u0, metadata[ch].v0,
+                    // BOTTOM LEFT
+                    x0, y0, metadata[ch].u0, metadata[ch].v1,
+                    // TOP RIGHT
+                    x1, y1, metadata[ch].u1, metadata[ch].v0,
+                    // BOTTOM RIGHT
+                    x1, y0, metadata[ch].u1, metadata[ch].v1,
+                    // TOP RIGHT
+                    x1, y1, metadata[ch].u1, metadata[ch].v0,
+                    // BOTTOM LEFT
+                    x0, y0, metadata[ch].u0, metadata[ch].v1,
+                );
+                xPos += (metadata[ch].advance) * scale;
+            }
         }
     }
     const vertices = Float32Array.from(letterQuads);

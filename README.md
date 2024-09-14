@@ -3,7 +3,6 @@
 working on some cool WebGPU stuff
 
 # TODO
-- text wrapping
 - PHYSICS OVERHAUL
     - AABBs to OBBs / more collision mesh classes? (WIP)
     - account for multiple moving objects
