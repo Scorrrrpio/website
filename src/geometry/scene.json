@@ -2,17 +2,10 @@
     "objects": [
         {
             "file": "geometry/cube.ply",
-            "vertexShader": "shaders/cubeVertex.wgsl",
-            "fragmentShader": "shaders/cubeFragment.wgsl",
+            "vertexShader": "shaders/grid.vert.wgsl",
+            "fragmentShader": "shaders/grid.frag.wgsl",
             "collision": "aabb",
             "instances": [
-                {
-                    "p": [0, 6, -20],
-                    "r": [0, 0, 0],
-                    "s": [2, 2, 2],
-                    "vertexShader": "shaders/debugV.wgsl",
-                    "fragmentShader": "shaders/debugUVF.wgsl"
-                },
                 {
                     "p": [0, 0.5, 0],
                     "r": [0, 0, 0],
@@ -62,8 +55,8 @@
                     "p": [-3.5, 7.5, -15],
                     "r": [0, 0, 0],
                     "s": [1, 1, 1],
-                    "vertexShader": "shaders/basicVertex.wgsl",
-                    "fragmentShader": "shaders/invisibleF.wgsl"
+                    "vertexShader": "shaders/basic.vert.wgsl",
+                    "fragmentShader": "shaders/invisible.frag.wgsl"
                 },
                 {
                     "p": [-3.5, 4, -23.5],
@@ -94,8 +87,8 @@
                     "p": [3.5, 7.5, -15],
                     "r": [0, 0, 0],
                     "s": [1, 1, 1],
-                    "vertexShader": "shaders/basicVertex.wgsl",
-                    "fragmentShader": "shaders/invisibleF.wgsl"
+                    "vertexShader": "shaders/basic.vert.wgsl",
+                    "fragmentShader": "shaders/invisible.frag.wgsl"
                 },
                 {
                     "p": [3.5, 4, -23.5],
@@ -146,8 +139,8 @@
                         "content": "// ABOUT ME\n> Adrian Koziskie\n> Based in Toronto\n> UWO CS alum\n> Interest in Computer Graphics\n\n// ABOUT THIS PAGE\n> This place is my longtime\n  dream project\n> Built from the ground up\n  with WebGPU\n> Demos to the right",
                         "faces": ["front"]
                     },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
+                    "vertexShader": "shaders/texture.vert.wgsl",
+                    "fragmentShader": "shaders/texture.frag.wgsl"
                 },
                 {
                     
@@ -159,8 +152,8 @@
                         "url": "media/x.png",
                         "faces": ["front", "back", "right", "left"]
                     },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
+                    "vertexShader": "shaders/texture.vert.wgsl",
+                    "fragmentShader": "shaders/texture.frag.wgsl"
                 },
                 {
                     "p": [8, 3, -60],
@@ -171,8 +164,8 @@
                         "url": "media/github.png",
                         "faces": ["front", "back", "right", "left"]
                     },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
+                    "vertexShader": "shaders/texture.vert.wgsl",
+                    "fragmentShader": "shaders/texture.frag.wgsl"
                 },
                 {
                     "p": [60, 2.5, -8],
@@ -180,8 +173,8 @@
                     "s": [2, 2, 2],
                     "animation": "spinY",
                     "ghost": "true",
-                    "vertexShader": "shaders/cubeVertex.wgsl",
-                    "fragmentShader": "shaders/cubeToyFragment.wgsl"
+                    "vertexShader": "shaders/grid.vert.wgsl",
+                    "fragmentShader": "shaders/cubeToy.frag.wgsl"
                 },
                 {
                     "p": [60, 2.5, 8],
@@ -193,8 +186,8 @@
                         "faces": ["front", "back", "left", "right"]
                     },
                     "ghost": true,
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
+                    "vertexShader": "shaders/texture.vert.wgsl",
+                    "fragmentShader": "shaders/texture.frag.wgsl"
                 },
                 {
                     "p": [-32, 4, -8],
@@ -205,8 +198,8 @@
                         "content": "Hello World",
                         "faces": ["front"]
                     },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
+                    "vertexShader": "shaders/texture.vert.wgsl",
+                    "fragmentShader": "shaders/texture.frag.wgsl"
                 },
                 {
                     "p": [-20, 0.5, 0],
@@ -219,8 +212,8 @@
         },
         {
             "file": "geometry/cubeWrap.ply",
-            "vertexShader": "shaders/cubeVertex.wgsl",
-            "fragmentShader": "shaders/cubeFragment.wgsl",
+            "vertexShader": "shaders/grid.vert.wgsl",
+            "fragmentShader": "shaders/grid.frag.wgsl",
             "collision": "aabb",
             "instances": [
                 {
@@ -231,15 +224,15 @@
                         "url": "media/cat-cube.png",
                         "faces": ["front", "back", "left", "right", "top", "bottom"]
                     },
-                    "vertexShader": "shaders/textureVertex.wgsl",
-                    "fragmentShader": "shaders/textureFragment.wgsl"
+                    "vertexShader": "shaders/texture.vert.wgsl",
+                    "fragmentShader": "shaders/texture.frag.wgsl"
                 }
             ]
         },
         {
             "file": "geometry/pyramidOcto.ply",
-            "vertexShader": "shaders/pyramidVertex.wgsl",
-            "fragmentShader": "shaders/pyramidFragment.wgsl",
+            "vertexShader": "shaders/pyramid.vert.wgsl",
+            "fragmentShader": "shaders/pyramid.frag.wgsl",
             "collision": "none",
             "instances": [
                 {
@@ -271,8 +264,8 @@
         },
         {
             "file": "geometry/pyramidQuad.ply",
-            "vertexShader": "shaders/pyramidVertex.wgsl",
-            "fragmentShader": "shaders/pyramidFragment.wgsl",
+            "vertexShader": "shaders/pyramid.vert.wgsl",
+            "fragmentShader": "shaders/pyramid.frag.wgsl",
             "collision": "none",
             "instances": [
                 {
@@ -299,8 +292,8 @@
         },
         {
             "file": "geometry/gateway.ply",
-            "vertexShader": "shaders/cubeVertex.wgsl",
-            "fragmentShader": "shaders/gatewayF.wgsl",
+            "vertexShader": "shaders/grid.vert.wgsl",
+            "fragmentShader": "shaders/gateway.frag.wgsl",
             "collision": "none",
             "instances": [
                 {
@@ -312,8 +305,8 @@
         },
         {
             "file": "geometry/cube.ply",
-            "vertexShader": "shaders/basicVertex.wgsl",
-            "fragmentShader": "shaders/invisibleF.wgsl",
+            "vertexShader": "shaders/basic.vert.wgsl",
+            "fragmentShader": "shaders/invisible.frag.wgsl",
             "collision": "aabb",
             "instances": [
                 {
@@ -335,8 +328,8 @@
         },
         {
             "file": "geometry/lokiSphere.ply",
-            "vertexShader": "shaders/sphereVertex.wgsl",
-            "fragmentShader": "shaders/sphereFragment.wgsl",
+            "vertexShader": "shaders/sphere.vert.wgsl",
+            "fragmentShader": "shaders/sphere.frag.wgsl",
             "collision": "sphere",
             "instances": [
                 {
@@ -349,8 +342,8 @@
                     "r": [1.57079632679, 0, 0],
                     "s": [4, 4, 4],
                     "animation": "lokiSpin",
-                    "vertexShader": "shaders/lokiSphereVertex.wgsl",
-                    "fragmentShader": "shaders/lokiSphereFragment.wgsl",
+                    "vertexShader": "shaders/lokiSphere.vert.wgsl",
+                    "fragmentShader": "shaders/lokiSphere.frag.wgsl",
                     "cullMode": "none"
                 }
             ]

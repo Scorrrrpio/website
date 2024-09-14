@@ -15,7 +15,6 @@ working on some cool WebGPU stuff
 - improve unavailable WebGPU text
 - better animation solution? (functions)
 - CSS reduction
-- UV debug shader
 - DEBUGGING OVERHAUL
     - conditional js imports
     - Global variables
@@ -23,6 +22,7 @@ working on some cool WebGPU stuff
 - Entity class?
 - Renderer class?
 - scene object default properties
+- automate testure shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded)
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z

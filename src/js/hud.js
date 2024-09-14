@@ -21,8 +21,10 @@ export async function generateHUD(device, format, projectionBuffer, multisamples
 
     // shaders
     // TODO crosshair size is defined in shaders using z position
-    const hudVertexModule = await createShaderModule(device, "shaders/hudV.wgsl", "HUD Vertex");
-    const hudFragmentModule = await createShaderModule(device, "shaders/hudF.wgsl", "HUD Fragment");
+    const [hudVertexModule, hudFragmentModule] = await Promise.all([
+        createShaderModule(device, "shaders/hud.vert.wgsl", "HUD Vertex"),
+        createShaderModule(device, "shaders/hud.frag.wgsl", "HUD Fragment")
+    ]);
 
     // bind group
     const hudBGL = createBindGroupLayout(device, "HUD BGL", { visibility: GPUShaderStage.VERTEX, buffer: {type: "uniform"}});

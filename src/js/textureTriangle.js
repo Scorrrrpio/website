@@ -41,8 +41,8 @@ export async function textureTriangle(texture, device, format) {
 
 
 	// SHADERS
-	const vertexModule = await createShaderModule(device, "shaders/helloTriangleV.wgsl", "Hello Triangle Vertex");
-	const fragmentModule = await createShaderModule(device, "shaders/helloTriangleF.wgsl", "Hello Triangle Fragment");
+	const vertexModule = await createShaderModule(device, "shaders/helloTriangle.vert.wgsl", "Hello Triangle Vertex");
+	const fragmentModule = await createShaderModule(device, "shaders/helloTriangle.frag.wgsl", "Hello Triangle Fragment");
 
 	// PIPELINE
 	const pipeline = createPipeline(

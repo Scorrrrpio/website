@@ -51,8 +51,8 @@ export async function textToTexture(outputTexture, device, format, text) {
 
 
     // SHADERS
-    const vertexModule = await createShaderModule(device, "shaders/textV.wgsl", "Text Vertex");
-    const fragmentModule = await createShaderModule(device, "shaders/textF.wgsl", "Text Fragment");
+    const vertexModule = await createShaderModule(device, "shaders/text.vert.wgsl", "Text Vertex");
+    const fragmentModule = await createShaderModule(device, "shaders/text.frag.wgsl", "Text Fragment");
 
     // GEOMETRY
     const atlasHeight = 64;

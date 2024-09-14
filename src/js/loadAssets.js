@@ -231,8 +231,8 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
 
 async function createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples) {
     // SHADERS
-    const debugVShader = await createShaderModule(device, "shaders/basicVertex.wgsl", "DEBUG Vertex Module");
-    const debugFShader = await createShaderModule(device, "shaders/debugF.wgsl", "DEBUG Fragment Module");
+    const debugVShader = await createShaderModule(device, "shaders/basic.vert.wgsl", "DEBUG Vertex Module");
+    const debugFShader = await createShaderModule(device, "shaders/debug.frag.wgsl", "DEBUG Fragment Module");
 
     // BGL
     const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
