@@ -5,6 +5,7 @@ import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
+import { Renderer } from "./renderer";
 
 // TODO why is this here
 export function createModelMatrix(position = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1]) {
@@ -49,6 +50,26 @@ class Entity {
         this.collisionMesh = collisionMesh;
         this.animation = animation;
         this.transforms = transforms;
+    }
+}
+
+export class Scene {
+    // TODO from url not assets?
+    constructor(url) {
+        this.url = url;
+    }
+
+    async initialize(device, context, canvas, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
+        // Scene assets as JSON
+        const assetsResponse = await fetch(this.url);
+        if (!assetsResponse.ok) { throw new AssetLoadError("Failed to fetch scene from " + url); }
+        const json = await assetsResponse.json();
+
+        this.renderables = await loadAssets(
+            json, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
+        );
+
+        this.renderer = new Renderer(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
     }
 }
 

@@ -1,10 +1,8 @@
 // imports
 import { wgpuSetup } from "./wgpuSetup";
 import { Player } from "./player";
-import { loadAssets } from "./loadAssets";
-import { AssetLoadError } from "./errors";
+import { Scene } from "./loadAssets";
 import { generateHUD } from "./hud";
-import { Renderer } from "./renderer";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
@@ -37,15 +35,10 @@ export async function fpv() {
     });
 
 
-    // GEOMETRY
-    // Scene assets as JSON
-    const assetsResponse = await fetch("geometry/scene.json");
-    if (!assetsResponse.ok) { throw new AssetLoadError("Failed to load scene json"); }
-    const assets = await assetsResponse.json();
-    // TODO what if objects are added at runtime?
-    const renderables = await loadAssets(
-        assets, device, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE, DEBUG
-    );
+    // SCENE SETUP
+    const scene = new Scene("geometry/scene.json");
+    await scene.initialize(device, context, canvas, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+
 
     // PLAYER
     // spawn coordinates
@@ -77,15 +70,14 @@ export async function fpv() {
 
 
     // RENDER LOOP
-    const renderer = new Renderer(device, context, canvas, viewBuffer, projectionBuffer, MULTISAMPLE);
 	function renderLoop() {
-        renderer.render(player, renderables, hud, canvas, DEBUG);
+        scene.renderer.render(player, scene.renderables, hud, canvas, DEBUG);
         requestAnimationFrame(renderLoop);
 	}
 
-    renderer.handleResize(player, canvas);
+    scene.renderer.handleResize(player, canvas);
     window.addEventListener("resize", () => {
-        renderer.handleResize(player, canvas);
+        scene.renderer.handleResize(player, canvas);
     });
     
     // remove loading ui
