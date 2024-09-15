@@ -6,6 +6,7 @@ import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
 
+// TODO why is this here
 export function createModelMatrix(position = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1]) {
     const model = mat4.create();
     mat4.translate(model, model, position);
@@ -31,6 +32,31 @@ async function loadImageToBMP(url) {
     };
     // convert to bmp
     return await createImageBitmap(img);
+}
+
+// TODO move to separate file
+// WIP
+class Entity {
+    constructor(id, vb, vertCount, model, modelBuffer, bg, pl, baseMesh, collisionMesh, animation, transforms) {
+        this.id = id;
+        this.vertexBuffer = vb;
+        this.vertexCount = vertCount;
+        this.model = model;
+        this.modelBuffer = modelBuffer;
+        this.bindGroup = bg;
+        this.pipeline = pl;
+        this.baseMesh = baseMesh;
+        this.collisionMesh = collisionMesh;
+        this.animation = animation;
+        this.transforms = transforms;
+    }
+}
+
+export class Scene {
+    // TODO from url no assets?
+    constructor(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
+        //
+    }
 }
 
 // TODO scene class?
@@ -182,15 +208,15 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
             // ANIMATION
             const animation = instance.animation;
 
-            // add to renderables list
-            renderables.push({
-                id: renderables.length,
-                vertexBuffer: vb,
-                vertexCount: floats.data.length / floats.properties.length,
-                model: model,
-                modelBuffer: modelBuffer,
-                bindGroup: bindGroup,
-                pipeline: createPipeline(
+            // create Entity
+            const entity = new Entity(
+                renderables.length,  // ID
+                vb,  // vertex buffer
+                floats.data.length / floats.properties.length,  // vertex count
+                model,
+                modelBuffer,
+                bindGroup,
+                createPipeline(
                     "FPV Render Pipeline",
                     device,
                     bindGroupLayout,
@@ -204,15 +230,18 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
                     true,
                     multisamples
                 ),
-                baseMesh: baseMesh,
-                collisionMesh: collisionMesh,
-                animation: animation,
-                transforms: {
+                baseMesh,
+                collisionMesh,
+                animation,
+                {
                     position: instance.p || [0, 0, 0],
                     rotation: instance.r || [0, 0, 0],
                     scale: instance.s || [1, 1, 1],
-                },
-            });
+                }
+            );
+
+            // add to renderables list
+            renderables.push(entity);
         }
     }
 
@@ -221,6 +250,8 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples);
     }
 
+    console.log(renderables);
+    //throw new Error("DEBUGGING RENDERABLES");
     return renderables;
 }
 

@@ -6,7 +6,6 @@ working on some cool WebGPU stuff
 - favicon
 - loadAssets -> Scene class
     - add objects to scene at runtime
-- Entity class?
 - Renderer class?
 - better animation solution? (functions)
 - automate testure shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded)
