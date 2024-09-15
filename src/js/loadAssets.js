@@ -53,7 +53,7 @@ class Entity {
 }
 
 export class Scene {
-    // TODO from url no assets?
+    // TODO from url not assets?
     constructor(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
         //
     }
@@ -250,8 +250,6 @@ export async function loadAssets(assets, device, viewBuffer, projectionBuffer, f
         createDebugGeometry(renderables, device, format, viewBuffer, projectionBuffer, multisamples);
     }
 
-    console.log(renderables);
-    //throw new Error("DEBUGGING RENDERABLES");
     return renderables;
 }
 

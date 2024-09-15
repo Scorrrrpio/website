@@ -1,7 +1,7 @@
 // imports
 import { wgpuSetup } from "./wgpuSetup";
 import { Player } from "./player";
-import { loadAssets } from "./loadAssets";
+import { Scene, loadAssets } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
 import { lokiSpin, move, spinY } from "./animations";
@@ -123,8 +123,60 @@ export async function fpv() {
     // TODO this needs depth testing and MSAA for some reason?
     const hud = await generateHUD(device, canvasTexture.format, projectionBuffer, MULTISAMPLE);
 
+    const renderer = new Renderer(device, context, viewBuffer, projectionBuffer, msaaTexture, depthTexture);
+
     // RENDER LOOP
 	function renderLoop() {
+        renderer.render(player, renderables, hud, canvas, canvasTexture, msaaTexture, depthTexture, DEBUG);
+        requestAnimationFrame(renderLoop);
+	}
+
+    handleResize();
+    window.addEventListener("resize", () => {
+        handleResize();
+    });
+    
+    // remove loading ui
+    const loading = document.getElementById("loading");
+    loading.remove();
+    const playButton = document.getElementById("play-svg");
+    playButton.style.display = "block";
+    const controlsText = document.getElementById("controls");
+    controlsText.style.display = "block";
+
+    // start game with play button
+    playButton.addEventListener("click", () => {
+        // remove play button
+        playButton.remove();
+        controlsText.style.display = "none";
+
+        // request pointer lock (and handle browser differences)
+        // chromium returns Promise, firefox returns undefined
+        const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
+        if (lockPromise) {
+            lockPromise.catch((error) => {
+                if (error.name === "NotSupportedError") {
+                    console.log("Cannot disable mouse acceleration in this browser");
+                    canvas.requestPointerLock();
+                }
+                else throw error;
+            })
+        }
+        
+        player.enableControls(canvas);
+        renderLoop();  // black until start
+    });
+}
+
+class Renderer {
+    constructor(device, context, viewBuffer, projectionBuffer) {
+        this.device = device;
+        this.context = context;
+        this.viewBuffer = viewBuffer;
+        this.projectionBuffer = projectionBuffer;
+    }
+
+	render(player, renderables, hud, canvas, canvasTexture, msaaTexture, depthTexture, debug=false) {
         // update animations
         for (const renderable of renderables) {
             switch (renderable.animation) {
@@ -144,18 +196,19 @@ export async function fpv() {
         const aabbBoxes = renderables.map(renderable => renderable.collisionMesh);
         player.move(aabbBoxes);
 
+        // TODO combine with animation -> O(n) not O(2n)
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of renderables) {
-            device.queue.writeBuffer(modelBuffer, 0, model);
+            this.device.queue.writeBuffer(modelBuffer, 0, model);
         }
-        device.queue.writeBuffer(viewBuffer, 0, new Float32Array(player.pov.view));
-        device.queue.writeBuffer(projectionBuffer, 0, new Float32Array(player.pov.projection));
+        this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(player.pov.view));
+        this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(player.pov.projection));
 
 		// create GPUCommandEncoder
-		const encoder = device.createCommandEncoder();
+		const encoder = this.device.createCommandEncoder();
 
         // create input texture the size of canvas
-        canvasTexture = context.getCurrentTexture();
+        canvasTexture = this.context.getCurrentTexture();
 
 		// begin render pass
 		const pass = encoder.beginRenderPass({
@@ -185,7 +238,7 @@ export async function fpv() {
         }
 
         // render debug content
-        if (DEBUG) {
+        if (debug) {
             for (const {debugPipeline, debugVB, debugBG, debugVertexCount } of renderables) {
                 if (debugVertexCount) {
                     pass.setPipeline(debugPipeline);
@@ -208,44 +261,6 @@ export async function fpv() {
 		pass.end();
 
 		// create and submit GPUCommandBuffer
-		device.queue.submit([encoder.finish()]);
-
-        requestAnimationFrame(renderLoop);
+		this.device.queue.submit([encoder.finish()]);
 	}
-
-    handleResize();
-    window.addEventListener("resize", () => {
-        handleResize();
-    });
-    
-    // remove loading ui
-    const loading = document.getElementById("loading");
-    loading.remove();
-    const playButton = document.getElementById("play-svg");
-    playButton.style.display = "block";
-    const controlsText = document.getElementById("controls");
-    controlsText.style.display = "block";
-
-    // start game with play button
-    playButton.addEventListener("click", () => {
-        // remove play button
-        playButton.remove();
-        controlsText.style.display = "none";
-
-        // request pointer lock (and handle browser differences)
-                // chromium returns Promise, firefox returns undefined
-        const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
-        if (lockPromise) {
-            lockPromise.catch((error) => {
-                if (error.name === "NotSupportedError") {
-                    console.log("Cannot disable mouse acceleration in this browser");
-                    canvas.requestPointerLock();
-                }
-                else throw error;
-            })
-        }
-        
-        player.enableControls(canvas);
-        renderLoop();  // black until start
-    });
 }
