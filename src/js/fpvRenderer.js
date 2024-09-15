@@ -1,10 +1,7 @@
 // imports
 import { wgpuSetup } from "./wgpuSetup";
-import { Player } from "./player";
-import { Scene } from "./loadAssets";
-import { generateHUD } from "./hud";
+import { Scene } from "./scene";
 
-// inspired by the sphere graphic from lokinet.org
 export async function fpv() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";
@@ -21,65 +18,19 @@ export async function fpv() {
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
-    // UNIFORM BUFFERS
-    // create uniform buffers for MVP matrices
-    const viewBuffer = device.createBuffer({
-        label: "View Uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-    const projectionBuffer = device.createBuffer({
-        label: "Projection Uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
-
     // SCENE SETUP
     const scene = new Scene("geometry/scene.json");
-    await scene.initialize(device, context, canvas, viewBuffer, projectionBuffer, format, TOPOLOGY, MULTISAMPLE, DEBUG);
-
-
-    // PLAYER
-    // spawn coordinates
-    function urlToSpawn() {
-        const spawns = {
-            "default": {
-                p: [0, 2.001, 0],
-                r: [0, 0, 0],
-            },
-            "bio": {
-                p: [0, 0, -40],
-                r: [0, 0, 0],
-            },
-        };
-        const params = new URLSearchParams(window.location.search);
-        const spawn = params.get("spawn");
-        if (spawn) { return spawns[spawn]; }
-        else { return spawns.default; }
-    }
-    
-    // create player object
-    const spawn = urlToSpawn(); 
-    const player = new Player(canvas, spawn.p, spawn.r);
-
-
-    // HUD
-    // TODO this needs depth testing and MSAA for some reason?
-    const hud = await generateHUD(device, context.getCurrentTexture().format, projectionBuffer, MULTISAMPLE);
+    await scene.initialize(device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
 
 
     // RENDER LOOP
 	function renderLoop() {
-        scene.renderer.render(player, scene.renderables, hud, canvas, DEBUG);
+        scene.drawFrame(canvas, DEBUG);
         requestAnimationFrame(renderLoop);
 	}
-
-    scene.renderer.handleResize(player, canvas);
-    window.addEventListener("resize", () => {
-        scene.renderer.handleResize(player, canvas);
-    });
     
+
+    // START GAME
     // remove loading ui
     const loading = document.getElementById("loading");
     loading.remove();
@@ -107,7 +58,7 @@ export async function fpv() {
             })
         }
         
-        player.enableControls(canvas);
+        scene.player.enableControls(canvas);
         renderLoop();  // black until start
     });
 }

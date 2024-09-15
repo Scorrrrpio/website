@@ -4,10 +4,11 @@ working on some cool WebGPU stuff
 
 # TODO
 - favicon
-- loadAssets -> Scene class
-    - add objects to scene at runtime
+- only fetch assets once
+- include player in scene.json
+- automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded)
+- add objects to scene at runtime
 - better animation solution? (functions)
-- automate testure shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded)
 - DEBUGGING OVERHAUL
     - conditional js imports
     - Global variables
