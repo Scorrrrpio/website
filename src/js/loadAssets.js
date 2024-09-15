@@ -52,13 +52,6 @@ class Entity {
     }
 }
 
-export class Scene {
-    // TODO from url not assets?
-    constructor(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
-        //
-    }
-}
-
 // TODO scene class?
 // only fetch each asset once
 export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {

@@ -1,10 +1,10 @@
 // imports
 import { wgpuSetup } from "./wgpuSetup";
 import { Player } from "./player";
-import { Scene, loadAssets } from "./loadAssets";
+import { loadAssets } from "./loadAssets";
 import { AssetLoadError } from "./errors";
 import { generateHUD } from "./hud";
-import { lokiSpin, move, spinY } from "./animations";
+import { Renderer } from "./renderer";
 
 // inspired by the sphere graphic from lokinet.org
 export async function fpv() {
@@ -71,69 +71,21 @@ export async function fpv() {
     const player = new Player(canvas, spawn.p, spawn.r);
 
 
-    // 4xMSAA TEXTURES
-    let canvasTexture = context.getCurrentTexture();  // TODO what is this?
-    let msaaTexture = device.createTexture({
-        format: canvasTexture.format,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        size: [canvas.width, canvas.height],
-        sampleCount: MULTISAMPLE,
-    });
-
-
-    // DEPTH TESTING TEXTURE
-    let depthTexture = device.createTexture({
-        label: "Depth Texture",
-        size: [canvas.width, canvas.height, 1],
-        format: "depth24plus",
-        sampleCount: MULTISAMPLE,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-
-
-    // HANDLE RESIZE
-    function handleResize() {
-        const parent = canvas.parentElement;
-
-        canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
-        canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
-
-        player.pov.updateProjectionMatrix(canvas.width / canvas.height);
-
-        if (msaaTexture) { msaaTexture.destroy(); }
-        msaaTexture = device.createTexture({
-            format: canvasTexture.format,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-            size: [canvas.width, canvas.height],
-            sampleCount: MULTISAMPLE,
-        });
-
-        if (depthTexture) { depthTexture.destroy(); }
-        depthTexture = device.createTexture({
-            label: "Depth Texture",
-            size: [canvas.width, canvas.height, 1],
-            format: "depth24plus",
-            sampleCount: MULTISAMPLE,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        });
-    }
-
-
     // HUD
     // TODO this needs depth testing and MSAA for some reason?
-    const hud = await generateHUD(device, canvasTexture.format, projectionBuffer, MULTISAMPLE);
+    const hud = await generateHUD(device, context.getCurrentTexture().format, projectionBuffer, MULTISAMPLE);
 
-    const renderer = new Renderer(device, context, viewBuffer, projectionBuffer, msaaTexture, depthTexture);
 
     // RENDER LOOP
+    const renderer = new Renderer(device, context, canvas, viewBuffer, projectionBuffer, MULTISAMPLE);
 	function renderLoop() {
-        renderer.render(player, renderables, hud, canvas, canvasTexture, msaaTexture, depthTexture, DEBUG);
+        renderer.render(player, renderables, hud, canvas, DEBUG);
         requestAnimationFrame(renderLoop);
 	}
 
-    handleResize();
+    renderer.handleResize(player, canvas);
     window.addEventListener("resize", () => {
-        handleResize();
+        renderer.handleResize(player, canvas);
     });
     
     // remove loading ui
@@ -166,101 +118,4 @@ export async function fpv() {
         player.enableControls(canvas);
         renderLoop();  // black until start
     });
-}
-
-class Renderer {
-    constructor(device, context, viewBuffer, projectionBuffer) {
-        this.device = device;
-        this.context = context;
-        this.viewBuffer = viewBuffer;
-        this.projectionBuffer = projectionBuffer;
-    }
-
-	render(player, renderables, hud, canvas, canvasTexture, msaaTexture, depthTexture, debug=false) {
-        // update animations
-        for (const renderable of renderables) {
-            switch (renderable.animation) {
-                case "spinY":
-                    spinY(renderable);
-                    break;
-                case "lokiSpin":
-                    lokiSpin(renderable);
-                    break;
-                case "move":
-                    move(renderable);
-                    break;
-            }
-        }
-
-        // update camera
-        const aabbBoxes = renderables.map(renderable => renderable.collisionMesh);
-        player.move(aabbBoxes);
-
-        // TODO combine with animation -> O(n) not O(2n)
-        // write mvp matrices to uniform buffers
-        for (const { modelBuffer, model } of renderables) {
-            this.device.queue.writeBuffer(modelBuffer, 0, model);
-        }
-        this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(player.pov.view));
-        this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(player.pov.projection));
-
-		// create GPUCommandEncoder
-		const encoder = this.device.createCommandEncoder();
-
-        // create input texture the size of canvas
-        canvasTexture = this.context.getCurrentTexture();
-
-		// begin render pass
-		const pass = encoder.beginRenderPass({
-			colorAttachments: [{
-                view: msaaTexture.createView(),  // render to MSAA texture
-				loadOp: "clear",
-				clearValue: { r: 0, g: 0, b: 0, a: 1 },
-				storeOp: "store",
-                resolveTarget: canvasTexture.createView(),
-			}],
-            depthStencilAttachment: {
-                view: depthTexture.createView(),
-                depthLoadOp: "clear",
-                depthClearValue: 1.0,
-                depthStoreOp: "store",
-            },
-		});
-
-        pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
-
-        for (const { pipeline, vertexBuffer, bindGroup, vertexCount } of renderables) {
-            // draw
-            pass.setPipeline(pipeline);
-            pass.setBindGroup(0, bindGroup);
-            pass.setVertexBuffer(0, vertexBuffer);
-            pass.draw(vertexCount);
-        }
-
-        // render debug content
-        if (debug) {
-            for (const {debugPipeline, debugVB, debugBG, debugVertexCount } of renderables) {
-                if (debugVertexCount) {
-                    pass.setPipeline(debugPipeline);
-                    pass.setBindGroup(0, debugBG);
-                    pass.setVertexBuffer(0, debugVB);
-                    pass.draw(debugVertexCount);
-                }
-            }
-        }
-
-        // render HUD
-        if (document.pointerLockElement === canvas) {
-            pass.setPipeline(hud.pipeline);
-            pass.setBindGroup(0, hud.bindGroup);
-            pass.setVertexBuffer(0, hud.vertexBuffer);
-            pass.draw(hud.vertexCount);
-        }
-
-		// end render pass
-		pass.end();
-
-		// create and submit GPUCommandBuffer
-		this.device.queue.submit([encoder.finish()]);
-	}
 }
