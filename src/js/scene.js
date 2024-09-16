@@ -1,4 +1,4 @@
-import { loadAssets } from "./loadAssets";
+import { loadScene } from "./loadAssets";
 import { Renderer } from "./renderer";
 import { generateHUD } from "./hud";
 import { Player } from "./player";
@@ -9,9 +9,6 @@ export class Scene {
     }
 
     async initialize(device, context, canvas, format, topology, multisamples, debug=false) {
-        const json = this.#fetchScene();
-
-
         // UNIFORM BUFFERS
         // create uniform buffers for MVP matrices
         const viewBuffer = device.createBuffer({
@@ -27,8 +24,8 @@ export class Scene {
 
 
         // ENTITIES
-        this.renderables = await loadAssets(
-            await json, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
+        this.renderables = await loadScene(
+            this.url, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
         );
 
 
@@ -65,13 +62,6 @@ export class Scene {
         window.addEventListener("resize", () => {
             this.renderer.handleResize(this.player, canvas);
         });
-    }
-
-    async #fetchScene() {
-        // Scene assets as JSON
-        const assetsResponse = await fetch(this.url);
-        if (!assetsResponse.ok) { throw new AssetLoadError("Failed to fetch scene from " + url); }
-        return assetsResponse.json();
     }
 
     drawFrame(canvas, debug=false) {

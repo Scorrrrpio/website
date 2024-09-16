@@ -1,7 +1,7 @@
-// imports
 import { wgpuSetup } from "./wgpuSetup";
 import { Scene } from "./scene";
 
+// TODO rename to Engine or Application or something
 export async function fpv() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";

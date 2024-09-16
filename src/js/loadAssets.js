@@ -52,19 +52,40 @@ class Entity {
     }
 }
 
-// TODO only fetch each asset once
-export async function loadAssets(assets, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
+async function fetchSceneFile(url) {
+    // Scene assets as JSON
+    const assetsResponse = await fetch(url);
+    if (!assetsResponse.ok) { throw new AssetLoadError("Failed to fetch scene from " + url); }
+    return assetsResponse.json();
+}
+
+// TODO logic belongs in Scene class
+export async function loadScene(sceneURL, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
+    const assets = await fetchSceneFile(sceneURL);
+
     // BIND GROUP LAYOUT
     const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
+
+    // TODO proof of concept implementation
+    const cache = new Map();
+    async function fetchOnce(url, fetcher) {
+        if (cache.has(url)) {
+            console.log("ALREADY FETCHED " + url);
+            return cache.get(url);
+        }
+        const data = await fetcher;
+        cache.set(url, data);
+        return data;
+    }
 
     // RENDERABLES
     const renderables = [];
     for (const asset of assets.objects) {  // each object in scene
         // ASSET FAMILY DEFAULT VALUES
         const [data, baseVertexShaderModule, baseFragmentShaderModule] = await Promise.all([
-            plyToTriangleList(asset.file),  // vertices from ply file
-            createShaderModule(device, asset.vertexShader, "Base Vertex Shader"),  // shaders from wgsl files
-            createShaderModule(device, asset.fragmentShader, "Base Fragment Shader")
+            fetchOnce(asset.file, plyToTriangleList(asset.file)),
+            fetchOnce(asset.vertexShader, createShaderModule(device, asset.vertexShader, "Base Vertex Shader")),  // shaders from wgsl files
+            fetchOnce(asset.fragmentShader, createShaderModule(device, asset.fragmentShader, "Base Fragment Shader"))
         ]);
 
         // TODO change ply reader AGAIN
