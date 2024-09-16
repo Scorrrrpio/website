@@ -4,8 +4,9 @@ import { generateHUD } from "./hud";
 import { Player } from "./player";
 
 export class Scene {
-    constructor(url) {
+    constructor(url, cache) {
         this.url = url;
+        this.cache = cache;
     }
 
     async initialize(device, context, canvas, format, topology, multisamples, debug=false) {
@@ -25,7 +26,7 @@ export class Scene {
 
         // ENTITIES
         this.renderables = await loadScene(
-            this.url, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
+            this.url, this.cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
         );
 
 
@@ -55,7 +56,7 @@ export class Scene {
 
         // HUD
         // TODO this needs depth testing and MSAA for some reason?
-        this.hud = await generateHUD(device, context.getCurrentTexture().format, projectionBuffer, multisamples);
+        this.hud = await generateHUD(device, format, projectionBuffer, multisamples);
 
         // RENDERER
         this.renderer = new Renderer(device, context, canvas, viewBuffer, projectionBuffer, multisamples);

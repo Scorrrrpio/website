@@ -1,7 +1,7 @@
 import { wgpuSetup } from "./wgpuSetup";
 import { Scene } from "./scene";
 
-// TODO rename to Engine or Application or something
+// TODO Engine class?
 export async function fpv() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";
@@ -19,7 +19,8 @@ export async function fpv() {
 
 
     // SCENE SETUP
-    const scene = new Scene("geometry/scene.json");
+    const assetCache = new Map();
+    const scene = new Scene("geometry/scene.json", assetCache);
     await scene.initialize(device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
 
 

@@ -60,17 +60,15 @@ async function fetchSceneFile(url) {
 }
 
 // TODO logic belongs in Scene class
-export async function loadScene(sceneURL, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
+export async function loadScene(sceneURL, cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
     const assets = await fetchSceneFile(sceneURL);
 
     // BIND GROUP LAYOUT
     const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
 
     // TODO proof of concept implementation
-    const cache = new Map();
     async function fetchOnce(url, fetcher) {
         if (cache.has(url)) {
-            console.log("ALREADY FETCHED " + url);
             return cache.get(url);
         }
         const data = await fetcher;
