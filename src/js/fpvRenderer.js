@@ -15,13 +15,13 @@ export async function fpv() {
     canvas.width = canvas.clientWidth * devicePixelRatio;
     canvas.height = canvas.clientHeight * devicePixelRatio;
 
+    // TODO consider keeping as object
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
     // SCENE SETUP
     const assetCache = new Map();
-    const scene = new Scene("geometry/scene.json", assetCache);
-    await scene.initialize(device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+    const scene = await Scene.fromURL("geometry/scene.json", assetCache, device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
 
 
     // RENDER LOOP

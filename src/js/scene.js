@@ -4,6 +4,12 @@ import { generateHUD } from "./hud";
 import { Player } from "./player";
 
 export class Scene {
+    static async fromURL(url, cache, device, context, canvas, format, topology, multisamples, debug=false) {
+        const scene = new Scene(url, cache);
+        await scene.initialize(device, context, canvas, format, topology, multisamples, debug=false);
+        return scene;
+    }
+
     constructor(url, cache) {
         this.url = url;
         this.cache = cache;
