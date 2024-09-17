@@ -1,3 +1,4 @@
+import { lokiSpin, move, spinY } from "./animations";
 import { loadScene } from "./loadAssets";
 import { Renderer } from "./renderer";
 import { generateHUD } from "./hud";
@@ -6,7 +7,7 @@ import { Player } from "./player";
 export class Scene {
     static async fromURL(url, cache, device, context, canvas, format, topology, multisamples, debug=false) {
         const scene = new Scene(url, cache);
-        await scene.initialize(device, context, canvas, format, topology, multisamples, debug=false);
+        await scene.initialize(device, context, canvas, format, topology, multisamples, debug);
         return scene;
     }
 
@@ -72,6 +73,25 @@ export class Scene {
     }
 
     drawFrame(canvas, debug=false) {
+        // update animations
+        for (const renderable of this.renderables) {
+            switch (renderable.animation) {
+                case "spinY":
+                    spinY(renderable);
+                    break;
+                case "lokiSpin":
+                    lokiSpin(renderable);
+                    break;
+                case "move":
+                    move(renderable);
+                    break;
+            }
+        }
+
+        // update camera
+        const aabbBoxes = this.renderables.map(renderable => renderable.collider);
+        this.player.move(aabbBoxes);
+
         this.renderer.render(this.player, this.renderables, this.hud, canvas, debug);
     }
 }

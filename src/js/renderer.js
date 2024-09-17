@@ -1,5 +1,3 @@
-import { lokiSpin, move, spinY } from "./animations";
-
 export class Renderer {
     constructor(device, context, canvas, viewBuffer, projectionBuffer, multisample) {
         this.device = device;
@@ -29,25 +27,6 @@ export class Renderer {
     }
 
 	render(player, renderables, hud, canvas, debug=false) {
-        // update animations
-        for (const renderable of renderables) {
-            switch (renderable.animation) {
-                case "spinY":
-                    spinY(renderable);
-                    break;
-                case "lokiSpin":
-                    lokiSpin(renderable);
-                    break;
-                case "move":
-                    move(renderable);
-                    break;
-            }
-        }
-
-        // update camera
-        const aabbBoxes = renderables.map(renderable => renderable.collisionMesh);
-        player.move(aabbBoxes);
-
         // TODO combine with animation -> O(n) not O(2n)
         // write mvp matrices to uniform buffers
         for (const { modelBuffer, model } of renderables) {

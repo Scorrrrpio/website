@@ -6,17 +6,6 @@ import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
 
-// TODO why is this here
-export function createModelMatrix(position = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1]) {
-    const model = mat4.create();
-    mat4.translate(model, model, position);
-    mat4.rotateX(model, model, rotation[0]);
-    mat4.rotateY(model, model, rotation[1]);
-    mat4.rotateZ(model, model, rotation[2]);
-    mat4.scale(model, model, scale);
-    return model;
-}
-
 async function loadImageToBMP(url) {
     // read image from texture url
     const img = new Image();
@@ -37,18 +26,32 @@ async function loadImageToBMP(url) {
 // TODO move to separate file
 // WIP
 class Entity {
-    constructor(id, vb, vertCount, model, modelBuffer, bg, pl, baseMesh, collisionMesh, animation, transforms) {
+    constructor(id, vb, vertCount, modelBuffer, bg, pl, collider, animation, transforms) {
         this.id = id;
         this.vertexBuffer = vb;
         this.vertexCount = vertCount;
-        this.model = model;
         this.modelBuffer = modelBuffer;
         this.bindGroup = bg;
         this.pipeline = pl;
-        this.baseMesh = baseMesh;
-        this.collisionMesh = collisionMesh;
+        this.collider = collider;
         this.animation = animation;
         this.transforms = transforms;
+        this.createModelMatrix();
+    }
+
+    createModelMatrix() {
+        const model = mat4.create();
+        mat4.translate(model, model, this.transforms.position);
+        mat4.rotateX(model, model, this.transforms.rotation[0]);
+        mat4.rotateY(model, model, this.transforms.rotation[1]);
+        mat4.rotateZ(model, model, this.transforms.rotation[2]);
+        mat4.scale(model, model, this.transforms.scale);
+        this.model = model;
+        if (this.collider) this.#transformCollider();
+    }
+
+    #transformCollider() {
+        this.collider.modelTransform(this.model);
     }
 }
 
@@ -71,6 +74,7 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
         if (cache.has(url)) {
             return cache.get(url);
         }
+        if (debug) console.log("FETCH: " + url);
         const data = await fetcher;
         cache.set(url, data);
         return data;
@@ -78,6 +82,7 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
 
     // RENDERABLES
     const renderables = [];
+    // TODO break into functions
     for (const asset of assets.objects) {  // each object in scene
         // ASSET FAMILY DEFAULT VALUES
         const [data, baseVertexShaderModule, baseFragmentShaderModule] = await Promise.all([
@@ -100,18 +105,17 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
         const vbAttributes = createVBAttributes(floats.properties);
         //console.log("VB ATTRIBUTES\n", vbAttributes);  // TODO grouping
 
+        // VERTEX BUFFER
+        const vb = device.createBuffer({
+            label: asset.file,
+            size: floats.data.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(vb, 0, floats.data);
+
         // INSTANCE-SPECIFIC VALUES
         for (const instance of asset.instances) {
-            // VERTEX BUFFER
-            const vb = device.createBuffer({
-                label: asset.file,
-                size: floats.data.byteLength,
-                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-            });
-            device.queue.writeBuffer(vb, 0, floats.data);
-
-            // MODEL MATRIX
-            const model = createModelMatrix(instance.p, instance.r, instance.s);
+            // MODEL BUFFER
             const modelBuffer = device.createBuffer({
                 label: "Model Uniform " + renderables.length,
                 size: 64,
@@ -125,11 +129,10 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
                 {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}  // MVP
             );
 
-            // TRANSFORM COLLISION MESH
-            let collisionMesh;
+            // COLLIDER
+            let collider;
             if (asset.collision === "aabb") {
-                collisionMesh = new AABB(baseMesh.min, baseMesh.max, instance.href, instance.ghost, instance.v);
-                collisionMesh.modelTransform(model);
+                collider = new AABB(baseMesh.min, baseMesh.max, instance.href, instance.ghost, instance.v);
             }
 
             // OVERRIDE SHADERS
@@ -137,8 +140,8 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
             let fragmentShaderModule = baseFragmentShaderModule;
             if (instance.vertexShader && instance.fragmentShader) {
                 [vertexShaderModule, fragmentShaderModule] = await Promise.all([
-                    createShaderModule(device, instance.vertexShader, "Vertex Shader Override"),
-                    createShaderModule(device, instance.fragmentShader, "Fragment Shader Override")
+                    fetchOnce(instance.vertexShader, createShaderModule(device, instance.vertexShader, "Vertex Shader Override")),
+                    fetchOnce(instance.fragmentShader, createShaderModule(device, instance.fragmentShader, "Fragment Shader Override"))
                 ]);
             }
 
@@ -150,7 +153,7 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
                 let texture;
                 if (instance.texture.url) {
                     // image texture
-                    const imgBmp = await loadImageToBMP(instance.texture.url);
+                    const imgBmp = await fetchOnce(instance.texture.url, loadImageToBMP(instance.texture.url));
                     // create texture on device
                     texture = device.createTexture({
                         label: "Instance Texture",
@@ -224,7 +227,6 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
                 renderables.length,  // ID
                 vb,  // vertex buffer
                 floats.data.length / floats.properties.length,  // vertex count
-                model,
                 modelBuffer,
                 bindGroup,
                 createPipeline(
@@ -241,10 +243,9 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
                     true,
                     multisamples
                 ),
-                baseMesh,
-                collisionMesh,
+                collider,
                 animation,
-                {
+                {  // transforms
                     position: instance.p || [0, 0, 0],
                     rotation: instance.r || [0, 0, 0],
                     scale: instance.s || [1, 1, 1],
@@ -273,10 +274,10 @@ async function createDebugGeometry(renderables, device, format, viewBuffer, proj
     const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
 
     for (const renderable of renderables) {
-        if (renderable.collisionMesh && !renderable.collisionMesh.ghost) {
+        if (renderable.collider && !renderable.collider.ghost) {
             // generate geometry (line-list)
             const vertexCount = 24;  // 12 edges, 2 vertices each
-            const vertices = renderable.collisionMesh.toVertices();
+            const vertices = renderable.collider.toVertices();
             
             // VERTEX BUFFER
             const vb = device.createBuffer({
