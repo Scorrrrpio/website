@@ -12,6 +12,7 @@ working on some cool WebGPU stuff
 - DEBUGGING OVERHAUL
     - conditional js imports
     - Global variables
+    - render debug over everything (no depth testing)
 - holdable objects
 - PHYSICS OVERHAUL
     - AABBs to OBBs / more collision mesh classes? (WIP)

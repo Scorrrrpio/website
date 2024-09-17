@@ -16,6 +16,16 @@ class Collider {  // TODO why?
         }
     }
 
+    copy() {
+        throw new Error("Copy behaviour must be implemented by subclasses of Collider");
+    }
+
+    setProperties(href=null, ghost=false, velocity=[0, 0, 0]) {
+        this.href = href;
+        this.ghost = ghost;
+        this.velocity = velocity;
+    }
+
     static checkCollision(other) {
         throw new Error("checkCollision must be implemented by subclasses of Collider");
     }
@@ -26,6 +36,10 @@ export class AABB extends Collider {
         super([min, max], href, ghost, velocity);
         this.min = min;
         this.max = max;
+    }
+
+    copy() {
+        return new AABB(this.min, this.max, this.hred, this.ghost, this.velocity, this.debug);
     }
 
     // TODO no rotation

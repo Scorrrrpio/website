@@ -29,8 +29,10 @@ export class Renderer {
 	render(player, renderables, hud, canvas, debug=false) {
         // TODO combine with animation -> O(n) not O(2n)
         // write mvp matrices to uniform buffers
-        for (const { modelBuffer, model } of renderables) {
-            this.device.queue.writeBuffer(modelBuffer, 0, model);
+        for (const mesh of renderables) {
+            for (const instance of mesh.instances) {
+                this.device.queue.writeBuffer(instance.modelBuffer, 0, instance.model);
+            }
         }
         this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(player.pov.view));
         this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(player.pov.projection));
@@ -60,22 +62,27 @@ export class Renderer {
 
         pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
 
-        for (const { pipeline, vertexBuffer, bindGroup, vertexCount } of renderables) {
-            // draw
-            pass.setPipeline(pipeline);
-            pass.setBindGroup(0, bindGroup);
-            pass.setVertexBuffer(0, vertexBuffer);
-            pass.draw(vertexCount);
+        for (const mesh of renderables) {
+            pass.setVertexBuffer(0, mesh.asset.vertexBuffer);
+            console.log(mesh.asset.vertexBuffer);
+            for (const instance of mesh.instances) {
+                pass.setPipeline(instance.pipeline);
+                pass.setBindGroup(0, instance.bindGroup);
+                pass.draw(mesh.asset.vertexCount);
+            }
         }
 
         // render debug content
+        // TODO will fail
         if (debug) {
-            for (const {debugPipeline, debugVB, debugBG, debugVertexCount } of renderables) {
-                if (debugVertexCount) {
-                    pass.setPipeline(debugPipeline);
-                    pass.setBindGroup(0, debugBG);
-                    pass.setVertexBuffer(0, debugVB);
-                    pass.draw(debugVertexCount);
+            for (const mesh of renderables) {
+                for (const instance of mesh.instances) {
+                    if (instance.debugVertexBuffer) {
+                        pass.setVertexBuffer(0, instance.debugVertexBuffer);
+                        pass.setPipeline(instance.debugPipeline);
+                        pass.setBindGroup(0, instance.debugBindGroup);
+                        pass.draw(instance.debugVertexCount);
+                    }
                 }
             }
         }

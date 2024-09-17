@@ -79,31 +79,34 @@ export class Scene {
 
     update(frame) {
         // TODO demo
+        /*
         if (frame % 240 === 179) {
             this.renderables.push(this.runtimes[0]);
         }
         if (frame % 240 === 239) {
             this.renderables.pop();
-        }
+        }*/
 
         // update animations
-        for (const renderable of this.renderables) {
-            switch (renderable.animation) {
-                case "spinY":
-                    spinY(renderable);
-                    break;
-                case "lokiSpin":
-                    lokiSpin(renderable);
-                    break;
-                case "move":
-                    move(renderable);
-                    break;
+        for (const asset of this.renderables) {
+            for (const instance of asset.instances) {
+                switch (instance.animation) {
+                    case "spinY":
+                        spinY(instance);
+                        break;
+                    case "lokiSpin":
+                        lokiSpin(instance);
+                        break;
+                    case "move":
+                        move(instance);
+                        break;
+                }
             }
         }
 
         // update camera
-        const aabbBoxes = this.renderables.map(renderable => renderable.collider);
-        this.player.move(aabbBoxes);
+        const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
+        this.player.move(colliders);
     }
 
     render(canvas, debug) {
