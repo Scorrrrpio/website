@@ -1,5 +1,5 @@
 import { lokiSpin, move, spinY } from "./animations";
-import { createInstance, loadScene } from "./loadAssets";
+import { createDebugGeometry, createInstance, loadScene } from "./loadAssets";
 import { Renderer } from "./renderer";
 import { generateHUD } from "./hud";
 import { Player } from "./player";
@@ -34,10 +34,6 @@ export class Scene {
         // ENTITIES
         this.renderables = await loadScene(
             this.url, this.cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
-        );
-        // TODO better solution
-        this.runtimes = await loadScene(
-            "geometry/scene2.json", this.cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
         );
 
 
@@ -113,6 +109,7 @@ export class Scene {
                         break;
                     case "move":
                         move(instance);
+                        createDebugGeometry(instance, device);
                         break;
                 }
             }

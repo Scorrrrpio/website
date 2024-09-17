@@ -6,7 +6,6 @@ working on some cool WebGPU stuff
 - favicon
 - include player in scene.json
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded)
-- add objects to scene at runtime
 - better animation solution? (functions)
 - DEBUGGING OVERHAUL
     - conditional js imports

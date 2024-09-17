@@ -63,32 +63,32 @@ export class AABB extends Collider {
         const vertices = new Float32Array(72);
         let vIndex = 0;
         // face 1
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.min[2];
         // face 2
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.min[2];
         // connectors
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[0][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[0][2];
-        vertices[vIndex++] = this.verts[0][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
-        vertices[vIndex++] = this.verts[1][0]; vertices[vIndex++] = this.verts[1][1]; vertices[vIndex++] = this.verts[1][2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.min[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.min[2];
+        vertices[vIndex++] = this.min[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.max[2];
+        vertices[vIndex++] = this.max[0]; vertices[vIndex++] = this.max[1]; vertices[vIndex++] = this.max[2];
         return vertices;
     }
 

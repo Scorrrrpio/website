@@ -226,6 +226,56 @@ export async function createInstance(data, base, cache, device, format, viewBuff
             scale: data.s || [1, 1, 1],
         }
     );
+
+    // DEBUG
+    // create debug geometry
+    if (debug && instance.collider && !instance.collider.ghost) {
+        // SHADERS
+        const [debugVShader, debugFShader] = await Promise.all([
+            fetchOnce(cache, "shaders/basic.vert.wgsl", createShaderModule(device, "shaders/basic.vert.wgsl", "DEBUG vertex module"), true),
+            fetchOnce(cache, "shaders/debug.frag.wgsl", createShaderModule(device, "shaders/debug.frag.wgsl", "DEBUG fragment module"), true),
+        ]);
+
+        // BGL
+        const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
+
+        // MODEL BUFFER (identity)
+        const modelBuffer = device.createBuffer({
+            label: "DEBUG Model Uniform",
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        const model = mat4.create();
+        device.queue.writeBuffer(modelBuffer, 0, model);
+
+        // BIND GROUP
+        const bg = createBindGroup(device, "DEBUG Bind Group", debugBGL, {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer});
+
+        // VERTEX BUFFER ATTRIBUTES
+        const vbAttributes = createVBAttributes(["x", "y", "z"]);
+    
+        // PIPELINE
+        const pipeline = createPipeline(
+            "DEBUG Pipeline",
+            device,
+            debugBGL,
+            debugVShader,
+            3,  // vertex properties
+            vbAttributes,
+            debugFShader,
+            format,
+            "line-list",
+            "none",
+            true,
+            multisamples
+        );
+
+        // TODO everything before this is constant across all debug geometry
+        const [debugVB, debugVCount] = createDebugGeometry(instance, device);
+
+        instance.debug(debugVB, debugVCount, bg, pipeline);
+    }
+
     return instance;
 }
 
@@ -249,74 +299,28 @@ export async function loadScene(sceneURL, cache, device, viewBuffer, projectionB
         renderables.push(renderable);
     }
 
-    // create debug geometry
-    if (debug) {
-        createDebugGeometry(cache, renderables, device, format, viewBuffer, projectionBuffer, multisamples);
-    }
-
     return renderables;
 }
 
 
-// TODO COMPLETELY COOKED
 // TODO move into Mesh class
 // TODO hardcoded for AABB
-async function createDebugGeometry(cache, renderables, device, format, viewBuffer, projectionBuffer, multisamples) {
-    // SHADERS
-    const [debugVShader, debugFShader] = await Promise.all([
-        fetchOnce(cache, "shaders/basic.vert.wgsl", createShaderModule(device, "shaders/basic.vert.wgsl", "DEBUG vertex module"), true),
-        fetchOnce(cache, "shaders/debug.frag.wgsl", createShaderModule(device, "shaders/debug.frag.wgsl", "DEBUG fragment module"), true),
-    ])
-
-    // BGL
-    const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
-
-    // MODEL BUFFER (identity)
-    const modelBuffer = device.createBuffer({
-        label: "DEBUG Model Uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-    const model = mat4.create();
-    device.queue.writeBuffer(modelBuffer, 0, model);
-
-    for (const mesh of renderables) {
-        for (const instance of mesh.instances) {
-            if (instance.collider && !instance.collider.ghost) {
-                // generate geometry (line-list)
-                const vertexCount = 24;  // 12 edges, 2 vertices each
-                const vertices = instance.collider.toVertices();
-                
-                // VERTEX BUFFER
-                const vb = device.createBuffer({
-                    label: "DEBUG VB",
-                    size: vertices.byteLength,
-                    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-                });
-                device.queue.writeBuffer(vb, 0, vertices);
-                const vbAttributes = createVBAttributes(["x", "y", "z"]);
-                
-                // BIND GROUP
-                const bg = createBindGroup(device, "DEBUG Bind Group", debugBGL, {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer});
+export function createDebugGeometry(instance, device) {
+    // generate geometry (line-list)
+    const vertices = instance.collider.toVertices();
+    const vCount = 24;  // for cube
     
-                // PIPELINE
-                const pipeline = createPipeline(
-                    "DEBUG Pipeline",
-                    device,
-                    debugBGL,
-                    debugVShader,
-                    3,  // vertex properties
-                    vbAttributes,
-                    debugFShader,
-                    format,
-                    "line-list",
-                    "none",
-                    true,
-                    multisamples
-                );
-
-                instance.debug(vb, vertexCount, bg, pipeline);
-            }
-        }
+    let vb;
+    if (instance.debugVertexBuffer) { vb = instance.debugVertexBuffer; }
+    else {
+        vb = device.createBuffer({
+            label: "DEBUG VB",
+            size: vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
     }
+    
+    device.queue.writeBuffer(vb, 0, vertices);
+
+    return [vb, vCount];
 }
