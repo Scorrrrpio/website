@@ -1,44 +1,27 @@
 import { mat4 } from "gl-matrix";
 
 export class Entity {
-    constructor(id, vb, vertCount, modelBuffer, bg, pl, collider, animation, transforms) {
-        // ASSET
-        this.vertexBuffer = vb;
-        this.vertexCount = vertCount;
-        // INSTANCE
-        this.id = id;
-        this.modelBuffer = modelBuffer;
-        this.bindGroup = bg;
-        this.pipeline = pl;
-        this.collider = collider;
-        this.animation = animation;
-        this.transforms = transforms;
-        this.createModelMatrix();
-    }
+    constructor() {}
 
-    createModelMatrix() {
-        const model = mat4.create();
-        mat4.translate(model, model, this.transforms.position);
-        mat4.rotateX(model, model, this.transforms.rotation[0]);
-        mat4.rotateY(model, model, this.transforms.rotation[1]);
-        mat4.rotateZ(model, model, this.transforms.rotation[2]);
-        mat4.scale(model, model, this.transforms.scale);
-        this.model = model;
-        if (this.collider) this.#transformCollider();
-    }
-
-    #transformCollider() {
-        this.collider.modelTransform(this.model);
+    createInstance() {
+        throw new Error("createInstance must be implemented in subclasses of Entity")
     }
 }
 
-export class Mesh {
-    constructor(vb, vbAttributes, propertyCount, vertexCount, collider) {
+export class Mesh extends Entity {
+    constructor(vb, vbAttributes, propertyCount, vertexCount, collider, vert, frag) {
+        super();
         this.vertexBuffer = vb;
         this.vbAttributes = vbAttributes;
         this.propertyCount = propertyCount;
         this.vertexCount = vertexCount;
         this.collider = collider;
+        this.vertexShader = vert;  // defaults
+        this.fragmentShader = frag;
+    }
+
+    createInstance(id, modelBuffer, bg, pl, collider, animation, transforms) {
+        return new MeshInstance(id, modelBuffer, bg, pl, collider, animation, transforms);
     }
 }
 

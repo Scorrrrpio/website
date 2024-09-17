@@ -64,7 +64,6 @@ export class Renderer {
 
         for (const mesh of renderables) {
             pass.setVertexBuffer(0, mesh.asset.vertexBuffer);
-            console.log(mesh.asset.vertexBuffer);
             for (const instance of mesh.instances) {
                 pass.setPipeline(instance.pipeline);
                 pass.setBindGroup(0, instance.bindGroup);

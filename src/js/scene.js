@@ -1,9 +1,8 @@
 import { lokiSpin, move, spinY } from "./animations";
-import { loadScene } from "./loadAssets";
+import { createInstance, loadScene } from "./loadAssets";
 import { Renderer } from "./renderer";
 import { generateHUD } from "./hud";
 import { Player } from "./player";
-import { Entity } from "./entity";
 
 export class Scene {
     static async fromURL(url, cache, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -77,15 +76,30 @@ export class Scene {
         });
     }
 
-    update(frame) {
+    async update(frame, device, format, topology, multisamples, debug=false) {
         // TODO demo
-        /*
         if (frame % 240 === 179) {
-            this.renderables.push(this.runtimes[0]);
+            const data = {
+                p: [-20, 4, 0],
+                s: [2, 2, 2],
+            }
+            const newCube = await createInstance(
+                data,  // instance data
+                this.renderables[0].asset,  // base asset
+                this.cache,  // cache
+                device,
+                format,
+                this.renderer.viewBuffer,
+                this.renderer.projectionBuffer,
+                topology,
+                multisamples,
+                debug
+            );
+            this.renderables[0].instances.push(newCube);
         }
         if (frame % 240 === 239) {
-            this.renderables.pop();
-        }*/
+            this.renderables[0].instances.pop();
+        }
 
         // update animations
         for (const asset of this.renderables) {
