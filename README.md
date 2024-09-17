@@ -4,6 +4,7 @@ working on some cool WebGPU stuff
 
 # TODO
 - favicon
+- instanced meshes
 - include player in scene.json
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded)
 - add objects to scene at runtime

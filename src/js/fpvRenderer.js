@@ -25,8 +25,10 @@ export async function fpv() {
 
 
     // RENDER LOOP
+    let frame = 0;
 	function renderLoop() {
-        scene.drawFrame(canvas, DEBUG);
+        scene.update(frame++);
+        scene.render(canvas, DEBUG);
         requestAnimationFrame(renderLoop);
 	}
     

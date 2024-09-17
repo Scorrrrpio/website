@@ -1,7 +1,7 @@
 import { vec3 } from "gl-matrix";
 
 class Collider {  // TODO why?
-    constructor(verts, href = null, ghost = false, velocity = [0, 0, 0]) {
+    constructor(verts, href=null, ghost=false, velocity=[0, 0, 0]) {
         this.verts = verts;
         this.href = href;
         this.ghost = ghost;

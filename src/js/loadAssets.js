@@ -1,10 +1,10 @@
 import { AssetLoadError } from "./errors";
 import { textureTriangle } from "./textureTriangle";
 import { plyToTriangleList } from "./plyReader";
-import { mat4 } from "gl-matrix";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
+import { Entity } from "./entity";
 
 async function loadImageToBMP(url) {
     // read image from texture url
@@ -23,38 +23,6 @@ async function loadImageToBMP(url) {
     return await createImageBitmap(img);
 }
 
-// TODO move to separate file
-// WIP
-class Entity {
-    constructor(id, vb, vertCount, modelBuffer, bg, pl, collider, animation, transforms) {
-        this.id = id;
-        this.vertexBuffer = vb;
-        this.vertexCount = vertCount;
-        this.modelBuffer = modelBuffer;
-        this.bindGroup = bg;
-        this.pipeline = pl;
-        this.collider = collider;
-        this.animation = animation;
-        this.transforms = transforms;
-        this.createModelMatrix();
-    }
-
-    createModelMatrix() {
-        const model = mat4.create();
-        mat4.translate(model, model, this.transforms.position);
-        mat4.rotateX(model, model, this.transforms.rotation[0]);
-        mat4.rotateY(model, model, this.transforms.rotation[1]);
-        mat4.rotateZ(model, model, this.transforms.rotation[2]);
-        mat4.scale(model, model, this.transforms.scale);
-        this.model = model;
-        if (this.collider) this.#transformCollider();
-    }
-
-    #transformCollider() {
-        this.collider.modelTransform(this.model);
-    }
-}
-
 async function fetchSceneFile(url) {
     // Scene assets as JSON
     const assetsResponse = await fetch(url);
@@ -64,7 +32,7 @@ async function fetchSceneFile(url) {
 
 // TODO logic belongs in Scene class
 export async function loadScene(sceneURL, cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
-    const assets = await fetchSceneFile(sceneURL);
+    const assets = await fetchSceneFile(sceneURL);  // TODO too much in one function
 
     // BIND GROUP LAYOUT
     const baseBindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");

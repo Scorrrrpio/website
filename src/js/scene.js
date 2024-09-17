@@ -3,6 +3,7 @@ import { loadScene } from "./loadAssets";
 import { Renderer } from "./renderer";
 import { generateHUD } from "./hud";
 import { Player } from "./player";
+import { Entity } from "./entity";
 
 export class Scene {
     static async fromURL(url, cache, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -34,6 +35,10 @@ export class Scene {
         // ENTITIES
         this.renderables = await loadScene(
             this.url, this.cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
+        );
+        // TODO better solution
+        this.runtimes = await loadScene(
+            "geometry/scene2.json", this.cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
         );
 
 
@@ -72,7 +77,15 @@ export class Scene {
         });
     }
 
-    drawFrame(canvas, debug=false) {
+    update(frame) {
+        // TODO demo
+        if (frame % 240 === 179) {
+            this.renderables.push(this.runtimes[0]);
+        }
+        if (frame % 240 === 239) {
+            this.renderables.pop();
+        }
+
         // update animations
         for (const renderable of this.renderables) {
             switch (renderable.animation) {
@@ -91,7 +104,9 @@ export class Scene {
         // update camera
         const aabbBoxes = this.renderables.map(renderable => renderable.collider);
         this.player.move(aabbBoxes);
+    }
 
-        this.renderer.render(this.player, this.renderables, this.hud, canvas, debug);
+    render(canvas, debug) {
+        this.renderer.render(this.player, this.renderables, this.hud, canvas, debug)
     }
 }
