@@ -7,6 +7,8 @@ import { AABB, SphereMesh } from "./collision";
 import { Entity, Mesh, MeshInstance } from "./entity";
 import { mat4 } from "gl-matrix";
 
+// TODO AssetManager class
+
 async function loadImageToBMP(url) {
     // read image from texture url
     const img = new Image();

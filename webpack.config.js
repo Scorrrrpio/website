@@ -4,7 +4,7 @@ const copyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
 	entry: {
-		fpv: "./src/js/fpvEntry.js",
+		engine: "./src/js/entry.js",
 	},
 	output: {
 		filename: "[name].bundle.js",
@@ -15,7 +15,7 @@ module.exports = {
 		new htmlWebpackPlugin({
 			template: "./src/index.html",
 			filename: "index.html",
-			chunks: ["fpv"]
+			chunks: ["engine"]
 		}),
 		new copyWebpackPlugin({
 			patterns: [

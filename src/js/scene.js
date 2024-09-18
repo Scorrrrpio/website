@@ -1,12 +1,12 @@
 import { lokiSpin, move, spinY } from "./animations";
-import { createDebugGeometry, createInstance, loadScene } from "./loadAssets";
-import { Renderer } from "./renderer";
+import { createDebugGeometry, createInstance, loadScene } from "./assetManager";
+import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { Player } from "./player";
 
-export class Scene {
+export class SceneManager {
     static async fromURL(url, cache, device, context, canvas, format, topology, multisamples, debug=false) {
-        const scene = new Scene(url, cache);
+        const scene = new SceneManager(url, cache);
         await scene.initialize(device, context, canvas, format, topology, multisamples, debug);
         return scene;
     }
@@ -66,7 +66,7 @@ export class Scene {
         this.hud = await generateHUD(device, format, projectionBuffer, multisamples);
 
         // RENDERER
-        this.renderer = new Renderer(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
+        this.renderer = new RenderEngine(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
         window.addEventListener("resize", () => {
             this.renderer.handleResize(this.player, canvas);
         });

@@ -1,4 +1,4 @@
-import { fpv } from "./fpvRenderer";
+import { engine } from "./engine";
 
 const canvas = document.querySelector("canvas");
 const controls = document.getElementById("controls");
@@ -14,7 +14,7 @@ function removeElements(...elements) {
     }
 }
 
-fpv().catch((error) => {
+engine().catch((error) => {
     removeElements(playButton, loading, canvas, controls);
     if (error.name === "UnsupportedWebGPUError") {
         removeElements(loadFailedDialogue, errorDialogue);

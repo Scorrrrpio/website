@@ -1,8 +1,8 @@
 import { wgpuSetup } from "./wgpuSetup";
-import { Scene } from "./scene";
+import { SceneManager } from "./scene";
 
 // TODO Engine class?
-export async function fpv() {
+export async function engine() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";
     const MULTISAMPLE = 4;
@@ -21,12 +21,12 @@ export async function fpv() {
 
     // SCENE SETUP
     const assetCache = new Map();
-    const scene = await Scene.fromURL("geometry/scene.json", assetCache, device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+    const scene = await SceneManager.fromURL("geometry/scene.json", assetCache, device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
 
 
-    // RENDER LOOP
+    // GAME LOOP
     let frame = 0;
-	async function renderLoop() {
+	async function renderLoop() {  // TODO why async
         await scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
         scene.render(canvas, DEBUG);
         requestAnimationFrame(renderLoop);

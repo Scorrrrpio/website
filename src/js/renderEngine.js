@@ -1,4 +1,4 @@
-export class Renderer {
+export class RenderEngine {
     constructor(device, context, canvas, viewBuffer, projectionBuffer, multisample) {
         this.device = device;
         this.context = context;  // TODO needed?
