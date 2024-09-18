@@ -30,10 +30,10 @@ export async function engine() {
 
     // GAME LOOP
     let frame = 0;
-	async function renderLoop() {  // TODO why async
+	async function gameLoop() {  // TODO why async
         await scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
         scene.render(canvas, DEBUG);
-        requestAnimationFrame(renderLoop);
+        requestAnimationFrame(gameLoop);
 	}
     
 
@@ -65,7 +65,12 @@ export async function engine() {
             })
         }
         
-        scene.player.enableControls(canvas);
-        renderLoop();  // black until start
+        // enable player controls
+        const controlled = scene.entitiesWith("InputComponent");
+        for (const e of controlled) {
+            scene.getComponent(e, "InputComponent").enableControls(canvas);
+        }
+        scene.player2.enableControls(canvas);
+        gameLoop();  // black until start
     });
 }

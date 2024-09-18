@@ -1,5 +1,7 @@
 import { mat4, vec3 } from "gl-matrix";
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
+
+// TODO ideally eliminate these imports
 import { textureTriangle } from "./textureTriangle";
 import { textToTexture } from "./renderText";
 
@@ -304,5 +306,196 @@ export class AABBComponent extends ColliderComponent {
                 this.min[2] <= other.max[2] && this.max[2] >= other.min[2]
             );
         }
+    }
+}
+
+
+export class CameraComponent {
+    // view matrix
+    view = mat4.create();
+
+    // projection matrix
+    fov = Math.PI / 6;
+    aspect = 1;
+    near = 0.01;
+    far = 1000.0;
+    projection = mat4.create();
+
+    constructor(aspect, offset=[0, 0, 0]) {
+        this.offset = offset;
+        // projection matrix setup
+        this.aspect = aspect;
+        mat4.perspective(this.projection, this.fov, this.aspect, this.near, this.far);
+    }
+
+    updateProjectionMatrix(aspect = this.aspect, fov = this.fov, near = this.near, far = this.far) {
+        this.aspect = aspect;
+        this.fov = fov;
+        this.near = near;
+        this.far = far;
+        mat4.perspective(this.projection, fov, aspect, near, far);
+    }
+
+    updateViewMatrix(position, rotation) {
+        position[0] += this.offset[0];
+        position[1] += this.offset[1];
+        position[2] += this.offset[2];
+        mat4.rotateX(this.view, mat4.create(), rotation[0]);
+        mat4.rotateY(this.view, this.view, rotation[1]);
+        mat4.rotateZ(this.view, this.view, rotation[2]);
+        mat4.translate(this.view, this.view, [-position[0], -position[1], -position[2]]);
+    }
+}
+
+
+export class InputComponent {
+    constructor() {
+        this.inputs = {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+            space: false,
+            leftMouse: false,
+            rightMouse: false,
+        }
+
+        this.look = [0, 0, 0];
+    }
+
+    enableControls(canvas) {
+        const controlsText = document.getElementById("controls");
+        // keyboard input
+        document.addEventListener("keydown", (event) => {
+            if (document.pointerLockElement === canvas) {
+                switch(event.code) {
+                    case "KeyW":
+                        this.inputs.w = true;
+                        break;
+                    case "KeyA":
+                        this.inputs.a = true;
+                        break;
+                    case "KeyS":
+                        this.inputs.s = true;
+                        break;
+                    case "KeyD":
+                        this.inputs.d = true;
+                        break;
+                    case "Space":
+                        this.inputs.space = true;
+                        break;
+                }
+            }
+        });
+
+        document.addEventListener("keyup", (event) => {
+            if (document.pointerLockElement === canvas) {
+                switch(event.code) {
+                    case "KeyW":
+                        this.inputs.w = false;
+                        break;
+                    case "KeyA":
+                        this.inputs.a = false;
+                        break;
+                    case "KeyS":
+                        this.inputs.s = false;
+                        break;
+                    case "KeyD":
+                        this.inputs.d = false;
+                        break;
+                    case "Space":
+                        this.inputs.space = false;
+                        break;
+                }
+            }
+        });
+
+        // show controls
+        document.addEventListener("pointerlockchange", () => {
+            if (document.pointerLockElement === canvas) {
+                // show controls text
+                controlsText.style.display = "none";
+            }
+            else {
+                // stop movement
+                this.inputs.w = false;
+                this.inputs.a = false;
+                this.inputs.s = false;
+                this.inputs.d = false;
+                this.inputs.space = false;
+                // show controls text
+                controlsText.style.display = "block";
+            }
+        })
+
+        // mouse movement
+        document.addEventListener("mousemove", (event) => {
+            if (document.pointerLockElement === canvas) {
+                this.look[1] += event.movementX;
+                this.look[0] += event.movementY;
+
+                console.log(this.look);
+            }
+        });
+
+        // request pointer lock within canvas
+        canvas.addEventListener("click", () => {
+            if (document.pointerLockElement !== canvas) {
+                // stop movement
+                this.inputs.w = false;
+                this.inputs.a = false;
+                this.inputs.s = false;
+                this.inputs.d = false;
+                this.inputs.space = false;
+
+                // request pointer lock (and handle browser differences)
+                // chromium returns Promise, firefox returns undefined
+                const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
+                if (lockPromise) {
+                    lockPromise.catch((error) => {
+                        if (error.name === "NotSupportedError") {
+                            canvas.requestPointerLock();
+                        }
+                        else throw error;
+                    })
+                }
+
+                if (document.pointerLockElement === canvas) {
+                    controlsText.style.display = "none";
+                }
+            }
+        });
+
+        canvas.addEventListener("mousedown", (event) => {
+            if (document.pointerLockElement === canvas) {
+                // in game
+                switch (event.button) {
+                    case 0:
+                        // left
+                        this.inputs.leftMouse = true;
+                        break;
+                    case 2:
+                        this.inputs.rightMouse = true;
+                        // right
+                        break;
+                }
+            }
+        });
+
+        canvas.addEventListener("mouseup", (event) => {
+            if (document.pointerLockElement === canvas) {
+                // in game
+                switch (event.button) {
+                    case 0:
+                        // left
+                        this.inputs.leftMouse = false;
+                        break;
+                    case 2:
+                        this.inputs.rightMouse = false;
+                        // right
+                        break;
+                }
+            }
+        });
     }
 }

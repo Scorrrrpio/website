@@ -2,7 +2,7 @@ import { lokiSpin, move, spinY } from "./animations";
 import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { Player } from "./player";
-import { MeshComponent, TransformComponent, AABBComponent } from "./components";
+import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent } from "./components";
 
 export class SceneManager {
     static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -17,6 +17,7 @@ export class SceneManager {
     }
 
     async initialize(device, context, canvas, format, topology, multisamples, debug=false) {
+        // TODO in RenderEngine (move with renderer)
         // UNIFORM BUFFERS
         // create uniform buffers for MVP matrices
         const viewBuffer = device.createBuffer({
@@ -31,18 +32,10 @@ export class SceneManager {
         });
 
 
-        // RENDERER
-        this.renderer = new RenderEngine(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
-        // TODO in InputHandler or EventSystem
-        window.addEventListener("resize", () => {
-            this.renderer.handleResize(this.player, canvas);
-        });
-
-
         // ENTITIES
-        this.entities = new Set();
+        this.entities = [];
         this.components = {};
-        await this.#loadScene(device, viewBuffer, projectionBuffer, format, topology, multisamples, debug);
+        await this.#loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug);
 
 
         // HUD
@@ -50,16 +43,54 @@ export class SceneManager {
         this.hud = await generateHUD(device, format, projectionBuffer, multisamples);
 
 
+        // RENDERER
+        this.renderer = new RenderEngine(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
+        // TODO in InputHandler or EventSystem
+        window.addEventListener("resize", () => {
+            this.renderer.handleResize(this.player2.pov, canvas);
+            for (const e in this.entitiesWith("CameraComponent")) {
+                this.renderer.handleResize(this.components[e]["CameraComponent"], canvas);
+            }
+        });
+    }
+
+    async #loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
+        const assets = await this.assetManager.get(this.url, debug);
+
         // PLAYER
         const spawn = {
             p: [0, 2.001, 0],
             r: [0, 0, 0],
         };
-        this.player = new Player(canvas, spawn.p, spawn.r);
-    }
+        /*
+        const playerAABB = {
+            min: [
+                spawn.p[0] - 0.4,
+                spawn.p[1],
+                spawn.p[2] - 0.4
+            ],
+            max: [
+                spawn.p[0] + 0.4,
+                spawn.p[1] + 2,
+                spawn.p[2] + 0.4
+            ],
+        };
+        const player = this.createEntity();
+        const playerTransform = new TransformComponent(spawn.p, spawn.r);
+        const camera = new CameraComponent(canvas.width / canvas.height, [0, 2, 0]);
+        camera.updateViewMatrix(playerTransform.position, playerTransform.rotation);
+        const collider = new AABBComponent(playerAABB.min, playerAABB.max);
+        const inputs = new InputComponent();
+        this.addComponent(player, camera);
+        this.addComponent(player, playerTransform);
+        this.addComponent(player, inputs);
+        console.log("CAM: ", this.entitiesWith("CameraComponent"));
+        console.log(this.components[0]);
+        this.player = player;
+        */
 
-    async #loadScene(device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
-        const assets = await this.assetManager.get(this.url, debug);  // TODO too much in one function
+        this.player2 = new Player(canvas, spawn.p, spawn.r);
+
 
         // TODO optimize (object pooling, instanced rendering)
         for (const asset of assets.objects) {  // each object in scene
@@ -98,13 +129,12 @@ export class SceneManager {
     }
 
     createEntity() {
-        const id = this.entities.size;  // TODO better UUID function
-        this.entities.add(id);
+        const id = this.entities.length;  // TODO better UUID function
+        this.entities.push(id);
         return id;
     }
 
     addComponent(entity, component) {
-        if (!this.entities.has(entity)) { throw new Error("Cannot add component to non-existant Entity"); }
         const name = component.constructor.name;
         if (!this.components[entity]) {
             this.components[entity] = {};
@@ -139,6 +169,10 @@ export class SceneManager {
         return entities;
     }
 
+    entitiesWith(name) {
+        return this.entities.filter((e) => this.hasComponent(e, name));
+    }
+
     async update(frame, device) {
         // TODO reimplement adding entities at runtime
 
@@ -160,7 +194,8 @@ export class SceneManager {
         // update camera
         //const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
         const colliders = this.entitiesWithComponents(["AABBComponent"]).map(e => this.components[e]["AABBComponent"]);
-        this.player.move(colliders);
+        this.player2.move(colliders);
+
 
         this.#writeTransforms(device);
     }
@@ -175,9 +210,13 @@ export class SceneManager {
         }
     }
 
+    // TODO move up to Engine
     render(canvas, debug) {
         // TODO could be instance variable and update when objects are added/removed/modified
         const renderables = this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
-        this.renderer.render(this.player, renderables, this.hud, canvas, debug)
+        // TODO select active camera
+        const camera = this.entitiesWith("CameraComponent").map(e => this.components[e]["CameraComponent"])[0];
+        this.renderer.render(this.player2.pov, renderables, this.hud, canvas, debug);
+        //this.renderer.render(camera, renderables, this.hud, canvas, debug);
     }
 }

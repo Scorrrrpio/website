@@ -26,11 +26,11 @@ export class RenderEngine {
         });
     }
 
-	render(player, renderables, hud, canvas, debug=false) {
+	render(camera, renderables, hud, canvas, debug=false) {
         // write mvp matrices to uniform buffers
         // model written in SceneManager
-        this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(player.pov.view));
-        this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(player.pov.projection));
+        this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(camera.view));
+        this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(camera.projection));
 
 		// create GPUCommandEncoder
 		const encoder = this.device.createCommandEncoder();
@@ -96,7 +96,7 @@ export class RenderEngine {
 		this.device.queue.submit([encoder.finish()]);
 	}
 
-    handleResize(player, canvas) {
+    handleResize(camera, canvas) {
         const parent = canvas.parentElement;
 
         const devicePixelRatio = window.devicePixelRatio || 1;
@@ -104,7 +104,7 @@ export class RenderEngine {
         canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
 
         // TODO AWFUL
-        player.pov.updateProjectionMatrix(canvas.width / canvas.height);
+        camera.updateProjectionMatrix(canvas.width / canvas.height);
 
         if (this.msaaTexture) { this.msaaTexture.destroy(); }
         this.msaaTexture = this.device.createTexture({

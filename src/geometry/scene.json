@@ -108,7 +108,7 @@
                     "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
-                        "content": "// ABOUT ME\n> Adrian Koziskie\n> Based in Toronto\n> UWO CS alum\n> Interest in Computer Graphics\n\n// ABOUT THIS PAGE\n> This place is my longtime\n  dream project\n> Built from the ground up\n  with WebGPU\n> Demos to the right",
+                        "content": "// ABOUT ME\n> Adrian Koziskie\n> Based in Toronto\n> UWO CS alum\n> Interest in Computer Graphics\n\n// ABOUT THIS PAGE\n> This place is my longtime\n  dream project\n> Built from the ground up\n  with WebGPU",
                         "faces": ["front"]
                     },
                     "vertexShader": "shaders/texture.vert.wgsl",

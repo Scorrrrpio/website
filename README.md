@@ -22,6 +22,7 @@ working on some cool WebGPU stuff
 - rendering optimizations
 - collision optimizations
 - redo url spawn locations
+- mobile controls
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z
