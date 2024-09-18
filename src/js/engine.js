@@ -70,7 +70,6 @@ export async function engine() {
         for (const e of controlled) {
             scene.getComponent(e, "InputComponent").enableControls(canvas);
         }
-        scene.player2.enableControls(canvas);
         gameLoop();  // black until start
     });
 }

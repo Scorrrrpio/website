@@ -47,19 +47,8 @@ export class Player {
     gravity = 0.01;
     grounded = true;
 
-    // input handling
-    inputs = {
-        w: false,
-        a: false,
-        s: false,
-        d: false,
-        space: false,
-        leftMouse: false,
-        rightMouse: false,
-    }
-
-    constructor(canvas, position, rotation) {
-        this.pov = new Camera(canvas.width / canvas.height);  // default fov, near plane, far plane
+    constructor(camera, position, rotation) {
+        this.pov = camera;
         this.position = position;
         this.rotation = rotation;
         this.aabb = new AABBComponent(...this.#generateAABB(position));
@@ -80,171 +69,19 @@ export class Player {
         ];
     }
 
-    enableControls(canvas) {
-        const controlsText = document.getElementById("controls");
-        // keyboard input
-        document.addEventListener("keydown", (event) => {
-            if (document.pointerLockElement === canvas) {
-                switch(event.code) {
-                    case "KeyW":
-                        this.inputs.w = true;
-                        break;
-                    case "KeyA":
-                        this.inputs.a = true;
-                        break;
-                    case "KeyS":
-                        this.inputs.s = true;
-                        break;
-                    case "KeyD":
-                        this.inputs.d = true;
-                        break;
-                    case "Space":
-                        this.inputs.space = true;
-                        break;
-                }
-            }
-        });
+    #raycast(boxes, position, rotation, inputs) {
+        if (!position) position = this.position;
+        if (!rotation) rotation = this.rotation;
 
-        document.addEventListener("keyup", (event) => {
-            if (document.pointerLockElement === canvas) {
-                switch(event.code) {
-                    case "KeyW":
-                        this.inputs.w = false;
-                        break;
-                    case "KeyA":
-                        this.inputs.a = false;
-                        break;
-                    case "KeyS":
-                        this.inputs.s = false;
-                        break;
-                    case "KeyD":
-                        this.inputs.d = false;
-                        break;
-                    case "Space":
-                        this.inputs.space = false;
-                        break;
-                }
-            }
-        });
-
-        // show controls
-        document.addEventListener("pointerlockchange", () => {
-            if (document.pointerLockElement === canvas) {
-                // show controls text
-                controlsText.style.display = "none";
-            }
-            else {
-                // stop movement
-                this.inputs.w = false;
-                this.inputs.a = false;
-                this.inputs.s = false;
-                this.inputs.d = false;
-                this.inputs.space = false;
-                // show controls text
-                controlsText.style.display = "block";
-            }
-        })
-
-        // mouse movement
-        document.addEventListener("mousemove", (event) => {
-            if (document.pointerLockElement === canvas) {
-                const deltaX = event.movementX;
-                const deltaY = event.movementY;
-
-                // TODO browser issue
-                // random spikes for movementX/movementY when usng mouse
-                // see https://unadjusted-movement.glitch.me/ for visualization
-                /*
-                if (deltaX > 100 || deltaX < -100) {
-                    console.log("DELTA X:", deltaX);
-                    console.log("DELTA Y:", deltaY);
-                    console.log("ROTATION:", this.rotation);
-                    this.rotation[1] += this.xSense * deltaX;  // yaw
-                    this.rotation[0] += this.ySense * deltaY;  // pitch
-                    console.log("ROTATION AFTER:", this.rotation);
-                    debugger;
-                }
-                */
-
-                this.rotation[1] += this.xSense * deltaX;  // yaw
-                this.rotation[0] += this.ySense * deltaY;  // pitch
-
-                // prevent flipping
-                this.rotation[0] = Math.max(this.minLook, Math.min(this.maxLook, this.rotation[0]));
-            }
-        });
-
-        // request pointer lock within canvas
-        canvas.addEventListener("click", () => {
-            if (document.pointerLockElement !== canvas) {
-                // stop movement
-                this.inputs.w = false;
-                this.inputs.a = false;
-                this.inputs.s = false;
-                this.inputs.d = false;
-                this.inputs.space = false;
-
-                // request pointer lock (and handle browser differences)
-                // chromium returns Promise, firefox returns undefined
-                const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
-                if (lockPromise) {
-                    lockPromise.catch((error) => {
-                        if (error.name === "NotSupportedError") {
-                            canvas.requestPointerLock();
-                        }
-                        else throw error;
-                    })
-                }
-
-                if (document.pointerLockElement === canvas) {
-                    controlsText.style.display = "none";
-                }
-            }
-        });
-
-        canvas.addEventListener("mousedown", (event) => {
-            if (document.pointerLockElement === canvas) {
-                // in game
-                switch (event.button) {
-                    case 0:
-                        // left
-                        this.inputs.leftMouse = true;
-                        break;
-                    case 2:
-                        this.inputs.rightMouse = true;
-                        // right
-                        break;
-                }
-            }
-        });
-
-        canvas.addEventListener("mouseup", (event) => {
-            if (document.pointerLockElement === canvas) {
-                // in game
-                switch (event.button) {
-                    case 0:
-                        // left
-                        this.inputs.leftMouse = false;
-                        break;
-                    case 2:
-                        this.inputs.rightMouse = false;
-                        // right
-                        break;
-                }
-            }
-        });
-    }
-
-    #raycast(boxes) {
-        const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
-        const forwardY = Math.sin(this.rotation[0]);
-        const forwardZ = Math.cos(this.rotation[0]) * Math.cos(this.rotation[1]);
+        const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
+        const forwardY = Math.sin(rotation[0]);
+        const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
 
         const rayDirection = normalize([forwardX, -forwardY, -forwardZ]);
         const rayOrigin = [
-            this.position[0] + this.cameraOffset[0],
-            this.position[1] + this.cameraOffset[1],
-            this.position[2] + this.cameraOffset[2],
+            position[0] + this.cameraOffset[0],
+            position[1] + this.cameraOffset[1],
+            position[2] + this.cameraOffset[2],
         ];
 
         // check intersection
@@ -306,41 +143,45 @@ export class Player {
             if (closest.href) {
                 console.log("bang");
                 // stop movement
-                this.inputs.w = false;
-                this.inputs.a = false;
-                this.inputs.s = false;
-                this.inputs.d = false;
-                this.inputs.space = false;
-                this.inputs.leftMouse = false;
-                this.inputs.rightMouse = false;
+                inputs.w = false;
+                inputs.a = false;
+                inputs.s = false;
+                inputs.d = false;
+                inputs.space = false;
+                inputs.leftMouse = false;
+                inputs.rightMouse = false;
                 // open link
                 window.open(closest.href, "__blank");
             }
         }
     }
 
-    move(boxes) {
-        const forwardX = Math.cos(this.rotation[0]) * Math.sin(this.rotation[1]);
-        const forwardZ = Math.cos(this.rotation[0]) * Math.cos(this.rotation[1]);
-        const strafeX = Math.cos(this.rotation[1]);
-        const strafeZ = -Math.sin(this.rotation[1]);
+    move(boxes, inputs, position, rotation) {
+        if (!inputs) inputs;
+        if (!position) position = this.position;
+        if (!rotation) rotation = this.rotation;
+
+        const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
+        const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
+        const strafeX = Math.cos(rotation[1]);
+        const strafeZ = -Math.sin(rotation[1]);
 
         let movement = [0, 0, 0];
 
         // horizontal movement
-        if (this.inputs.w) {
+        if (inputs.w) {
             movement[0] += forwardX;
             movement[2] -= forwardZ;
         }
-        if (this.inputs.a) {
+        if (inputs.a) {
             movement[0] -= strafeX;
             movement[2] += strafeZ;
         }
-        if (this.inputs.s) {
+        if (inputs.s) {
             movement[0] -= forwardX;
             movement[2] += forwardZ;
         }
-        if (this.inputs.d) {
+        if (inputs.d) {
             movement[0] += strafeX;
             movement[2] -= strafeZ;
         }
@@ -348,7 +189,7 @@ export class Player {
         movement = normalizeXZ(movement, this.maxSpeed);
 
         // jumping
-        if (this.inputs.space) {
+        if (inputs.space) {
             if (this.grounded) {
                 this.jumpSpeed = this.jumpImpulse;
                 this.grounded = false;
@@ -359,8 +200,8 @@ export class Player {
         this.grounded = false;
 
         // absolute floor
-        this.position[1] = Math.max(0, this.position[1]);  // floor
-        if (this.position[1] === 0) {
+        position[1] = Math.max(0, position[1]);  // floor
+        if (position[1] === 0) {
             this.jumpSpeed = 0;
             this.grounded = true;
             movement[1] = Math.max(0, movement[1]);
@@ -369,9 +210,9 @@ export class Player {
         // collision handling
         // predicted position
         const nextPos = [
-            this.position[0] + movement[0],
-            this.position[1] + movement[1],
-            this.position[2] + movement[2],
+            position[0] + movement[0],
+            position[1] + movement[1],
+            position[2] + movement[2],
         ];
 
         // projected AABB after move
@@ -385,36 +226,33 @@ export class Player {
         }
 
         // move camera
-        this.position[0] += movement[0];
-        this.position[1] += movement[1];
-        this.position[2] += movement[2];
+        position[0] += movement[0];
+        position[1] += movement[1];
+        position[2] += movement[2];
         //this.aabb.translate(movement);
 
         // update camera view matrix
-        this.pov.updateViewMatrix([
-            this.position[0] + this.cameraOffset[0],
-            this.position[1] + this.cameraOffset[1],
-            this.position[2] + this.cameraOffset[2],
-        ], this.rotation);
+        this.pov.updateViewMatrix(position, rotation);
 
         // cast interaction ray
-        if (this.inputs.leftMouse) {
-            this.#raycast(boxes);  // TODO not snappy
+        if (inputs.leftMouse) {
+            this.#raycast(boxes, position, rotation, inputs);  // TODO not snappy
         }
     }
 
-    #slide(box1, box2, movement) {
+    #slide(box1, box2, movement, position) {
+        if (!position) position = this.position;
         // faces names are for player but based on world axes
         // y
         if (box1.max[1] >= box2.max[1]) {  // bottom
-            if (this.position[1] > box2.max[1]) {  // from above
+            if (position[1] > box2.max[1]) {  // from above
                 movement[1] = Math.max(0, movement[1]);
                 this.grounded = true;
                 this.jumpSpeed = 0;
             }
         }
         else if (box1.min[1] < box2.min[1]) {  // top
-            if (this.position[1] + this.cameraOffset[1] < box2.min[1]) {
+            if (position[1] + this.cameraOffset[1] < box2.min[1]) {
                 movement[1] = Math.min(0, movement[1]);
                 this.jumpSpeed = 0;
             }

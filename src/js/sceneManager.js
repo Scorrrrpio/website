@@ -47,7 +47,7 @@ export class SceneManager {
         this.renderer = new RenderEngine(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
         // TODO in InputHandler or EventSystem
         window.addEventListener("resize", () => {
-            this.renderer.handleResize(this.player2.pov, canvas);
+            this.renderer.handleResize(this.playerOld.pov, canvas);
             for (const e in this.entitiesWith("CameraComponent")) {
                 this.renderer.handleResize(this.components[e]["CameraComponent"], canvas);
             }
@@ -62,7 +62,6 @@ export class SceneManager {
             p: [0, 2.001, 0],
             r: [0, 0, 0],
         };
-        /*
         const playerAABB = {
             min: [
                 spawn.p[0] - 0.4,
@@ -84,12 +83,10 @@ export class SceneManager {
         this.addComponent(player, camera);
         this.addComponent(player, playerTransform);
         this.addComponent(player, inputs);
-        console.log("CAM: ", this.entitiesWith("CameraComponent"));
         console.log(this.components[0]);
         this.player = player;
-        */
 
-        this.player2 = new Player(canvas, spawn.p, spawn.r);
+        this.playerOld = new Player(camera, spawn.p, spawn.r);
 
 
         // TODO optimize (object pooling, instanced rendering)
@@ -192,12 +189,19 @@ export class SceneManager {
         }
 
         // update camera
-        //const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
         const colliders = this.entitiesWithComponents(["AABBComponent"]).map(e => this.components[e]["AABBComponent"]);
-        this.player2.move(colliders);
+        //this.playerOld.move(colliders);
+        this.#movePlayer(colliders);
 
 
         this.#writeTransforms(device);
+    }
+
+    #movePlayer(colliders) {
+        const inputs = this.components[this.player].InputComponent.inputs;
+        const rotation = this.components[this.player].InputComponent.look;
+        const position = this.components[this.player].TransformComponent.position;
+        this.playerOld.move(colliders, inputs, position, rotation);
     }
 
     // TODO move logic elsewhere?
@@ -216,7 +220,7 @@ export class SceneManager {
         const renderables = this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
         // TODO select active camera
         const camera = this.entitiesWith("CameraComponent").map(e => this.components[e]["CameraComponent"])[0];
-        this.renderer.render(this.player2.pov, renderables, this.hud, canvas, debug);
+        this.renderer.render(this.playerOld.pov, renderables, this.hud, canvas, debug);
         //this.renderer.render(camera, renderables, this.hud, canvas, debug);
     }
 }

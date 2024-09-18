@@ -337,17 +337,15 @@ export class CameraComponent {
     }
 
     updateViewMatrix(position, rotation) {
-        position[0] += this.offset[0];
-        position[1] += this.offset[1];
-        position[2] += this.offset[2];
         mat4.rotateX(this.view, mat4.create(), rotation[0]);
         mat4.rotateY(this.view, this.view, rotation[1]);
         mat4.rotateZ(this.view, this.view, rotation[2]);
-        mat4.translate(this.view, this.view, [-position[0], -position[1], -position[2]]);
+        mat4.translate(this.view, this.view, [-position[0]-this.offset[0], -position[1]-this.offset[1], -position[2]-this.offset[2]]);
     }
 }
 
 
+// TODO more versatile (bonus feature)
 export class InputComponent {
     constructor() {
         this.inputs = {
@@ -359,6 +357,12 @@ export class InputComponent {
             leftMouse: false,
             rightMouse: false,
         }
+
+        // TODO allow changing
+        this.xSense = 0.002;
+        this.ySense = 0.002;
+        this.maxLook = Math.PI / 2;
+        this.minLook = -this.maxLook;
 
         this.look = [0, 0, 0];
     }
@@ -431,10 +435,24 @@ export class InputComponent {
         // mouse movement
         document.addEventListener("mousemove", (event) => {
             if (document.pointerLockElement === canvas) {
-                this.look[1] += event.movementX;
-                this.look[0] += event.movementY;
+                this.look[1] += event.movementX * this.xSense;
+                this.look[0] += event.movementY * this.ySense;
+                this.look[0] = Math.max(this.minLook, Math.min(this.maxLook, this.look[0]));
 
-                console.log(this.look);
+                // TODO browser issue
+                // random spikes for movementX/movementY when usng mouse
+                // see https://unadjusted-movement.glitch.me/ for visualization
+                /*
+                if (deltaX > 100 || deltaX < -100) {
+                    console.log("DELTA X:", deltaX);
+                    console.log("DELTA Y:", deltaY);
+                    console.log("ROTATION:", this.rotation);
+                    this.rotation[1] += this.xSense * deltaX;  // yaw
+                    this.rotation[0] += this.ySense * deltaY;  // pitch
+                    console.log("ROTATION AFTER:", this.rotation);
+                    debugger;
+                }
+                */
             }
         });
 
