@@ -293,7 +293,19 @@ export class AABBComponent extends ColliderComponent {
                 if (data[i] > aabb.max[2]) { aabb.max[2] = data[i]; }
             }
         }
-        return aabb;
+        return new AABBComponent(aabb.min, aabb.max);
+    }
+
+    static createPlayerAABB(position) {
+        return new AABBComponent([
+            position[0]-0.4,
+            position[1],
+            position[2]-0.4,
+        ], [
+            position[0]+0.4,
+            position[1]+2,
+            position[2]+0.4,
+        ]);
     }
 
     checkCollision(other) {
@@ -515,5 +527,17 @@ export class InputComponent {
                 }
             }
         });
+    }
+}
+
+
+export class PhysicsComponent {
+    constructor() {
+        this.maxSpeed = 0.2;
+        this.jumpImpulse = 0.25;
+        this.gravity = 0.01;
+        // variable
+        this.jumpSpeed = 0;
+        this.grounded = false;  // TODO priority fix
     }
 }

@@ -1,8 +1,8 @@
 import { lokiSpin, move, spinY } from "./animations";
 import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
-import { Player } from "./player";
-import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent } from "./components";
+import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
+import { movePlayer } from "./physicsEngine";
 
 export class SceneManager {
     static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -62,31 +62,18 @@ export class SceneManager {
             p: [0, 2.001, 0],
             r: [0, 0, 0],
         };
-        const playerAABB = {
-            min: [
-                spawn.p[0] - 0.4,
-                spawn.p[1],
-                spawn.p[2] - 0.4
-            ],
-            max: [
-                spawn.p[0] + 0.4,
-                spawn.p[1] + 2,
-                spawn.p[2] + 0.4
-            ],
-        };
         const player = this.createEntity();
         const playerTransform = new TransformComponent(spawn.p, spawn.r);
         const camera = new CameraComponent(canvas.width / canvas.height, [0, 2, 0]);
         camera.updateViewMatrix(playerTransform.position, playerTransform.rotation);
-        const collider = new AABBComponent(playerAABB.min, playerAABB.max);
+        //const collider = AABBComponent.createPlayerAABB(playerTransform.position);
         const inputs = new InputComponent();
+        const physics = new PhysicsComponent();
         this.addComponent(player, camera);
         this.addComponent(player, playerTransform);
         this.addComponent(player, inputs);
-        console.log(this.components[0]);
+        this.addComponent(player, physics);
         this.player = player;
-
-        this.playerOld = new Player(camera, spawn.p, spawn.r);
 
 
         // TODO optimize (object pooling, instanced rendering)
@@ -100,11 +87,7 @@ export class SceneManager {
             const meshGenerators = {
                 aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
             }
-            const basePoints = meshGenerators[asset.collision]?.(floats.data, floats.properties);
-            let baseCollider = null;
-            if (asset.collision === "aabb") {
-                baseCollider = new AABBComponent(basePoints.min, basePoints.max);
-            }
+            const baseCollider = meshGenerators[asset.collision]?.(floats.data, floats.properties);
 
             // INSTANCE-SPECIFIC VALUES
             for (const instance of asset.instances) {
@@ -190,7 +173,6 @@ export class SceneManager {
 
         // update camera
         const colliders = this.entitiesWithComponents(["AABBComponent"]).map(e => this.components[e]["AABBComponent"]);
-        //this.playerOld.move(colliders);
         this.#movePlayer(colliders);
 
 
@@ -198,10 +180,12 @@ export class SceneManager {
     }
 
     #movePlayer(colliders) {
+        const camera = this.components[this.player].CameraComponent;
         const inputs = this.components[this.player].InputComponent.inputs;
         const rotation = this.components[this.player].InputComponent.look;
         const position = this.components[this.player].TransformComponent.position;
-        this.playerOld.move(colliders, inputs, position, rotation);
+        const physics = this.components[this.player].PhysicsComponent;
+        movePlayer(colliders, inputs, position, rotation, camera, physics);
     }
 
     // TODO move logic elsewhere?
@@ -220,7 +204,6 @@ export class SceneManager {
         const renderables = this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
         // TODO select active camera
         const camera = this.entitiesWith("CameraComponent").map(e => this.components[e]["CameraComponent"])[0];
-        this.renderer.render(this.playerOld.pov, renderables, this.hud, canvas, debug);
-        //this.renderer.render(camera, renderables, this.hud, canvas, debug);
+        this.renderer.render(camera, renderables, this.hud, canvas, debug);
     }
 }
