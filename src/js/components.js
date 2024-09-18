@@ -4,11 +4,12 @@ import { textureTriangle } from "./textureTriangle";
 import { textToTexture } from "./renderText";
 
 export class TransformComponent {
-    constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1]) {
+    constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1], animation) {
         this.position = position;
         this.rotation = rotation;
         this.scale = scale;
         this.createModelMatrix();
+        this.animation = animation;  // TODO bad solution
     }
 
     createModelMatrix() {
@@ -179,5 +180,7 @@ class ColliderComponent {
 }
 
 class AABBComponent extends ColliderComponent {
-    constructor() {}
+    constructor() {
+        super();
+    }
 }

@@ -3,7 +3,8 @@ import { createDebugGeometry, createInstance, assetToMesh } from "./assetManager
 import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { Player } from "./player";
-import { MeshComponent, TransformComponent } from "./components";
+import { MeshComponent, TransformComponent, AABBComponent } from "./components";
+import { AABB, SphereMesh } from "./collision";
 
 export class SceneManager {
     static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -73,27 +74,34 @@ export class SceneManager {
             const baseMesh = await this.assetManager.get(asset.file);
             const baseVert = await this.assetManager.get(asset.vertexShader);
             const baseFrag = await this.assetManager.get(asset.fragmentShader);
-            //const baseCollision
+            // collision mesh based on geometry
+            const floats = baseMesh.vertex.values.float32;
+            const meshGenerators = {
+                aabb: AABB.createMesh,
+                sphere: SphereMesh.createMesh,  // TODO other types (sphere, mesh)
+            }
+            const basePoints = meshGenerators[asset.collision]?.(floats.data, floats.properties);
+            let baseCollider = null;
+            if (asset.collision === "aabb") {
+                baseCollider = new AABB(basePoints.min, basePoints.max);
+            }
 
-            // TODO delete old
-            const base = await assetToMesh(asset, this.assetManager, device, debug);
-            const renderable = { asset: base, instances: [] };
             // INSTANCE-SPECIFIC VALUES
             for (const instance of asset.instances) {
-                const meshInstance = await createInstance(instance, base, this.assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug);
-                // add to this.renderables list
-                renderable.instances.push(meshInstance);
-
-                // NEW
                 const entity = this.createEntity();
-                const transform = new TransformComponent(instance.p, instance.r, instance.s);
+                const transform = new TransformComponent(instance.p, instance.r, instance.s, instance.animation);
                 const mesh = await MeshComponent.assetToMesh(
                     instance, baseMesh, baseVert, baseFrag, this.assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug
                 );
                 this.addComponent(entity, transform);
                 this.addComponent(entity, mesh);
+                if (baseCollider) {
+                    const collider = baseCollider.copy();
+                    collider.setProperties(instance.href, instance.ghost, instance.v);
+                    collider.modelTransform(transform.model);
+                    this.addComponent(entity, collider);
+                }
             }
-            this.renderables.push(renderable);
         }
     }
 
@@ -173,25 +181,24 @@ export class SceneManager {
         */
 
         // update animations
-        for (const asset of this.renderables) {
-            for (const instance of asset.instances) {
-                switch (instance.animation) {
-                    case "spinY":
-                        spinY(instance);
-                        break;
-                    case "lokiSpin":
-                        lokiSpin(instance);
-                        break;
-                    case "move":
-                        move(instance);
-                        createDebugGeometry(instance, device);  // TODO awful
-                        break;
-                }
+        const animated = this.entitiesWithComponents(["TransformComponent"]).filter(e => this.components[e]["TransformComponent"].animation);
+        for (const e of animated) {
+            switch(this.components[e]["TransformComponent"].animation) {
+                case "spinY":
+                    spinY(this.components[e]["TransformComponent"]);
+                    break;
+                case "lokiSpin":
+                    lokiSpin(this.components[e]["TransformComponent"]);
+                    break;
+                case "move":
+                    move(this.components[e]["TransformComponent"], this.components[e]["AABB"]);
+                    break;
             }
         }
 
         // update camera
-        const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
+        //const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
+        const colliders = this.entitiesWithComponents(["AABB"]).map(e => this.components[e]["AABB"]);
         this.player.move(colliders);
 
         this.#writeTransforms(device);

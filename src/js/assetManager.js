@@ -100,53 +100,12 @@ export async function assetToMesh(asset, assetManager, device, debug=false) {
         collider = new AABB(baseMesh.min, baseMesh.max);
     }
 
-    // vertex buffer atrributes array
-    const vbAttributes = createVBAttributes(floats.properties);
-    //console.log("VB ATTRIBUTES\n", vbAttributes);  // TODO grouping
-
-    // VERTEX BUFFER
-    const vb = device.createBuffer({
-        label: asset.file,
-        size: floats.data.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    });
-    device.queue.writeBuffer(vb, 0, floats.data);
-
-    return new MeshOld(vb, vbAttributes, vProps, vCount, collider, vert, frag);
+    return new MeshOld(null, null, null, null, collider, null, null);
 }
 
 export async function createInstance(data, base, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
-    if (!(base instanceof MeshOld)) {
-        throw new Error("Cannot create Instance of non-Mesh");
-    }
-
     // ID
     const id = "Mesh";  // TODO
-
-    // MODEL BUFFER
-    const modelBuffer = device.createBuffer({
-        label: id + "Model Uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
-    // BIND GROUP and LAYOUT
-    let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
-    let bindGroup = createBindGroup(
-        device, id + " Base Bind Group", bindGroupLayout,
-        {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}  // MVP
-    );
-
-    // using data
-    // OVERRIDE SHADERS
-    let vertexShaderModule = base.vertexShader;
-    let fragmentShaderModule = base.fragmentShader;
-    if (data.vertexShader && data.fragmentShader) {
-        [vertexShaderModule, fragmentShaderModule] = await Promise.all([
-            assetManager.get(data.vertexShader, debug),
-            assetManager.get(data.fragmentShader, debug),
-        ]);
-    }
 
     // OVERRIDE COLLIDER
     let collider = base.collider ? base.collider.copy() : null;
@@ -154,104 +113,9 @@ export async function createInstance(data, base, assetManager, device, format, v
         collider.setProperties(data.href, data.ghost, data.v);
     }
 
-    // OVERRIDE CULL MODE
-    const cullMode = data.cullMode ? data.cullMode : "back";
-
-    // TEXTURE
-    if (data.texture) {
-        let texture;
-        if (data.texture.url) {
-            // image texture
-            const imgBmp = await assetManager.get(data.texture.url, debug);
-            // create texture on device
-            texture = device.createTexture({
-                label: "Image Texture",
-                size: [imgBmp.width, imgBmp.height, 1],
-                format: format,
-                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-            });
-            device.queue.copyExternalImageToTexture(
-                { source: imgBmp },
-                { texture: texture },
-                [imgBmp.width, imgBmp.height, 1],
-            );
-        }
-        else if (data.texture.program) {
-            // program texture
-            const textureSize = [512, 512];
-            texture = device.createTexture({
-                label: "Program Texture",
-                size: textureSize,
-                format: format,
-                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-            });
-            if (data.texture.program === "helloTriangle") {
-                textureTriangle(texture, device, format);
-            }
-            else if (data.texture.program === "text") {
-                textToTexture(texture, device, format, data.texture.content);
-            }
-        }
-
-        // create texture sampler
-        const sampler = device.createSampler({
-            magFilter: "linear",
-            minFilter: "linear",
-        });
-
-        // create list of faces to texture
-        const faceIDs = new Uint32Array([
-            data.texture.faces.includes("front") ? 1 : 0, 0, 0, 0,
-            data.texture.faces.includes("back") ? 1 : 0, 0, 0, 0,
-            data.texture.faces.includes("left") ? 1 : 0, 0, 0, 0,
-            data.texture.faces.includes("right") ? 1 : 0, 0, 0, 0,
-            data.texture.faces.includes("top") ? 1 : 0, 0, 0, 0,
-            data.texture.faces.includes("bottom") ? 1 : 0, 0, 0, 0,
-        ]);
-        // store in uniform buffer
-        const faceIDsBuffer = device.createBuffer({
-            label: "Texture Faces Buffer",
-            size: faceIDs.byteLength,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-        device.queue.writeBuffer(faceIDsBuffer, 0, faceIDs);
-
-        // OVERRIDE BIND GROUP
-        bindGroupLayout = createBindGroupLayout(
-            device, "Texture Bind Group Layout",
-            "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
-        );
-        bindGroup = createBindGroup(
-            device, "OVERRIDE Bind Group", bindGroupLayout,
-            {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP
-            texture.createView(), sampler, {buffer: faceIDsBuffer}  // texture
-        );
-    }
-
-    // ANIMATION
     const animation = data.animation;
 
-    // Pipeline
-    const pipeline = createPipeline(
-        "FPV Render Pipeline",
-        device,
-        bindGroupLayout,
-        vertexShaderModule,
-        base.propertyCount,
-        base.vbAttributes,
-        fragmentShaderModule,
-        format,
-        topology,
-        cullMode,
-        true,
-        multisamples
-    );
-
-    const instance = base.createInstance(
-        id,
-        modelBuffer,
-        bindGroup,
-        pipeline,
+    const instance = base.createInstance(id, null, null, null,
         collider,
         animation,
         {  // transforms
@@ -261,58 +125,60 @@ export async function createInstance(data, base, assetManager, device, format, v
         }
     );
 
-    // DEBUG
-    // create debug geometry
-    if (debug && instance.collider && !instance.collider.ghost) {
-        // SHADERS
-        const [debugVShader, debugFShader] = await Promise.all([
-            assetManager.get("shaders/basic.vert.wgsl", debug),
-            assetManager.get("shaders/debug.frag.wgsl", debug),
-        ]);
-
-        // BGL
-        const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
-
-        // MODEL BUFFER (identity)
-        const modelBuffer = device.createBuffer({
-            label: "DEBUG Model Uniform",
-            size: 64,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        const model = mat4.create();
-        device.queue.writeBuffer(modelBuffer, 0, model);
-
-        // BIND GROUP
-        const bg = createBindGroup(device, "DEBUG Bind Group", debugBGL, {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer});
-
-        // VERTEX BUFFER ATTRIBUTES
-        const vbAttributes = createVBAttributes(["x", "y", "z"]);
-    
-        // PIPELINE
-        const pipeline = createPipeline(
-            "DEBUG Pipeline",
-            device,
-            debugBGL,
-            debugVShader,
-            3,  // vertex properties
-            vbAttributes,
-            debugFShader,
-            format,
-            "line-list",
-            "none",
-            true,
-            multisamples
-        );
-
-        // TODO everything before this is constant across all debug geometry
-        const [debugVB, debugVCount] = createDebugGeometry(instance, device);
-
-        instance.debug(debugVB, debugVCount, bg, pipeline);
-    }
-
     return instance;
 }
 
+
+/*
+// DEBUG
+// create debug geometry
+if (debug && instance.collider && !instance.collider.ghost) {
+    // SHADERS
+    const [debugVShader, debugFShader] = await Promise.all([
+        assetManager.get("shaders/basic.vert.wgsl", debug),
+        assetManager.get("shaders/debug.frag.wgsl", debug),
+    ]);
+
+    // BGL
+    const debugBGL = createBindGroupLayout(device, "DEBUG BGL", "MVP");
+
+    // MODEL BUFFER (identity)
+    const modelBuffer = device.createBuffer({
+        label: "DEBUG Model Uniform",
+        size: 64,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    const model = mat4.create();
+    device.queue.writeBuffer(modelBuffer, 0, model);
+
+    // BIND GROUP
+    const bg = createBindGroup(device, "DEBUG Bind Group", debugBGL, {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer});
+
+    // VERTEX BUFFER ATTRIBUTES
+    const vbAttributes = createVBAttributes(["x", "y", "z"]);
+
+    // PIPELINE
+    const pipeline = createPipeline(
+        "DEBUG Pipeline",
+        device,
+        debugBGL,
+        debugVShader,
+        3,  // vertex properties
+        vbAttributes,
+        debugFShader,
+        format,
+        "line-list",
+        "none",
+        true,
+        multisamples
+    );
+
+    // TODO everything before this is constant across all debug geometry
+    const [debugVB, debugVCount] = createDebugGeometry(instance, device);
+
+    instance.debug(debugVB, debugVCount, bg, pipeline);
+}
+*/
 
 // TODO move into Mesh/Collider? class
 // TODO hardcoded for AABB
