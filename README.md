@@ -7,15 +7,16 @@ working on some cool WebGPU stuff
 - include player in scene.json
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)
 - better animation solution? (functions)
-- DEBUGGING OVERHAUL
-    - conditional js imports
-    - Global variables
-    - render debug over everything (no depth testing)
 - holdable objects
 - PHYSICS OVERHAUL
     - AABBs to OBBs / more collision mesh classes? (WIP)
     - account for multiple moving objects
     - AABB collision handling and sliding STILL don't work
+- DEBUGGING OVERHAUL
+    - conditional js imports
+    - Global variables
+    - render debug over everything (no depth testing)
+    - collider outlines
 - give player model matrix + model
 - lazy loading / performance improvements
 - rendering optimizations

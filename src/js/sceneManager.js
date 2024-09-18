@@ -1,9 +1,8 @@
 import { lokiSpin, move, spinY } from "./animations";
-import { createDebugGeometry, createInstance, assetToMesh } from "./assetManager";
 import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { Player } from "./player";
-import { MeshComponent, TransformComponent, AABBComponent } from "./components";
+import { MeshComponent, TransformComponent } from "./components";
 import { AABB, SphereMesh } from "./collision";
 
 export class SceneManager {
@@ -42,7 +41,6 @@ export class SceneManager {
 
 
         // ENTITIES
-        this.renderables = [];
         this.entities = new Set();
         this.components = {};
         await this.#loadScene(device, viewBuffer, projectionBuffer, format, topology, multisamples, debug);
@@ -59,18 +57,14 @@ export class SceneManager {
             r: [0, 0, 0],
         };
         this.player = new Player(canvas, spawn.p, spawn.r);
-
-        console.log("RENDERABLES: ", this.renderables);
-        console.log("ENTITIES: ", this.entities);
-        console.log("COMPONENTS: ", this.components);
     }
 
     async #loadScene(device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
         const assets = await this.assetManager.get(this.url, debug);  // TODO too much in one function
 
+        // TODO optimize (object pooling, instanced rendering)
         for (const asset of assets.objects) {  // each object in scene
             // ASSET FAMILY DEFAULT VALUES
-
             const baseMesh = await this.assetManager.get(asset.file);
             const baseVert = await this.assetManager.get(asset.vertexShader);
             const baseFrag = await this.assetManager.get(asset.fragmentShader);
@@ -103,6 +97,8 @@ export class SceneManager {
                 }
             }
         }
+
+        console.log(this);
     }
 
     createEntity() {
@@ -147,53 +143,22 @@ export class SceneManager {
         return entities;
     }
 
-    async update(frame, device, format, topology, multisamples, debug=false) {
-        // TODO demo
-        /*
-        if (frame % 240 === 179) {
-            const data = {
-                p: [-20, 4, 0],
-                s: [2, 2, 2],
-                texture: {
-                    url: "media/mysterious-canine.jpg",
-                    faces: ["front", "back", "right", "left", "top", "bottom"],
-                },
-                vertexShader: "shaders/texture.vert.wgsl",
-                fragmentShader: "shaders/texture.frag.wgsl",
-            }
-            const newCube = await createInstance(
-                data,  // instance data
-                this.renderables[0].asset,  // base asset
-                this.assetManager,  // cache
-                device,
-                format,
-                this.renderer.viewBuffer,
-                this.renderer.projectionBuffer,
-                topology,
-                multisamples,
-                debug
-            );
-            this.renderables[0].instances.push(newCube);
-        }
-        if (frame % 240 === 239) {
-            this.renderables[0].instances.pop();
-        }
-        */
+    async update(frame, device) {
+        // TODO reimplement adding entities at runtime
 
         // update animations
+        const animations = {
+            spinY: spinY,
+            lokiSpin: lokiSpin,
+            move: move
+        }
+        // TODO not ideal
         const animated = this.entitiesWithComponents(["TransformComponent"]).filter(e => this.components[e]["TransformComponent"].animation);
         for (const e of animated) {
-            switch(this.components[e]["TransformComponent"].animation) {
-                case "spinY":
-                    spinY(this.components[e]["TransformComponent"]);
-                    break;
-                case "lokiSpin":
-                    lokiSpin(this.components[e]["TransformComponent"]);
-                    break;
-                case "move":
-                    move(this.components[e]["TransformComponent"], this.components[e]["AABB"]);
-                    break;
-            }
+            animations[this.components[e]["TransformComponent"].animation]?.(
+                this.components[e]["TransformComponent"],
+                this.components[e]["AABB"]
+            );
         }
 
         // update camera
@@ -204,7 +169,7 @@ export class SceneManager {
         this.#writeTransforms(device);
     }
 
-    // TODO doing too much here?
+    // TODO move logic elsewhere?
     #writeTransforms(device) {
         for (const entity of this.entitiesWithComponents(["MeshComponent", "TransformComponent"])) {
             device.queue.writeBuffer(
