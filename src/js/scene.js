@@ -5,15 +5,15 @@ import { generateHUD } from "./hud";
 import { Player } from "./player";
 
 export class SceneManager {
-    static async fromURL(url, cache, device, context, canvas, format, topology, multisamples, debug=false) {
-        const scene = new SceneManager(url, cache);
+    static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
+        const scene = new SceneManager(url, assetManager);
         await scene.initialize(device, context, canvas, format, topology, multisamples, debug);
         return scene;
     }
 
-    constructor(url, cache) {
+    constructor(url, assetManager) {
         this.url = url;
-        this.cache = cache;
+        this.assetManager = assetManager;
     }
 
     async initialize(device, context, canvas, format, topology, multisamples, debug=false) {
@@ -33,7 +33,7 @@ export class SceneManager {
 
         // ENTITIES
         this.renderables = await loadScene(
-            this.url, this.cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
+            this.url, this.assetManager, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug
         );
 
 

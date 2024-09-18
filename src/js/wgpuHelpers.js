@@ -185,6 +185,7 @@ export function createVBAttributes(properties) {
     return attributes;
 }
 
+// TODO Eliminate?
 async function loadShader(url) {
     const response = await fetch(url);
     if (!response.ok) { throw new AssetLoadError("Failed to load shader: " + url); }

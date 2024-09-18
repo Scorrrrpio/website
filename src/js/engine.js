@@ -1,4 +1,5 @@
 import { wgpuSetup } from "./wgpuSetup";
+import { AssetManager } from "./assetManager";
 import { SceneManager } from "./scene";
 
 // TODO Engine class?
@@ -19,9 +20,12 @@ export async function engine() {
     const { adapter, device, context, format } = await wgpuSetup(canvas);
 
 
-    // SCENE SETUP
-    const assetCache = new Map();
-    const scene = await SceneManager.fromURL("geometry/scene.json", assetCache, device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+    // ASSET MANAGER
+    const assetManager = new AssetManager(device);
+
+
+    // SCENE MANAGER
+    const scene = await SceneManager.fromURL("geometry/scene.json", assetManager, device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
 
 
     // GAME LOOP

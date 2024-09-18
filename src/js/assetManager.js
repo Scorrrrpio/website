@@ -2,54 +2,86 @@ import { AssetLoadError } from "./errors";
 import { textureTriangle } from "./textureTriangle";
 import { plyToTriangleList } from "./plyReader";
 import { textToTexture } from "./renderText";
-import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
+import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
-import { Entity, Mesh, MeshInstance } from "./entity";
+import { Entity, Mesh } from "./entity";
 import { mat4 } from "gl-matrix";
 
 // TODO AssetManager class
-
-async function loadImageToBMP(url) {
-    // read image from texture url
-    const img = new Image();
-    img.src = url;
-    try {
-        await img.decode();
+export class AssetManager {
+    constructor(device) {
+        this.device = device;  // TODO why
+        this.cache = new Map();
     }
-    catch (error) {
-        if (error.name === "EncodingError") {
-            throw new AssetLoadError("Failed to load image: " + url);
+
+    async get(url, debug=false) {
+        if (this.cache.has(url)) { return this.cache.get(url); }
+        if (debug) console.log("FETCH: ${url}");
+        let data;
+        const fileType = url.slice(url.lastIndexOf("."));
+        switch (fileType) {
+            case ".json":
+                data = this.#loadJson(url);
+                break;
+            case ".wgsl":
+                data = this.#loadShaderModule(url);
+                break;
+            case ".ply":
+                data = plyToTriangleList(url);
+                break;
+            case ".png": case ".jpg":
+                data = this.#loadImageToBmp(url);
+                break;
+            default:
+                throw new AssetLoadError("Failed to load from ${url}. No loader method for file extension ${fileType}.");
         }
-        else { throw error; }
-    };
-    // convert to bmp
-    return await createImageBitmap(img);
-}
-
-async function fetchSceneFile(url) {
-    // Scene assets as JSON
-    const assetsResponse = await fetch(url);
-    if (!assetsResponse.ok) { throw new AssetLoadError("Failed to fetch scene from " + url); }
-    return assetsResponse.json();
-}
-
-// TODO proof of concept implementation
-async function fetchOnce(cache, url, fetcher, debug=false) {
-    if (cache.has(url)) {
-        return cache.get(url);
+        this.cache.set(url, data);
+        return await data;
     }
-    if (debug) console.log("FETCH: " + url);
-    const data = await fetcher;
-    cache.set(url, data);
-    return data;
+
+    async #loadJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) { throw new AssetLoadError("Failed to load from ${url}."); }
+        return response.json();
+    }
+
+    async #loadImageToBmp(url) {
+        // read image from texture url
+        const img = new Image();
+        img.src = url;
+        try {
+            await img.decode();
+        }
+        catch (error) {
+            if (error.name === "EncodingError") {
+                throw new AssetLoadError("Failed to load image: " + url);
+            }
+            else { throw error; }
+        };
+        // convert to bmp
+        return await createImageBitmap(img);
+    }
+    
+    async #loadShaderModule(url) {
+        const response = await fetch(url);
+        if (!response.ok) { throw new AssetLoadError("Failed to load shader: " + url); }
+        const shaderCode = await response.text();
+        const shaderModule = this.device.createShaderModule({
+            label: url.slice(url.lastIndexOf("/") + 1),
+            code: shaderCode,
+        });
+        return shaderModule;
+    }
 }
 
-async function assetToMesh(asset, cache, device, debug=false) {
+// TODO way too much going on in here
+
+async function assetToMesh(asset, assetManager, device, debug=false) {
     // ASSET FAMILY DEFAULT VALUES
     const [data, vert, frag] = await Promise.all([
-        fetchOnce(cache, asset.file, plyToTriangleList(asset.file), debug),
-        fetchOnce(cache, asset.vertexShader, createShaderModule(device, asset.vertexShader, "Base Vertex Shader"), debug),  // shaders from wgsl files
-        fetchOnce(cache, asset.fragmentShader, createShaderModule(device, asset.fragmentShader, "Base Fragment Shader"), debug)
+        assetManager.get(asset.file, debug),
+        assetManager.get(asset.vertexShader),
+        assetManager.get(asset.fragmentShader),
     ]);
 
     // TODO change ply reader AGAIN
@@ -83,7 +115,7 @@ async function assetToMesh(asset, cache, device, debug=false) {
     return new Mesh(vb, vbAttributes, vProps, vCount, collider, vert, frag);
 }
 
-export async function createInstance(data, base, cache, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
+export async function createInstance(data, base, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
     if (!(base instanceof Entity)) {
         throw new Error("Cannot create Instance of non-Entity");
     }
@@ -111,8 +143,8 @@ export async function createInstance(data, base, cache, device, format, viewBuff
     let fragmentShaderModule = base.fragmentShader;
     if (data.vertexShader && data.fragmentShader) {
         [vertexShaderModule, fragmentShaderModule] = await Promise.all([
-            fetchOnce(cache, data.vertexShader, createShaderModule(device, data.vertexShader, "Vertex Shader Override"), debug),
-            fetchOnce(cache, data.fragmentShader, createShaderModule(device, data.fragmentShader, "Fragment Shader Override"), debug)
+            assetManager.get(data.vertexShader, debug),
+            assetManager.get(data.fragmentShader, debug),
         ]);
     }
 
@@ -130,7 +162,7 @@ export async function createInstance(data, base, cache, device, format, viewBuff
         let texture;
         if (data.texture.url) {
             // image texture
-            const imgBmp = await fetchOnce(cache, data.texture.url, loadImageToBMP(data.texture.url), debug);
+            const imgBmp = await assetManager.get(data.texture.url, debug);
             // create texture on device
             texture = device.createTexture({
                 label: "Image Texture",
@@ -234,8 +266,8 @@ export async function createInstance(data, base, cache, device, format, viewBuff
     if (debug && instance.collider && !instance.collider.ghost) {
         // SHADERS
         const [debugVShader, debugFShader] = await Promise.all([
-            fetchOnce(cache, "shaders/basic.vert.wgsl", createShaderModule(device, "shaders/basic.vert.wgsl", "DEBUG vertex module"), true),
-            fetchOnce(cache, "shaders/debug.frag.wgsl", createShaderModule(device, "shaders/debug.frag.wgsl", "DEBUG fragment module"), true),
+            assetManager.get("shaders/basic.vert.wgsl", debug),
+            assetManager.get("shaders/debug.frag.wgsl", debug),
         ]);
 
         // BGL
@@ -282,19 +314,19 @@ export async function createInstance(data, base, cache, device, format, viewBuff
 }
 
 // TODO logic belongs in Scene class
-export async function loadScene(sceneURL, cache, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
-    const assets = await fetchSceneFile(sceneURL);  // TODO too much in one function
+export async function loadScene(sceneURL, assetManager, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
+    const assets = await assetManager.get(sceneURL, debug);  // TODO too much in one function
 
     // RENDERABLES
     const renderables = [];
     for (const asset of assets.objects) {  // each object in scene
         // ASSET FAMILY DEFAULT VALUES
-        const mesh = await assetToMesh(asset, cache, device, debug);
+        const mesh = await assetToMesh(asset, assetManager, device, debug);
 
         const renderable = { asset: mesh, instances: [] };
         // INSTANCE-SPECIFIC VALUES
         for (const instance of asset.instances) {
-            const meshInstance = await createInstance(instance, mesh, cache, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug);
+            const meshInstance = await createInstance(instance, mesh, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug);
             // add to renderables list
             renderable.instances.push(meshInstance);
         }
