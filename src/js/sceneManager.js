@@ -85,7 +85,6 @@ export class SceneManager {
                 renderable.instances.push(meshInstance);
 
                 // NEW
-                
                 const entity = this.createEntity();
                 const transform = new TransformComponent(instance.p, instance.r, instance.s);
                 const mesh = await MeshComponent.assetToMesh(
@@ -120,8 +119,29 @@ export class SceneManager {
         return this.components[entity][name];
     }
 
+    hasComponent(entity, name) {
+        if (!this.components[entity] || !this.components[entity][name]) return false;
+        return true;
+    }
+
+    entitiesWithComponents(components) {
+        const entities = [];
+        for (const entity of this.entities) {
+            let hasAll = true;
+            for (const component of components) {
+                if (!this.hasComponent(entity, component)) {
+                    hasAll = false;
+                    break;
+                }
+            }
+            if (hasAll) { entities.push(entity); }
+        }
+        return entities;
+    }
+
     async update(frame, device, format, topology, multisamples, debug=false) {
         // TODO demo
+        /*
         if (frame % 240 === 179) {
             const data = {
                 p: [-20, 4, 0],
@@ -150,6 +170,7 @@ export class SceneManager {
         if (frame % 240 === 239) {
             this.renderables[0].instances.pop();
         }
+        */
 
         // update animations
         for (const asset of this.renderables) {
@@ -172,9 +193,23 @@ export class SceneManager {
         // update camera
         const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
         this.player.move(colliders);
+
+        this.#writeTransforms(device);
+    }
+
+    // TODO doing too much here?
+    #writeTransforms(device) {
+        for (const entity of this.entitiesWithComponents(["MeshComponent", "TransformComponent"])) {
+            device.queue.writeBuffer(
+                this.components[entity]["MeshComponent"].modelBuffer, 0,
+                this.components[entity]["TransformComponent"].model
+            );
+        }
     }
 
     render(canvas, debug) {
-        this.renderer.render(this.player, this.renderables, this.components, this.hud, canvas, debug)
+        // TODO could be instance variable and update when objects are added/removed/modified
+        const renderables = this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
+        this.renderer.render(this.player, renderables, this.hud, canvas, debug)
     }
 }
