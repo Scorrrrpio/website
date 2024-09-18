@@ -1,16 +1,8 @@
 import { mat4 } from "gl-matrix";
 
-export class Entity {
-    constructor() {}
-
-    createInstance() {
-        throw new Error("createInstance must be implemented in subclasses of Entity")
-    }
-}
-
-export class Mesh extends Entity {
+// TODO delete
+export class MeshOld {
     constructor(vb, vbAttributes, propertyCount, vertexCount, collider, vert, frag) {
-        super();
         this.vertexBuffer = vb;
         this.vbAttributes = vbAttributes;
         this.propertyCount = propertyCount;
@@ -21,11 +13,11 @@ export class Mesh extends Entity {
     }
 
     createInstance(id, modelBuffer, bg, pl, collider, animation, transforms) {
-        return new MeshInstance(id, modelBuffer, bg, pl, collider, animation, transforms);
+        return new MeshOldInstance(id, modelBuffer, bg, pl, collider, animation, transforms);
     }
 }
 
-export class MeshInstance {
+export class MeshOldInstance {
     constructor(id, modelBuffer, bg, pl, collider, animation, transforms) {
         this.id = id;
         this.transforms = transforms;

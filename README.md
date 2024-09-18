@@ -20,7 +20,7 @@ working on some cool WebGPU stuff
 - lazy loading / performance improvements
 - rendering optimizations
 - collision optimizations
-- rename renderables
+- redo url spawn locations
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z

@@ -1,6 +1,6 @@
 import { wgpuSetup } from "./wgpuSetup";
 import { AssetManager } from "./assetManager";
-import { SceneManager } from "./scene";
+import { SceneManager } from "./sceneManager";
 
 // TODO Engine class?
 export async function engine() {

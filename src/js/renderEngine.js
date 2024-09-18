@@ -26,12 +26,17 @@ export class RenderEngine {
         });
     }
 
-	render(player, renderables, hud, canvas, debug=false) {
+	render(player, renderables, components, hud, canvas, debug=false) {
         // TODO combine with animation -> O(n) not O(2n)
         // write mvp matrices to uniform buffers
         for (const mesh of renderables) {
             for (const instance of mesh.instances) {
                 this.device.queue.writeBuffer(instance.modelBuffer, 0, instance.model);
+            }
+        }
+        for (const c in components) {  // TODO move to SceneManager
+            if (components[c].TransformComponent && components[c].MeshComponent) {
+                this.device.queue.writeBuffer(components[c].MeshComponent.modelBuffer, 0, components[c].TransformComponent.model);
             }
         }
         this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(player.pov.view));
@@ -62,6 +67,16 @@ export class RenderEngine {
 
         pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
 
+        for (const c in components) {
+            if (components[c].MeshComponent) {
+                pass.setVertexBuffer(0, components[c].MeshComponent.vertexBuffer);
+                pass.setBindGroup(0, components[c].MeshComponent.bindGroup);
+                pass.setPipeline(components[c].MeshComponent.pipeline);
+                pass.draw(components[c].MeshComponent.vertexCount);
+            }
+        }
+
+        /*
         for (const mesh of renderables) {
             pass.setVertexBuffer(0, mesh.asset.vertexBuffer);
             for (const instance of mesh.instances) {
@@ -70,9 +85,11 @@ export class RenderEngine {
                 pass.draw(mesh.asset.vertexCount);
             }
         }
+        */
 
         // render debug content
         // TODO will fail
+        /*
         if (debug) {
             for (const mesh of renderables) {
                 for (const instance of mesh.instances) {
@@ -85,6 +102,7 @@ export class RenderEngine {
                 }
             }
         }
+        */
 
         // render HUD
         if (document.pointerLockElement === canvas) {

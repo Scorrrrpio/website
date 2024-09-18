@@ -1,10 +1,11 @@
 import { AssetLoadError } from "./errors";
-import { textureTriangle } from "./textureTriangle";
 import { plyToTriangleList } from "./plyReader";
+
+import { textureTriangle } from "./textureTriangle";
 import { textToTexture } from "./renderText";
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
 import { AABB, SphereMesh } from "./collision";
-import { Entity, Mesh } from "./entity";
+import { MeshOld } from "./mesh";
 import { mat4 } from "gl-matrix";
 
 export class AssetManager {
@@ -73,9 +74,9 @@ export class AssetManager {
     }
 }
 
-// TODO way too much going on in here
 
-async function assetToMesh(asset, assetManager, device, debug=false) {
+// TODO move everything to SceneManager
+export async function assetToMesh(asset, assetManager, device, debug=false) {
     // ASSET FAMILY DEFAULT VALUES
     const [data, vert, frag] = await Promise.all([
         assetManager.get(asset.file, debug),
@@ -111,12 +112,12 @@ async function assetToMesh(asset, assetManager, device, debug=false) {
     });
     device.queue.writeBuffer(vb, 0, floats.data);
 
-    return new Mesh(vb, vbAttributes, vProps, vCount, collider, vert, frag);
+    return new MeshOld(vb, vbAttributes, vProps, vCount, collider, vert, frag);
 }
 
 export async function createInstance(data, base, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
-    if (!(base instanceof Entity)) {
-        throw new Error("Cannot create Instance of non-Entity");
+    if (!(base instanceof MeshOld)) {
+        throw new Error("Cannot create Instance of non-Mesh");
     }
 
     // ID
@@ -310,29 +311,6 @@ export async function createInstance(data, base, assetManager, device, format, v
     }
 
     return instance;
-}
-
-// TODO logic belongs in Scene class
-export async function loadScene(sceneURL, assetManager, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug=false) {
-    const assets = await assetManager.get(sceneURL, debug);  // TODO too much in one function
-
-    // RENDERABLES
-    const renderables = [];
-    for (const asset of assets.objects) {  // each object in scene
-        // ASSET FAMILY DEFAULT VALUES
-        const mesh = await assetToMesh(asset, assetManager, device, debug);
-
-        const renderable = { asset: mesh, instances: [] };
-        // INSTANCE-SPECIFIC VALUES
-        for (const instance of asset.instances) {
-            const meshInstance = await createInstance(instance, mesh, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug);
-            // add to renderables list
-            renderable.instances.push(meshInstance);
-        }
-        renderables.push(renderable);
-    }
-
-    return renderables;
 }
 
 
