@@ -7,7 +7,6 @@ import { AABB, SphereMesh } from "./collision";
 import { Entity, Mesh } from "./entity";
 import { mat4 } from "gl-matrix";
 
-// TODO AssetManager class
 export class AssetManager {
     constructor(device) {
         this.device = device;  // TODO why
@@ -16,7 +15,7 @@ export class AssetManager {
 
     async get(url, debug=false) {
         if (this.cache.has(url)) { return this.cache.get(url); }
-        if (debug) console.log("FETCH: ${url}");
+        if (debug) console.log("FETCH: " + url);
         let data;
         const fileType = url.slice(url.lastIndexOf("."));
         switch (fileType) {
@@ -80,8 +79,8 @@ async function assetToMesh(asset, assetManager, device, debug=false) {
     // ASSET FAMILY DEFAULT VALUES
     const [data, vert, frag] = await Promise.all([
         assetManager.get(asset.file, debug),
-        assetManager.get(asset.vertexShader),
-        assetManager.get(asset.fragmentShader),
+        assetManager.get(asset.vertexShader, debug),
+        assetManager.get(asset.fragmentShader, debug),
     ]);
 
     // TODO change ply reader AGAIN
@@ -337,7 +336,7 @@ export async function loadScene(sceneURL, assetManager, device, viewBuffer, proj
 }
 
 
-// TODO move into Mesh class
+// TODO move into Mesh/Collider? class
 // TODO hardcoded for AABB
 export function createDebugGeometry(instance, device) {
     // generate geometry (line-list)

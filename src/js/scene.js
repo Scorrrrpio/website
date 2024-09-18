@@ -74,15 +74,22 @@ export class SceneManager {
 
     async update(frame, device, format, topology, multisamples, debug=false) {
         // TODO demo
+        /*
         if (frame % 240 === 179) {
             const data = {
                 p: [-20, 4, 0],
                 s: [2, 2, 2],
+                texture: {
+                    url: "media/mysterious-canine.jpg",
+                    faces: ["front", "back", "right", "left", "top", "bottom"],
+                },
+                vertexShader: "shaders/texture.vert.wgsl",
+                fragmentShader: "shaders/texture.frag.wgsl",
             }
             const newCube = await createInstance(
                 data,  // instance data
                 this.renderables[0].asset,  // base asset
-                this.cache,  // cache
+                this.assetManager,  // cache
                 device,
                 format,
                 this.renderer.viewBuffer,
@@ -96,6 +103,7 @@ export class SceneManager {
         if (frame % 240 === 239) {
             this.renderables[0].instances.pop();
         }
+        */
 
         // update animations
         for (const asset of this.renderables) {
