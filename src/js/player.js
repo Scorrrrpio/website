@@ -1,5 +1,5 @@
 import { Camera } from "./camera";
-import { AABB } from "./collision";
+import { AABBComponent } from "./components"; 
 
 function normalizeXZ(v, speed) {
     const magnitude = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
@@ -62,8 +62,7 @@ export class Player {
         this.pov = new Camera(canvas.width / canvas.height);  // default fov, near plane, far plane
         this.position = position;
         this.rotation = rotation;
-        // AABB
-        this.aabb = new AABB(...this.#generateAABB(position));
+        this.aabb = new AABBComponent(...this.#generateAABB(position));
     }
     
     #generateAABB(pos) {
@@ -376,7 +375,7 @@ export class Player {
         ];
 
         // projected AABB after move
-        const nextAABB = new AABB(...this.#generateAABB(nextPos));
+        const nextAABB = new AABBComponent(...this.#generateAABB(nextPos));
 
         for (const box of boxes) {
             if (nextAABB.checkCollision(box)) {

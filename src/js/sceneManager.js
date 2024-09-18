@@ -2,8 +2,7 @@ import { lokiSpin, move, spinY } from "./animations";
 import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { Player } from "./player";
-import { MeshComponent, TransformComponent } from "./components";
-import { AABB, SphereMesh } from "./collision";
+import { MeshComponent, TransformComponent, AABBComponent } from "./components";
 
 export class SceneManager {
     static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -71,13 +70,12 @@ export class SceneManager {
             // collision mesh based on geometry
             const floats = baseMesh.vertex.values.float32;
             const meshGenerators = {
-                aabb: AABB.createMesh,
-                sphere: SphereMesh.createMesh,  // TODO other types (sphere, mesh)
+                aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
             }
             const basePoints = meshGenerators[asset.collision]?.(floats.data, floats.properties);
             let baseCollider = null;
             if (asset.collision === "aabb") {
-                baseCollider = new AABB(basePoints.min, basePoints.max);
+                baseCollider = new AABBComponent(basePoints.min, basePoints.max);
             }
 
             // INSTANCE-SPECIFIC VALUES
@@ -97,8 +95,6 @@ export class SceneManager {
                 }
             }
         }
-
-        console.log(this);
     }
 
     createEntity() {
@@ -157,13 +153,13 @@ export class SceneManager {
         for (const e of animated) {
             animations[this.components[e]["TransformComponent"].animation]?.(
                 this.components[e]["TransformComponent"],
-                this.components[e]["AABB"]
+                this.components[e]["AABBComponent"]
             );
         }
 
         // update camera
         //const colliders = this.renderables.flatMap(asset => asset.instances.map(instance => instance.collider));
-        const colliders = this.entitiesWithComponents(["AABB"]).map(e => this.components[e]["AABB"]);
+        const colliders = this.entitiesWithComponents(["AABBComponent"]).map(e => this.components[e]["AABBComponent"]);
         this.player.move(colliders);
 
         this.#writeTransforms(device);
