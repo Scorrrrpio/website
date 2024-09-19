@@ -2,7 +2,7 @@ import { lokiSpin, move, spinY } from "./animations";
 import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
-import { movePlayer } from "./physicsEngine";
+import { movePlayer, raycast } from "./physicsEngine";
 
 export class SceneManager {
     static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
@@ -47,7 +47,7 @@ export class SceneManager {
         this.renderer = new RenderEngine(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
         // TODO in InputHandler or EventSystem
         window.addEventListener("resize", () => {
-            this.renderer.handleResize(this.playerOld.pov, canvas);
+            this.renderer.handleResize(this.components[this.player].CameraComponent, canvas);
             for (const e in this.entitiesWith("CameraComponent")) {
                 this.renderer.handleResize(this.components[e]["CameraComponent"], canvas);
             }
@@ -84,10 +84,10 @@ export class SceneManager {
             const baseFrag = await this.assetManager.get(asset.fragmentShader);
             // collision mesh based on geometry
             const floats = baseMesh.vertex.values.float32;
-            const meshGenerators = {
+            const colliderGenerators = {
                 aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
             }
-            const baseCollider = meshGenerators[asset.collision]?.(floats.data, floats.properties);
+            const baseCollider = colliderGenerators[asset.collision]?.(floats.data, floats.properties);
 
             // INSTANCE-SPECIFIC VALUES
             for (const instance of asset.instances) {
@@ -103,6 +103,9 @@ export class SceneManager {
                     collider.setProperties(instance.href, instance.ghost, instance.v);
                     collider.modelTransform(transform.model);
                     this.addComponent(entity, collider);
+                }
+                if (mesh.textRenderer) {  // TODO awful
+                    this.addComponent(entity, mesh.textRenderer);
                 }
             }
         }
@@ -172,20 +175,45 @@ export class SceneManager {
         }
 
         // update camera
-        const colliders = this.entitiesWithComponents(["AABBComponent"]).map(e => this.components[e]["AABBComponent"]);
-        this.#movePlayer(colliders);
+        const colliders = this.entitiesWithComponents(["AABBComponent"]);
+        this.#movePlayer(colliders, device);
 
 
         this.#writeTransforms(device);
     }
 
-    #movePlayer(colliders) {
+    #movePlayer(colliders, device) {
         const camera = this.components[this.player].CameraComponent;
         const inputs = this.components[this.player].InputComponent.inputs;
         const rotation = this.components[this.player].InputComponent.look;
         const position = this.components[this.player].TransformComponent.position;
         const physics = this.components[this.player].PhysicsComponent;
-        movePlayer(colliders, inputs, position, rotation, camera, physics);
+        movePlayer(colliders.map(e => this.components[e].AABBComponent), inputs, position, rotation, camera, physics);
+        const hit = raycast(this, colliders, [position[0] + camera.offset[0], position[1] + camera.offset[1], position[2] + camera.offset[2]], rotation);  // TODO not snappy
+        if (hit) {
+            if (inputs.leftMouse) {
+                // if link
+                if (this.components[hit].AABBComponent.href) {
+                    console.log("bang");
+                    // stop movement
+                    inputs.w = false;
+                    inputs.a = false;
+                    inputs.s = false;
+                    inputs.d = false;
+                    inputs.space = false;
+                    inputs.leftMouse = false;
+                    inputs.rightMouse = false;
+                    // open link
+                    window.open(hit.href, "__blank");
+                }
+            }
+            if (this.hasComponent(hit, "TextRenderer")) {
+                const scroll = this.components[this.player].InputComponent.scroll;
+                this.components[hit].TextRenderer.createTextGeometry(scroll);
+                this.components[hit].TextRenderer.render(device);
+                this.components[this.player].InputComponent.scroll = 0;
+            }
+        }
     }
 
     // TODO move logic elsewhere?

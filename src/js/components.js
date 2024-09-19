@@ -3,7 +3,7 @@ import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttribu
 
 // TODO ideally eliminate these imports
 import { textureTriangle } from "./textureTriangle";
-import { textToTexture } from "./renderText";
+import { TextRenderer, textToTexture } from "./renderText";
 
 export class TransformComponent {
     constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1], animation) {
@@ -26,12 +26,13 @@ export class TransformComponent {
 }
 
 export class MeshComponent {
-    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline) {
+    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline, textRenderer) {
         this.vertexBuffer = vb;
         this.vertexCount = vertexCount;
         this.modelBuffer = modelBuffer;
         this.bindGroup = bindGroup;
         this.pipeline = pipeline;
+        this.textRenderer = textRenderer;
     }
 
     // TODO don't require assetManager
@@ -84,6 +85,7 @@ export class MeshComponent {
         const cullMode = data.cullMode ? data.cullMode : "back";
 
         // TEXTURE
+        let textRenderer;  // TODO awful
         if (data.texture) {
             let texture;
             if (data.texture.url) {
@@ -115,7 +117,8 @@ export class MeshComponent {
                     textureTriangle(texture, device, format);
                 }
                 else if (data.texture.program === "text") {
-                    textToTexture(texture, device, format, data.texture.content);
+                    textRenderer = new TextRenderer(texture, format, data.texture.content);
+                    await textRenderer.initialize(assetManager, device);
                 }
             }
 
@@ -172,7 +175,7 @@ export class MeshComponent {
 
 
         // TODO debug geometry
-        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline);  // TODO
+        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline, textRenderer);  // TODO
     }
 }
 
@@ -375,8 +378,10 @@ export class InputComponent {
         this.ySense = 0.002;
         this.maxLook = Math.PI / 2;
         this.minLook = -this.maxLook;
+        this.scrollSense = 1;
 
         this.look = [0, 0, 0];
+        this.scroll = 0;
     }
 
     enableControls(canvas) {
@@ -465,6 +470,12 @@ export class InputComponent {
                     debugger;
                 }
                 */
+            }
+        });
+
+        document.addEventListener("wheel", (event) => {
+            if (document.pointerLockElement === canvas) {
+                this.scroll += event.deltaY * this.scrollSense;
             }
         });
 

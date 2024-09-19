@@ -162,7 +162,7 @@
                     "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
-                        "content": "Hello World",
+                        "content": "Hello World\n\nWAY TOO MUCH TEXT 1\n\nWAY TOO MUCH TEXT 2\n\nWAY TOO MUCH TEXT 3\n\nWAY TOO MUCH TEXT 4\n\nWAY TOO MUCH TEXT 5\n\nWAY TOO MUCH TEXT 6\n\nWAY TOO MUCH TEXT 7\n\nWAY TOO MUCH TEXT 8\n\nWAY TOO MUCH TEXT 9\n\nWAY TOO MUCH TEXT 10\n\nWAY TOO MUCH TEXT 11",
                         "faces": ["front"]
                     },
                     "vertexShader": "shaders/texture.vert.wgsl",

@@ -19,7 +19,7 @@ function normalize(v) {
     return v;
 }
 
-function raycast(boxes, rayOrigin, rotation, inputs) {
+export function raycast(ECS, entities, rayOrigin, rotation) {
     const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
     const forwardY = Math.sin(rotation[0]);
     const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
@@ -30,75 +30,59 @@ function raycast(boxes, rayOrigin, rotation, inputs) {
     let closest;
     let closestDist = Infinity;
     // TODO review
-    for (const box of boxes) {
-        if (box) {
-            let intersect = true;
+    for (const e of entities) {
+        const box = ECS.components[e].AABBComponent
+        let intersect = true;
 
-            let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
-            let tmax = (box.max[0] - rayOrigin[0]) / rayDirection[0];
+        let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
+        let tmax = (box.max[0] - rayOrigin[0]) / rayDirection[0];
 
-            if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
+        if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
 
-            let tymin, tymax;
-            if (rayDirection[1] !== 0) {
-                tymin = (box.min[1] - rayOrigin[1]) / rayDirection[1];
-                tymax = (box.max[1] - rayOrigin[1]) / rayDirection[1];
+        let tymin, tymax;
+        if (rayDirection[1] !== 0) {
+            tymin = (box.min[1] - rayOrigin[1]) / rayDirection[1];
+            tymax = (box.max[1] - rayOrigin[1]) / rayDirection[1];
 
-                if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
-            } else {
-                tymin = -Infinity;
-                tymax = Infinity;
-            }
+            if (tymin > tymax) [tymin, tymax] = [tymax, tymin];
+        } else {
+            tymin = -Infinity;
+            tymax = Infinity;
+        }
 
-            if ((tmin > tymax) || (tymin > tmax)) intersect = false;
+        if ((tmin > tymax) || (tymin > tmax)) intersect = false;
 
-            if (tymin > tmin) tmin = tymin;
-            if (tymax < tmax) tmax = tymax;
+        if (tymin > tmin) tmin = tymin;
+        if (tymax < tmax) tmax = tymax;
 
-            let tzmin, tzmax;
-            if (rayDirection[2] !== 0) {
-                tzmin = (box.min[2] - rayOrigin[2]) / rayDirection[2];
-                tzmax = (box.max[2] - rayOrigin[2]) / rayDirection[2];
+        let tzmin, tzmax;
+        if (rayDirection[2] !== 0) {
+            tzmin = (box.min[2] - rayOrigin[2]) / rayDirection[2];
+            tzmax = (box.max[2] - rayOrigin[2]) / rayDirection[2];
 
-                if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
-            } else {
-                tzmin = -Infinity;
-                tzmax = Infinity;
-            }
+            if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
+        } else {
+            tzmin = -Infinity;
+            tzmax = Infinity;
+        }
 
-            if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
+        if ((tmin > tzmax) || (tzmin > tmax)) intersect = false;
 
-            if (tzmin > tmin) tmin = tzmin;
-            if (tzmax < tmax) tmax = tzmax;
+        if (tzmin > tmin) tmin = tzmin;
+        if (tzmax < tmax) tmax = tzmax;
 
-            if (intersect) {
-                if (tmin < closestDist) {
-                    closest = box;
-                    closestDist = tmin;
-                }
+        if (intersect) {
+            if (tmin < closestDist) {
+                closest = e;
+                closestDist = tmin;
             }
         }
     }
 
-    if (closest) {
-        // if link
-        if (closest.href) {
-            console.log("bang");
-            // stop movement
-            inputs.w = false;
-            inputs.a = false;
-            inputs.s = false;
-            inputs.d = false;
-            inputs.space = false;
-            inputs.leftMouse = false;
-            inputs.rightMouse = false;
-            // open link
-            window.open(closest.href, "__blank");
-        }
-    }
+    return closest;
 }
 
-export function movePlayer(boxes, inputs, position, rotation, camera, physics) {
+export function movePlayer(boxes, inputs, position, rotation, camera, physics) {    
     const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
     const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
     const strafeX = Math.cos(rotation[1]);
@@ -170,11 +154,6 @@ export function movePlayer(boxes, inputs, position, rotation, camera, physics) {
 
     // update camera view matrix
     camera.updateViewMatrix(position, rotation);
-
-    // cast interaction ray
-    if (inputs.leftMouse) {
-        raycast(boxes, [position[0] + camera.offset[0], position[1] + camera.offset[1], position[2] + camera.offset[2]], rotation, inputs);  // TODO not snappy
-    }
 }
 
 function slide(box1, box2, movement, position, camera, physics) {

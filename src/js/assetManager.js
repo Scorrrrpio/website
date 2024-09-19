@@ -1,6 +1,7 @@
 import { AssetLoadError } from "./errors";
 import { plyToTriangleList } from "./plyReader";
 
+// TODO getMultiple using Promise.all (or get(...urls))
 export class AssetManager {
     constructor(device) {
         this.device = device;  // TODO why

@@ -3,6 +3,7 @@
 working on some cool WebGPU stuff
 
 # TODO
+- ECS class
 - favicon
 - include player in scene.json
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)

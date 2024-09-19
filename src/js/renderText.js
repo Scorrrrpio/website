@@ -1,161 +1,168 @@
-import { AssetLoadError } from "./errors";
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-export async function textToTexture(outputTexture, device, format, text) {
-    // CONSTANTS
-    // TODO as parameters
-    const atlasUrl = "media/text/hackAtlas64.png";
-    const metadataUrl = "media/text/hackMetadata64.json";
-    const fontSize = 48;
-    const MULTISAMPLE = 4;
-
-    // load glyph atlas png
-    const img = new Image();
-    img.src = atlasUrl;
-    try {
-        await img.decode();
+// TODO awful format
+// TODO some can be const not this
+export class TextRenderer {
+    constructor(outputTexture, format, text) {
+        this.outputTexture = outputTexture;
+        this.format = format;
+        this.text = text;  // TODO why not pass at render time?
+        // TODO as parameters
+        this.atlasUrl = "media/text/hackAtlas64.png";
+        this.metadataUrl = "media/text/hackMetadata64.json";
+        this.fontSize = 48;
+        this.scroll = 0
     }
-    catch (error) {
-        if (error.name === "EncodingError") {
-            throw new AssetLoadError("Failed to load image: " + url);
-        }
-        else { throw error; }
-    };
-    // convert to bmp
-    const atlasBMP = await createImageBitmap(img);
 
-    const response = await fetch(metadataUrl);
-    if (!response.ok) { throw new AssetLoadError("Failed to load Glyph Atlas Metadata"); }
-    const metadata = await response.json();
+    async initialize(assetManager, device) {
+        // CONSTANTS
+        const MULTISAMPLE = 4;
+
+        // load glyph atlas to bmp and metadata json
+        [this.atlasBmp, this.metadata] = await Promise.all([
+            assetManager.get(this.atlasUrl),
+            assetManager.get(this.metadataUrl)
+        ]);
+
+        // GLYPH ATLAS TEXTURE
+        this.atlasTexture = device.createTexture({
+            label: "Instance Texture",
+            size: [this.atlasBmp.width, this.atlasBmp.height, 1],
+            format: this.format,
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+
+        device.queue.copyExternalImageToTexture(
+            { source: this.atlasBmp },
+            { texture: this.atlasTexture },
+            [this.atlasBmp.width, this.atlasBmp.height]
+        );
+
+        // create texture sampler
+        this.sampler = device.createSampler({
+            magFilter: "linear",
+            minFilter: "linear",
+        });
+
+        // SHADERS
+        const [vertexModule, fragmentModule] = await Promise.all([
+            assetManager.get("shaders/text.vert.wgsl"),
+            assetManager.get("shaders/text.frag.wgsl"),
+        ]);
+
+        this.createTextGeometry(0);
+
+        // create vertex buffer
+        this.vertexBuffer = device.createBuffer({
+            label: "Text Geometry",
+            size: this.vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+        });
+
+        device.queue.writeBuffer(this.vertexBuffer, 0, this.vertices);
+
+        // BIND GROUP and LAYOUT
+        const BGL = createBindGroupLayout(device, "Text BGL", "texture", "sampler");
+        this.BG = createBindGroup(device, "Text Bind Group", BGL, this.atlasTexture.createView(), this.sampler);
 
 
-    // GLYPH ATLAS TEXTURE
-    const texture = device.createTexture({
-        label: "Instance Texture",
-        size: [atlasBMP.width, atlasBMP.height, 1],
-        format: format,
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-    });
+        // PIPELINE
+        const vbAttributes = createVBAttributes(["x", "y", "u", "v"]);
+        this.pipeline = createPipeline("Text Render Pipeline", device, BGL, vertexModule, 4, vbAttributes, fragmentModule, this.format, "triangle-list", "none", false, MULTISAMPLE);
 
-    device.queue.copyExternalImageToTexture(
-        { source: atlasBMP },
-        { texture: texture },
-        [atlasBMP.width, atlasBMP.height]
-    );
+        // 4xMSAA TEXTURES
+        this.msaaTexture = device.createTexture({
+            format: this.format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            size: [this.outputTexture.width, this.outputTexture.height],
+            sampleCount: MULTISAMPLE,
+        });
 
-    // create texture sampler
-    const sampler = device.createSampler({
-        magFilter: "linear",
-        minFilter: "linear",
-    });
-
-
-    // SHADERS
-    const vertexModule = await createShaderModule(device, "shaders/text.vert.wgsl", "Text Vertex");
-    const fragmentModule = await createShaderModule(device, "shaders/text.frag.wgsl", "Text Fragment");
-
-    // GEOMETRY
-    const atlasHeight = 64;
-    const scale = fontSize / atlasHeight;
-    const margin = 32;
-
-    // recall uv [0, 0] is bottom left corner
-    let xPos = -outputTexture.width + margin;  // [-1, 1] x coord and x increases
-    let yPos = outputTexture.height - fontSize - margin;  // top (with space for glyph) and y decreases
-    const letterQuads = [];
-
-    const words = text.split(" ");
-    for (let word of words) {
-        let wordLength = 0;
-        for (const ch of word) {
-            if (ch != "\n") { wordLength += metadata[ch].advance * scale; }
-            else break;
-        }
-        if (xPos + wordLength > outputTexture.width) {
-            xPos = -outputTexture.width + margin;
-            yPos -= fontSize;
-        }
-        word += " ";
-        for (const ch of word) {
-            if (yPos - fontSize < -outputTexture.height - fontSize + margin) { break; }
-            if (ch === "\n") {
-                xPos = -outputTexture.width + margin;
-                yPos -= fontSize;
-            }
-            else {
-                let x0 = (xPos + metadata[ch].x * scale) / outputTexture.width;
-                let y1 = (yPos + metadata[ch].y * scale) / outputTexture.height;
-                let x1 = (xPos + (metadata[ch].x + metadata[ch].width) * scale) / outputTexture.width;
-                let y0 = (yPos + (metadata[ch].y - metadata[ch].height) * scale) / outputTexture.height;
-                // TODO desperately needs a function
-                letterQuads.push(
-                    // TOP LEFT
-                    x0, y1, metadata[ch].u0, metadata[ch].v0,
-                    // BOTTOM LEFT
-                    x0, y0, metadata[ch].u0, metadata[ch].v1,
-                    // TOP RIGHT
-                    x1, y1, metadata[ch].u1, metadata[ch].v0,
-                    // BOTTOM RIGHT
-                    x1, y0, metadata[ch].u1, metadata[ch].v1,
-                    // TOP RIGHT
-                    x1, y1, metadata[ch].u1, metadata[ch].v0,
-                    // BOTTOM LEFT
-                    x0, y0, metadata[ch].u0, metadata[ch].v1,
-                );
-                xPos += (metadata[ch].advance) * scale;
-            }
-        }
+        this.render(device);
     }
-    const vertices = Float32Array.from(letterQuads);
 
-    // create vertex buffer
-	const vertexBuffer = device.createBuffer({
-		label: "Text Geometry",
-		size: vertices.byteLength,
-		usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-	});
-	device.queue.writeBuffer(vertexBuffer, 0, vertices);
+    createTextGeometry(scroll = 0) {
+        this.scroll += scroll;
+        this.scroll = Math.max(0, this.scroll);
 
+        // GEOMETRY
+        const atlasHeight = 64;
+        const scale = this.fontSize / atlasHeight;
+        const margin = 32;
 
-    // BIND GROUP and LAYOUT
-    const BGL = createBindGroupLayout(device, "Text BGL", "texture", "sampler");
-    const BG = createBindGroup(device, "Text Bind Group", BGL, texture.createView(), sampler);
+        // recall uv [0, 0] is bottom left corner
+        let xPos = -this.outputTexture.width + margin;  // [-1, 1] x coord and x increases
+        let yPos = this.outputTexture.height - this.fontSize - margin + this.scroll;  // top (with space for glyph) and y decreases
+        const letterQuads = [];
 
+        // TODO assumes target face is square
+        // TODO font scales with face
+        const words = this.text.split(" ");
+        for (let word of words) {
+            let wordLength = 0;
+            for (const ch of word) {
+                if (ch != "\n") { wordLength += this.metadata[ch].advance * scale; }
+                else break;
+            }
+            if (xPos + wordLength > this.outputTexture.width) {
+                xPos = -this.outputTexture.width + margin;
+                yPos -= this.fontSize;
+            }
+            word += " ";
+            for (const ch of word) {
+                if (ch === "\n") {
+                    xPos = -this.outputTexture.width + margin;
+                    yPos -= this.fontSize;
+                }
+                else {
+                    let x0 = (xPos + this.metadata[ch].x * scale) / this.outputTexture.width;
+                    let y1 = (yPos + this.metadata[ch].y * scale) / this.outputTexture.height;
+                    let x1 = (xPos + (this.metadata[ch].x + this.metadata[ch].width) * scale) / this.outputTexture.width;
+                    let y0 = (yPos + (this.metadata[ch].y - this.metadata[ch].height) * scale) / this.outputTexture.height;
+                    // TODO desperately needs a function
+                    letterQuads.push(
+                        // TOP LEFT
+                        x0, y1, this.metadata[ch].u0, this.metadata[ch].v0,
+                        // BOTTOM LEFT
+                        x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,
+                        // TOP RIGHT
+                        x1, y1, this.metadata[ch].u1, this.metadata[ch].v0,
+                        // BOTTOM RIGHT
+                        x1, y0, this.metadata[ch].u1, this.metadata[ch].v1,
+                        // TOP RIGHT
+                        x1, y1, this.metadata[ch].u1, this.metadata[ch].v0,
+                        // BOTTOM LEFT
+                        x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,
+                    );
+                    xPos += (this.metadata[ch].advance) * scale;
+                }
+            }
+        }
+        this.vertices = Float32Array.from(letterQuads);
+    }
 
-    // PIPELINE
-    const vbAttributes = createVBAttributes(["x", "y", "u", "v"]);
-    const pipeline = createPipeline("Text Render Pipeline", device, BGL, vertexModule, 4, vbAttributes, fragmentModule, format, "triangle-list", "none", false, MULTISAMPLE);
+    render(device) {
+        device.queue.writeBuffer(this.vertexBuffer, 0, this.vertices);
 
-    // 4xMSAA TEXTURES
-    let msaaTexture = device.createTexture({
-        format: format,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        size: [outputTexture.width, outputTexture.height],
-        sampleCount: MULTISAMPLE,
-    });
-
-
-    // RENDER
-    function drawText() {
         // create GPUCommandEncoder
 		const encoder = device.createCommandEncoder();
 
         // begin render pass
 		const pass = encoder.beginRenderPass({
 			colorAttachments: [{
-                view: msaaTexture.createView(),  // render to MSAA texture
+                view: this.msaaTexture.createView(),  // render to MSAA texture
 				loadOp: "clear",
 				clearValue: { r: 0, g: 0, b: 0, a: 1 },
 				storeOp: "store",
-                resolveTarget: outputTexture.createView(),  // multisample down to output
+                resolveTarget: this.outputTexture.createView(),  // multisample down to output
 			}],
 		});
 
-		// render triangle
-		pass.setPipeline(pipeline);
-        pass.setBindGroup(0, BG);
-		pass.setVertexBuffer(0, vertexBuffer);
-		pass.draw(vertices.length / 4);
+		// render text
+		pass.setPipeline(this.pipeline);
+        pass.setBindGroup(0, this.BG);
+		pass.setVertexBuffer(0, this.vertexBuffer);
+		pass.draw(this.vertices.length / 4);
 
 		// end render pass
 		pass.end();
@@ -163,6 +170,4 @@ export async function textToTexture(outputTexture, device, format, text) {
 		// create and submit GPUCommandBuffer
 		device.queue.submit([encoder.finish()]);
     }
-
-    drawText();
 }
