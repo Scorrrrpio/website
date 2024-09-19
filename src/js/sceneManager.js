@@ -40,7 +40,7 @@ export class SceneManager {
 
         // HUD
         // TODO HUD needs depth testing and MSAA for some reason?
-        this.hud = await generateHUD(device, format, projectionBuffer, multisamples);
+        this.hud = await generateHUD(this.assetManager, device, format, projectionBuffer, multisamples);
 
 
         // RENDERER
@@ -55,7 +55,7 @@ export class SceneManager {
     }
 
     async #loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
-        const assets = await this.assetManager.get(this.url, debug);
+        const [assets] = await this.assetManager.get(this.url);
 
         // PLAYER
         const spawn = {
@@ -79,9 +79,7 @@ export class SceneManager {
         // TODO optimize (object pooling, instanced rendering)
         for (const asset of assets.objects) {  // each object in scene
             // ASSET FAMILY DEFAULT VALUES
-            const baseMesh = await this.assetManager.get(asset.file);
-            const baseVert = await this.assetManager.get(asset.vertexShader);
-            const baseFrag = await this.assetManager.get(asset.fragmentShader);
+            const [baseMesh, baseVert, baseFrag] = await this.assetManager.get(asset.file, asset.vertexShader, asset.fragmentShader);
             // collision mesh based on geometry
             const floats = baseMesh.vertex.values.float32;
             const colliderGenerators = {
@@ -211,9 +209,11 @@ export class SceneManager {
                 const scroll = this.components[this.player].InputComponent.scroll;
                 this.components[hit].TextRenderer.createTextGeometry(scroll);
                 this.components[hit].TextRenderer.render(device);
-                this.components[this.player].InputComponent.scroll = 0;
             }
         }
+
+        // reset scroll deltaY between frames
+        this.components[this.player].InputComponent.scroll = 0;
     }
 
     // TODO move logic elsewhere?

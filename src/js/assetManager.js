@@ -1,36 +1,36 @@
 import { AssetLoadError } from "./errors";
 import { plyToTriangleList } from "./plyReader";
 
-// TODO getMultiple using Promise.all (or get(...urls))
 export class AssetManager {
     constructor(device) {
         this.device = device;  // TODO why
         this.cache = new Map();
     }
 
-    async get(url, debug=false) {
-        if (this.cache.has(url)) { return this.cache.get(url); }
-        if (debug) console.log("FETCH: " + url);
-        let data;
-        const fileType = url.slice(url.lastIndexOf("."));
-        switch (fileType) {
-            case ".json":
-                data = this.#loadJson(url);
-                break;
-            case ".wgsl":
-                data = this.#loadShaderModule(url);
-                break;
-            case ".ply":
-                data = plyToTriangleList(url);
-                break;
-            case ".png": case ".jpg":
-                data = this.#loadImageToBmp(url);
-                break;
-            default:
-                throw new AssetLoadError("Failed to load from ${url}. No loader method for file extension ${fileType}.");
-        }
-        this.cache.set(url, data);
-        return await data;
+    async get(...urls) {
+        return await Promise.all(urls.map((url) => {
+            if (this.cache.has(url)) { return this.cache.get(url); }
+            let data;
+            const fileType = url.slice(url.lastIndexOf("."));
+            switch (fileType) {
+                case ".json":
+                    data = this.#loadJson(url);
+                    break;
+                case ".wgsl":
+                    data = this.#loadShaderModule(url);
+                    break;
+                case ".ply":
+                    data = plyToTriangleList(url);
+                    break;
+                case ".png": case ".jpg":
+                    data = this.#loadImageToBmp(url);
+                    break;
+                default:
+                    throw new AssetLoadError("Failed to load from ${url}. No loader method for file extension ${fileType}.");
+            }
+            this.cache.set(url, data);
+            return data;
+        }));
     }
 
     async #loadJson(url) {

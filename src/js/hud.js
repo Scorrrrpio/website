@@ -1,6 +1,6 @@
 import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
 
-export async function generateHUD(device, format, projectionBuffer, multisamples) {
+export async function generateHUD(assetManager, device, format, projectionBuffer, multisamples) {
     // geometry
     const crosshair = new Float32Array([
         // X,    Y
@@ -21,10 +21,7 @@ export async function generateHUD(device, format, projectionBuffer, multisamples
 
     // shaders
     // TODO crosshair size is defined in shaders using z position
-    const [hudVertexModule, hudFragmentModule] = await Promise.all([
-        createShaderModule(device, "shaders/hud.vert.wgsl", "HUD Vertex"),
-        createShaderModule(device, "shaders/hud.frag.wgsl", "HUD Fragment")
-    ]);
+    const [hudVertexModule, hudFragmentModule] = await assetManager.get("shaders/hud.vert.wgsl", "shaders/hud.frag.wgsl");
 
     // bind group
     const hudBGL = createBindGroupLayout(device, "HUD BGL", { visibility: GPUShaderStage.VERTEX, buffer: {type: "uniform"}});

@@ -75,10 +75,7 @@ export class MeshComponent {
         let vertexShaderModule = baseVert;
         let fragmentShaderModule = baseFrag;
         if (data.vertexShader && data.fragmentShader) {
-            [vertexShaderModule, fragmentShaderModule] = await Promise.all([
-                assetManager.get(data.vertexShader, debug),
-                assetManager.get(data.fragmentShader, debug),
-            ]);
+            [vertexShaderModule, fragmentShaderModule] = await assetManager.get(data.vertexShader, data.fragmentShader);
         }
 
         // OVERRIDE CULL MODE
@@ -90,7 +87,7 @@ export class MeshComponent {
             let texture;
             if (data.texture.url) {
                 // image texture
-                const imgBmp = await assetManager.get(data.texture.url, debug);
+                const [imgBmp] = await assetManager.get(data.texture.url);
                 // create texture on device
                 texture = device.createTexture({
                     label: "Image Texture",
@@ -114,7 +111,7 @@ export class MeshComponent {
                     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
                 });
                 if (data.texture.program === "helloTriangle") {
-                    textureTriangle(texture, device, format);
+                    textureTriangle(assetManager, texture, device, format);
                 }
                 else if (data.texture.program === "text") {
                     textRenderer = new TextRenderer(texture, format, data.texture.content);

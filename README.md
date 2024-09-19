@@ -4,6 +4,7 @@ working on some cool WebGPU stuff
 
 # TODO
 - ECS class
+- once again add objects at runtime
 - favicon
 - include player in scene.json
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)

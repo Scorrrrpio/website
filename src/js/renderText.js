@@ -1,4 +1,4 @@
-import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
+import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
 
 // TODO awful format
 // TODO some can be const not this
@@ -19,10 +19,7 @@ export class TextRenderer {
         const MULTISAMPLE = 4;
 
         // load glyph atlas to bmp and metadata json
-        [this.atlasBmp, this.metadata] = await Promise.all([
-            assetManager.get(this.atlasUrl),
-            assetManager.get(this.metadataUrl)
-        ]);
+        [this.atlasBmp, this.metadata] = await assetManager.get(this.atlasUrl, this.metadataUrl);
 
         // GLYPH ATLAS TEXTURE
         this.atlasTexture = device.createTexture({
@@ -45,10 +42,7 @@ export class TextRenderer {
         });
 
         // SHADERS
-        const [vertexModule, fragmentModule] = await Promise.all([
-            assetManager.get("shaders/text.vert.wgsl"),
-            assetManager.get("shaders/text.frag.wgsl"),
-        ]);
+        const [vertexModule, fragmentModule] = await assetManager.get("shaders/text.vert.wgsl", "shaders/text.frag.wgsl");
 
         this.createTextGeometry(0);
 
