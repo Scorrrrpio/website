@@ -204,7 +204,7 @@ export class SceneManager {
                     inputs.leftMouse = false;
                     inputs.rightMouse = false;
                     // open link
-                    window.open(hit.href, "__blank");
+                    window.open(this.components[hit].AABBComponent.href, "__blank");
                 }
             }
             if (this.hasComponent(hit, "TextRenderer")) {
