@@ -1,4 +1,4 @@
-import { createBindGroup, createBindGroupLayout, createPipeline, createShaderModule, createVBAttributes } from "./wgpuHelpers";
+import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
 
 export async function generateHUD(assetManager, device, format, projectionBuffer, multisamples) {
     // geometry

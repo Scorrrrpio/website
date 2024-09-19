@@ -1,15 +1,12 @@
 export class RenderEngine {
-    constructor(device, context, canvas, viewBuffer, projectionBuffer, multisample) {
+    constructor(device, context, format, canvas, multisample) {
         this.device = device;
-        this.context = context;  // TODO needed?
-        this.viewBuffer = viewBuffer;
-        this.projectionBuffer = projectionBuffer;
         this.multisample = multisample;
 
         // 4xMSAA TEXTURES
-        this.canvasTexture = context.getCurrentTexture();  // TODO what is this?
+        this.canvasTexture = context.getCurrentTexture();  // TODO what is this? what is context?
         this.msaaTexture = device.createTexture({
-            format: this.canvasTexture.format,
+            format: format,
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
             size: [canvas.width, canvas.height],
             sampleCount: multisample,
@@ -24,9 +21,22 @@ export class RenderEngine {
             sampleCount: multisample,
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
+
+
+        // UNIFORM BUFFERS
+        this.viewBuffer = device.createBuffer({
+            label: "View Uniform",
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        this.projectionBuffer = device.createBuffer({
+            label: "Projection Uniform",
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
     }
 
-	render(camera, renderables, hud, canvas, debug=false) {
+	render(camera, renderables, hud, context, canvas, debug=false) {
         // write mvp matrices to uniform buffers
         // model written in SceneManager
         this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(camera.view));
@@ -36,7 +46,7 @@ export class RenderEngine {
 		const encoder = this.device.createCommandEncoder();
 
         // create input texture the size of canvas
-        this.canvasTexture = this.context.getCurrentTexture();
+        this.canvasTexture = context.getCurrentTexture();
 
 		// begin render pass
 		const pass = encoder.beginRenderPass({
@@ -96,7 +106,7 @@ export class RenderEngine {
 		this.device.queue.submit([encoder.finish()]);
 	}
 
-    handleResize(camera, canvas) {
+    handleResize(format, camera, canvas) {
         const parent = canvas.parentElement;
 
         const devicePixelRatio = window.devicePixelRatio || 1;
@@ -108,7 +118,7 @@ export class RenderEngine {
 
         if (this.msaaTexture) { this.msaaTexture.destroy(); }
         this.msaaTexture = this.device.createTexture({
-            format: this.canvasTexture.format,
+            format: format,
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
             size: [canvas.width, canvas.height],
             sampleCount: this.multisample,

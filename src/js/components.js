@@ -1,9 +1,9 @@
 import { mat4, vec3 } from "gl-matrix";
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
+import { TextRenderer } from "./renderText";
 
 // TODO ideally eliminate these imports
 import { textureTriangle } from "./textureTriangle";
-import { TextRenderer, textToTexture } from "./renderText";
 
 export class TransformComponent {
     constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1], animation) {
@@ -172,12 +172,13 @@ export class MeshComponent {
 
 
         // TODO debug geometry
-        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline, textRenderer);  // TODO
+        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline, textRenderer);
     }
 }
 
 
 // COLLIDERS
+// TODO why does this exist
 class ColliderComponent {
     constructor(verts, href=null, ghost=false, velocity=[0, 0, 0]) {
         this.verts = verts;
@@ -220,7 +221,7 @@ export class AABBComponent extends ColliderComponent {
         return new AABBComponent(this.min, this.max, this.hred, this.ghost, this.velocity, this.debug);
     }
 
-    // TODO no rotation
+    // TODO no rotation (use Transform but need collider debugging)
     modelTransform(model) {
         this.min = [0, 0, 0];
         this.max = [0, 0, 0];
@@ -309,7 +310,6 @@ export class AABBComponent extends ColliderComponent {
     }
 
     checkCollision(other) {
-        if (!other) { return false; }  // TODO why does this happen
         if (this.ghost || other.ghost) { return false; }
         if (other instanceof AABBComponent) {
             return (
@@ -546,6 +546,6 @@ export class PhysicsComponent {
         this.gravity = 0.01;
         // variable
         this.jumpSpeed = 0;
-        this.grounded = false;  // TODO priority fix
+        this.grounded = false;
     }
 }

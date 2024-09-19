@@ -3,7 +3,7 @@ import { plyToTriangleList } from "./plyReader";
 
 export class AssetManager {
     constructor(device) {
-        this.device = device;  // TODO why
+        this.device = device;
         this.cache = new Map();
     }
 

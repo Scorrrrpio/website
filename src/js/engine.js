@@ -1,8 +1,8 @@
 import { wgpuSetup } from "./wgpuSetup";
 import { AssetManager } from "./assetManager";
+import { RenderEngine } from "./renderEngine";
 import { SceneManager } from "./sceneManager";
 
-// TODO Engine class?
 export async function engine() {
     // CONSTANTS
     const TOPOLOGY = "triangle-list";
@@ -16,23 +16,38 @@ export async function engine() {
     canvas.width = canvas.clientWidth * devicePixelRatio;
     canvas.height = canvas.clientHeight * devicePixelRatio;
 
-    // TODO consider keeping as object
-    const { adapter, device, context, format } = await wgpuSetup(canvas);
+    const { device, context, format } = await wgpuSetup(canvas);
 
 
     // ASSET MANAGER
     const assetManager = new AssetManager(device);
 
+    // RENDER ENGINE
+    const renderEngine = new RenderEngine(device, context, format, canvas, MULTISAMPLE);
 
     // SCENE MANAGER
-    const scene = await SceneManager.fromURL("geometry/scene.json", assetManager, device, context, canvas, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+    const scene = await SceneManager.fromURL(
+        "geometry/scene.json",
+        assetManager,
+        device, context, format, canvas,
+        renderEngine.viewBuffer, renderEngine.projectionBuffer,
+        TOPOLOGY, MULTISAMPLE, DEBUG
+    );
+
+
+    // RESIZE HANDLING
+    window.addEventListener("resize", () => {
+        for (const e in scene.entitiesWith("CameraComponent")) {
+            renderEngine.handleResize(format, scene.components[e].CameraComponent, canvas);
+        }
+    });
 
 
     // GAME LOOP
     let frame = 0;
-	async function gameLoop() {  // TODO why async
-        await scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
-        scene.render(canvas, DEBUG);
+	function gameLoop() {
+        scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+        renderEngine.render(scene.getActiveCamera(), scene.getRenderables(), scene.hud, context, canvas, DEBUG);
         requestAnimationFrame(gameLoop);
 	}
     

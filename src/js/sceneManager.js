@@ -1,13 +1,12 @@
 import { lokiSpin, move, spinY } from "./animations";
-import { RenderEngine } from "./renderEngine";  // TODO move to Engine
 import { generateHUD } from "./hud";
 import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
 import { movePlayer, raycast } from "./physicsEngine";
 
 export class SceneManager {
-    static async fromURL(url, assetManager, device, context, canvas, format, topology, multisamples, debug=false) {
+    static async fromURL(url, assetManager, device, context, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         const scene = new SceneManager(url, assetManager);
-        await scene.initialize(device, context, canvas, format, topology, multisamples, debug);
+        await scene.initialize(device, context, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug);
         return scene;
     }
 
@@ -16,22 +15,7 @@ export class SceneManager {
         this.assetManager = assetManager;
     }
 
-    async initialize(device, context, canvas, format, topology, multisamples, debug=false) {
-        // TODO in RenderEngine (move with renderer)
-        // UNIFORM BUFFERS
-        // create uniform buffers for MVP matrices
-        const viewBuffer = device.createBuffer({
-            label: "View Uniform",
-            size: 64,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        const projectionBuffer = device.createBuffer({
-            label: "Projection Uniform",
-            size: 64,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-
-
+    async initialize(device, context, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         // ENTITIES
         this.entities = [];
         this.components = {};
@@ -41,17 +25,6 @@ export class SceneManager {
         // HUD
         // TODO HUD needs depth testing and MSAA for some reason?
         this.hud = await generateHUD(this.assetManager, device, format, projectionBuffer, multisamples);
-
-
-        // RENDERER
-        this.renderer = new RenderEngine(device, context, canvas, viewBuffer, projectionBuffer, multisamples);
-        // TODO in InputHandler or EventSystem
-        window.addEventListener("resize", () => {
-            this.renderer.handleResize(this.components[this.player].CameraComponent, canvas);
-            for (const e in this.entitiesWith("CameraComponent")) {
-                this.renderer.handleResize(this.components[e]["CameraComponent"], canvas);
-            }
-        });
     }
 
     async #loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
@@ -109,6 +82,7 @@ export class SceneManager {
         }
     }
 
+    // ECS
     createEntity() {
         const id = this.entities.length;  // TODO better UUID function
         this.entities.push(id);
@@ -154,7 +128,7 @@ export class SceneManager {
         return this.entities.filter((e) => this.hasComponent(e, name));
     }
 
-    async update(frame, device) {
+    update(frame, device) {  // TODO why async
         // TODO reimplement adding entities at runtime
 
         // update animations
@@ -226,12 +200,15 @@ export class SceneManager {
         }
     }
 
-    // TODO move up to Engine
-    render(canvas, debug) {
-        // TODO could be instance variable and update when objects are added/removed/modified
-        const renderables = this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
+
+    // RENDERING
+    getActiveCamera() {
         // TODO select active camera
-        const camera = this.entitiesWith("CameraComponent").map(e => this.components[e]["CameraComponent"])[0];
-        this.renderer.render(camera, renderables, this.hud, canvas, debug);
+        return this.entitiesWith("CameraComponent").map(e => this.components[e]["CameraComponent"])[0];
+    }
+
+    getRenderables() {
+        // TODO could be instance variable and update when objects are added/removed/modified
+        return this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
     }
 }
