@@ -1,12 +1,9 @@
-import { mat4 } from "gl-matrix";
-
 export class RenderEngine {
-    constructor(device, context, format, canvas, multisample) {
+    constructor(device, format, canvas, multisample) {
         this.device = device;
         this.multisample = multisample;
 
         // 4xMSAA TEXTURES
-        this.canvasTexture = context.getCurrentTexture();  // TODO what is this? what is context?
         this.msaaTexture = device.createTexture({
             format: format,
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -38,21 +35,25 @@ export class RenderEngine {
         });
     }
 
-	render(camera, renderables, hud, context, canvas, debug=false) {
+	render(ecs, activeCamera, meshes, huds, context, canvas, debug=false) {
+        // GET COMPONENTS
+        const camera = ecs.components[activeCamera].CameraComponent;
+        const renderables = meshes.map((m) => ecs.components[m].MeshComponent);
+        const hud = huds.map((h) => ecs.components[h].HUD);
+        const hudCamera = huds.map((h) => ecs.components[h].CameraComponent)[0];
+
+        this.canvasTexture = context.getCurrentTexture();  // create texture the size of canvas
+
+        // 3D PASS
         // write mvp matrices to uniform buffers
-        // model written in SceneManager
+        for (const mesh of meshes) {
+            this.device.queue.writeBuffer(ecs.components[mesh].MeshComponent.modelBuffer, 0, ecs.components[mesh].TransformComponent.model);
+        }
         this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(camera.view));
         this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(camera.projection));
 
-		// create GPUCommandEncoder
-		const encoder = this.device.createCommandEncoder();
-
-        // TODO pass function
-        // create input texture the size of canvas
-        this.canvasTexture = context.getCurrentTexture();
-
-		// begin render pass
-		const pass = encoder.beginRenderPass({
+        // 3D pass descriptor
+        const passDescriptor = {
 			colorAttachments: [{
                 view: this.msaaTexture.createView(),  // render to MSAA texture
 				loadOp: "clear",
@@ -66,63 +67,50 @@ export class RenderEngine {
                 depthClearValue: 1.0,
                 depthStoreOp: "store",
             },
-		});
+		};
 
+        this.#pass(renderables, canvas, passDescriptor);
+
+
+        // HUD PASS
+        if (document.pointerLockElement === canvas) {
+            // write HUD projection matrix to unifrom buffer
+            this.device.queue.writeBuffer(this.projectionBuffer, 0, hudCamera.projection);
+
+            // HUD pass descriptor (no depth testing)
+            const hudPassDescriptor = {
+                colorAttachments: [{
+                    view: this.msaaTexture.createView(),  // render to MSAA texture
+                    loadOp: "load",  // do not clear
+                    clearValue: { r: 0, g: 0, b: 0, a: 0 },
+                    storeOp: "store",
+                    resolveTarget: this.canvasTexture.createView(),
+                }],
+            };
+
+            this.#pass(hud, canvas, hudPassDescriptor);
+        }
+	}
+
+    #pass(renderables, canvas, passDescriptor) {
+        const encoder = this.device.createCommandEncoder();  // create GPUCommandEncoder
+
+        // begin render pass
+		const pass = encoder.beginRenderPass(passDescriptor);
         pass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
 
         for (const r of renderables) {
-            pass.setVertexBuffer(0, r.vertexBuffer);
             pass.setBindGroup(0, r.bindGroup);
             pass.setPipeline(r.pipeline);
+            pass.setVertexBuffer(0, r.vertexBuffer);
             pass.draw(r.vertexCount);
         }
 
         // end render pass
 		pass.end();
 
-        // create and submit GPUCommandBuffer
-		this.device.queue.submit([encoder.finish()]);
-
-
-        // HUD PASS
-        // TODO HUD CameraComponent
-        const aspect = canvas.width / canvas.height;
-        const ortho = mat4.ortho(mat4.create(), -aspect, aspect, -1, 1, -1, 1);
-        this.device.queue.writeBuffer(this.projectionBuffer, 0, ortho);
-
-        // create GPUCommandEncoder
-		const hudEncoder = this.device.createCommandEncoder();
-
-        // create input texture the size of canvas
-        this.canvasTexture = context.getCurrentTexture();
-
-        // begin render pass
-		const hudPass = hudEncoder.beginRenderPass({
-			colorAttachments: [{
-                view: this.msaaTexture.createView(),  // render to MSAA texture
-				loadOp: "load",
-				clearValue: { r: 0, g: 0, b: 0, a: 0 },
-				storeOp: "store",
-                resolveTarget: this.canvasTexture.createView(),
-			}],
-		});
-
-        hudPass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
-
-        // render HUD
-        if (document.pointerLockElement === canvas) {
-            hudPass.setBindGroup(0, hud.bindGroup);
-            hudPass.setPipeline(hud.pipeline);
-            hudPass.setVertexBuffer(0, hud.vertexBuffer);
-            hudPass.draw(hud.vertexCount);
-        }
-
-        // end render pass
-		hudPass.end();
-
-        // create and submit GPUCommandBuffer
-		this.device.queue.submit([hudEncoder.finish()]);
-	}
+        this.device.queue.submit([encoder.finish()]);  // create and submit GPUCommandBuffer
+    }
 
     handleResize(format, canvas) {
         const parent = canvas.parentElement;

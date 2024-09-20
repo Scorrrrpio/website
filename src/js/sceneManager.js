@@ -20,13 +20,6 @@ export class SceneManager {
         this.entities = [];
         this.components = {};
         await this.#loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug);
-
-
-        // HUD
-        // TODO HUD needs depth testing and MSAA for some reason?
-        this.hud = this.createEntity();
-        const hud = await HUD.generate(this.assetManager, device, format, projectionBuffer, multisamples);
-        this.addComponent(this.hud, hud)
     }
 
     async #loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
@@ -49,6 +42,15 @@ export class SceneManager {
         this.addComponent(player, inputs);
         this.addComponent(player, physics);
         this.player = player;
+
+
+        // HUD
+        // TODO HUD needs depth testing and MSAA for some reason?
+        this.hud = this.createEntity();
+        const hud = HUD.generate(this.assetManager, device, format, projectionBuffer, multisamples);
+        const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
+        this.addComponent(this.hud, await hud)
+        this.addComponent(this.hud, hudCam);
 
 
         const assets = await assetPromise;
@@ -158,9 +160,6 @@ export class SceneManager {
         // update camera
         const colliders = this.entitiesWithComponents(["AABBComponent"]);
         this.#movePlayer(colliders, device);
-
-
-        this.#writeTransforms(device);
     }
 
     #movePlayer(colliders, device) {
@@ -206,29 +205,20 @@ export class SceneManager {
         this.components[this.player].InputComponent.scroll = 0;
     }
 
-    // TODO move logic elsewhere?
-    #writeTransforms(device) {
-        for (const entity of this.entitiesWithComponents(["MeshComponent", "TransformComponent"])) {
-            device.queue.writeBuffer(
-                this.components[entity]["MeshComponent"].modelBuffer, 0,
-                this.components[entity]["TransformComponent"].model
-            );
-        }
-    }
-
 
     // RENDERING
     getActiveCamera() {
         // TODO select active camera
-        return this.entitiesWith("CameraComponent").map(e => this.components[e]["CameraComponent"])[0];
+        return this.entitiesWith("CameraComponent")[0];
     }
 
     getRenderables() {
         // TODO could be instance variable and update when objects are added/removed/modified
-        return this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e].MeshComponent);
+        return this.entitiesWithComponents(["MeshComponent", "TransformComponent"]);
     }
 
     getHUD() {
-        return this.entitiesWith("HUD").map((e) => this.components[e].HUD)[0];
+        // TODO multiple HUDs
+        return this.entitiesWith("HUD");
     }
 }

@@ -23,7 +23,7 @@ export async function engine() {
     const assetManager = new AssetManager(device);
 
     // RENDER ENGINE
-    const renderEngine = new RenderEngine(device, context, format, canvas, MULTISAMPLE);
+    const renderEngine = new RenderEngine(device, format, canvas, MULTISAMPLE);
 
     // SCENE MANAGER
     const scene = await SceneManager.fromURL(
@@ -47,8 +47,13 @@ export async function engine() {
     // GAME LOOP
     let frame = 0;
 	function gameLoop() {
+        // update
         scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
-        renderEngine.render(scene.getActiveCamera(), scene.getRenderables(), scene.getHUD(), context, canvas, DEBUG);
+        // render
+        const camera = scene.getActiveCamera();
+        const renderables = scene.getRenderables();
+        const hud = scene.getHUD();
+        renderEngine.render(scene, camera, renderables, hud, context, canvas, DEBUG);
         requestAnimationFrame(gameLoop);
 	}
     

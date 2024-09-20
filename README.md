@@ -19,7 +19,6 @@ working on some cool WebGPU stuff
     - Global variables
     - render debug over everything (no depth testing)
     - collider outlines
-- give player model matrix + model
 - lazy loading / performance improvements
 - rendering optimizations
 - collision optimizations

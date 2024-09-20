@@ -334,11 +334,12 @@ export class CameraComponent {
     far = 1000.0;
     projection = mat4.create();
 
-    constructor(aspect, offset=[0, 0, 0]) {
+    constructor(aspect, offset=[0, 0, 0], ortho=false) {
         this.offset = offset;
         // projection matrix setup
         this.aspect = aspect;
-        mat4.perspective(this.projection, this.fov, this.aspect, this.near, this.far);
+        this.orthographic = ortho;
+        this.updateProjectionMatrix();
     }
 
     updateProjectionMatrix(aspect = this.aspect, fov = this.fov, near = this.near, far = this.far) {
@@ -346,7 +347,12 @@ export class CameraComponent {
         this.fov = fov;
         this.near = near;
         this.far = far;
-        mat4.perspective(this.projection, fov, aspect, near, far);
+        if (this.orthographic) {
+            mat4.ortho(this.projection, -aspect, aspect, -1, 1, -1, 1);
+        }
+        else {
+            mat4.perspective(this.projection, fov, aspect, near, far);
+        }
     }
 
     updateViewMatrix(position, rotation) {
