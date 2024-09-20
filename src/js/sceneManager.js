@@ -152,8 +152,8 @@ export class SceneManager {
         const animated = this.entitiesWithComponents(["TransformComponent"]).filter(e => this.components[e]["TransformComponent"].animation);
         for (const e of animated) {
             animations[this.components[e]["TransformComponent"].animation]?.(
-                this.components[e]["TransformComponent"],
-                this.components[e]["AABBComponent"]
+                this.components[e].TransformComponent,
+                this.components[e].AABBComponent
             );
         }
 

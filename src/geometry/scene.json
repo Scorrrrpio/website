@@ -108,7 +108,9 @@
                     "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
-                        "content": "// ABOUT ME\n> Adrian Koziskie\n> Based in Toronto\n> UWO CS alum\n> Interest in Computer Graphics\n\n// ABOUT THIS PAGE\n> This place is my longtime\n  dream project\n> Built from the ground up\n  with WebGPU",
+                        "content": "media/text/about.txt",
+                        "fontSize": 6,
+                        "margin": 32,
                         "faces": ["front"]
                     },
                     "vertexShader": "shaders/texture.vert.wgsl",
@@ -162,7 +164,9 @@
                     "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
-                        "content": "Hello World\n\nWAY TOO MUCH TEXT 1\n\nWAY TOO MUCH TEXT 2\n\nWAY TOO MUCH TEXT 3\n\nWAY TOO MUCH TEXT 4\n\nWAY TOO MUCH TEXT 5\n\nWAY TOO MUCH TEXT 6\n\nWAY TOO MUCH TEXT 7\n\nWAY TOO MUCH TEXT 8\n\nWAY TOO MUCH TEXT 9\n\nWAY TOO MUCH TEXT 10\n\nWAY TOO MUCH TEXT 11\n\nWAY TOO MUCH TEXT 12\n\nWAY TOO MUCH TEXT 13\n\nWAY TOO MUCH TEXT 14\n\nWAY TOO MUCH TEXT 15",
+                        "content": "media/text/test.txt",
+                        "fontSize": 12,
+                        "margin": 32,
                         "faces": ["front"]
                     },
                     "vertexShader": "shaders/texture.vert.wgsl",

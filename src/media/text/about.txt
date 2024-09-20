@@ -1,0 +1,11 @@
+// ABOUT ME
+> Adrian Koziskie
+> Based in Toronto
+> UWO CS alum
+> Interest in Computer Graphics
+
+// ABOUT THIS PAGE
+> This place is my longtime
+  dream project
+> Built from the ground up
+  with WebGPU

@@ -1,52 +1,62 @@
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
 
-// TODO awful format
 export class TextTexture {
-    constructor(outputTexture) {
-        this.outputTexture = outputTexture;
-        this.scrollOffset = 0
+    static async fromUrls(outputTexture, textUrl, atlasUrl, metadataUrl, fontSize, margin, aspect, assetManager, device, format) {
         // TODO as parameters
-        this.textUrl;
-        this.atlasUrl = "media/text/hackAtlas64.png";
-        this.metadataUrl = "media/text/hackMetadata64.json";
-        this.fontSize = 48;
+        atlasUrl = "media/fonts/hackAtlas64.png";
+        metadataUrl = "media/fonts/hackMetadata64.json";
+        const textTexture = new TextTexture(outputTexture, textUrl, atlasUrl, metadataUrl, aspect, fontSize, margin);
+        await textTexture.initialize(assetManager, device, format);
+        return textTexture;
     }
 
-    // TODO some can be const not this
-    async initialize(assetManager, text, device, format) {
+    constructor(outputTexture, textUrl, atlasUrl, metadataUrl, aspect=[1, 1], fontSize=48, margin=32) {
+        this.outputTexture = outputTexture;
+        this.scrollOffset = 0
+        this.textUrl = textUrl;
+        this.atlasUrl = atlasUrl;
+        this.metadataUrl = metadataUrl;
+        this.fontSize = fontSize;
+        this.margin = margin;
+        this.aspect = aspect;
+    }
+
+    async initialize(assetManager, device, format) {
         // CONSTANTS
         const MULTISAMPLE = 4;
 
+        // CONTENT
+        const [textPromise] = assetManager.get(this.textUrl);
+        // ASSETS
+        const [atlasPromise, metadataPromise] = assetManager.get(this.atlasUrl, this.metadataUrl);
         // SHADERS
         const [vertPromise, fragPromise] = assetManager.get("shaders/text.vert.wgsl", "shaders/text.frag.wgsl");
 
-        // load glyph atlas to bmp and metadata json
-        const [atlasPromise, metadataPromise] = assetManager.get(this.atlasUrl, this.metadataUrl);
         
-        this.atlasBmp = await atlasPromise
+        const atlasBmp = await atlasPromise
         // GLYPH ATLAS TEXTURE
-        this.atlasTexture = device.createTexture({
+        const atlasTexture = device.createTexture({
             label: "Instance Texture",
-            size: [this.atlasBmp.width, this.atlasBmp.height, 1],
+            size: [atlasBmp.width, atlasBmp.height, 1],
             format: format,
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         });
 
         device.queue.copyExternalImageToTexture(
-            { source: this.atlasBmp },
-            { texture: this.atlasTexture },
-            [this.atlasBmp.width, this.atlasBmp.height]
+            { source: atlasBmp },
+            { texture: atlasTexture },
+            [atlasBmp.width, atlasBmp.height]
         );
 
         // create texture sampler
-        this.sampler = device.createSampler({
+        const sampler = device.createSampler({
             magFilter: "linear",
             minFilter: "linear",
         });
 
         // BIND GROUP and LAYOUT
         const BGL = createBindGroupLayout(device, "Text BGL", "texture", "sampler");
-        this.BG = createBindGroup(device, "Text Bind Group", BGL, this.atlasTexture.createView(), this.sampler);
+        this.BG = createBindGroup(device, "Text Bind Group", BGL, atlasTexture.createView(), sampler);
 
         // 4xMSAA TEXTURES
         this.msaaTexture = device.createTexture({
@@ -58,7 +68,7 @@ export class TextTexture {
 
         // create text geometry
         this.metadata = await metadataPromise;
-        this.#createTextGeometry(text);
+        this.#createTextGeometry(await textPromise);
 
         // create vertex buffer
         const vbAttributes = createVBAttributes(["x", "y", "u", "v"]);
@@ -76,64 +86,57 @@ export class TextTexture {
     }
 
     #createTextGeometry(text) {
-        // GEOMETRY
-        const atlasHeight = 64;
-        const scale = this.fontSize / atlasHeight;
-        const margin = 32;
+        const atlasHeight = 64;  // TODO encode in metadata
+        const xScale = this.fontSize / this.aspect[0];
+        const yScale = this.fontSize / this.aspect[1];
 
+        // GEOMETRY
         // recall uv [0, 0] is bottom left corner
-        let xPos = -this.outputTexture.width + margin;  // [-1, 1] x coord and x increases
-        let yPos = this.outputTexture.height - this.fontSize - margin;  // top (with space for glyph) and y decreases
+        let xPos = -this.outputTexture.width + this.margin;  // [-1, 1] x coord and x increases
+        let yPos = this.outputTexture.height - atlasHeight * yScale - this.margin;  // top (with space for glyph) and y decreases
         let lowest = 0;
         const letterQuads = [];
 
-        // TODO assumes target face is square
-        // TODO font scales with face
         const words = text.split(" ");
         for (let word of words) {
+            // check if word fits on line
             let wordLength = 0;
             for (const ch of word) {
-                if (ch != "\n") { wordLength += this.metadata[ch].advance * scale; }
-                else break;
+                if (ch === "\n") break;
+                wordLength += this.metadata[ch].advance * xScale;
             }
-            if (xPos + wordLength > this.outputTexture.width) {
-                xPos = -this.outputTexture.width + margin;
-                yPos -= this.fontSize;
+            if (xPos > -this.outputTexture.width + this.margin && xPos + wordLength > this.outputTexture.width) {
+                xPos = -this.outputTexture.width + this.margin;
+                yPos -= atlasHeight * yScale;
             }
+            // create letter geometry
             word += " ";
             for (const ch of word) {
                 if (ch === "\n") {
-                    xPos = -this.outputTexture.width + margin;
-                    yPos -= this.fontSize;
+                    xPos = -this.outputTexture.width + this.margin;
+                    yPos -= atlasHeight * yScale;
                 }
                 else {
-                    let x0 = (xPos + this.metadata[ch].x * scale) / this.outputTexture.width;
-                    let y1 = (yPos + this.metadata[ch].y * scale) / this.outputTexture.height;
-                    let x1 = (xPos + (this.metadata[ch].x + this.metadata[ch].width) * scale) / this.outputTexture.width;
-                    let y0 = (yPos + (this.metadata[ch].y - this.metadata[ch].height) * scale) / this.outputTexture.height;
-                    // TODO desperately needs a function
+                    let x0 = (xPos + this.metadata[ch].x * xScale) / this.outputTexture.width;
+                    let y1 = (yPos + this.metadata[ch].y * yScale) / this.outputTexture.height;
+                    let x1 = (xPos + (this.metadata[ch].x + this.metadata[ch].width) * xScale) / this.outputTexture.width;
+                    let y0 = (yPos + (this.metadata[ch].y - this.metadata[ch].height) * yScale) / this.outputTexture.height;
                     letterQuads.push(
-                        // TOP LEFT
-                        x0, y1, this.metadata[ch].u0, this.metadata[ch].v0,
-                        // BOTTOM LEFT
-                        x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,
-                        // TOP RIGHT
-                        x1, y1, this.metadata[ch].u1, this.metadata[ch].v0,
-                        // BOTTOM RIGHT
-                        x1, y0, this.metadata[ch].u1, this.metadata[ch].v1,
-                        // TOP RIGHT
-                        x1, y1, this.metadata[ch].u1, this.metadata[ch].v0,
-                        // BOTTOM LEFT
-                        x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,
+                        x0, y1, this.metadata[ch].u0, this.metadata[ch].v0,  // TOP LEFT
+                        x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,  // BOTTOM LEFT
+                        x1, y1, this.metadata[ch].u1, this.metadata[ch].v0,  // TOP RIGHT
+                        x1, y0, this.metadata[ch].u1, this.metadata[ch].v1,  // BOTTOM RIGHT
+                        x1, y1, this.metadata[ch].u1, this.metadata[ch].v0,  // TOP RIGHT
+                        x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,  // BOTTOM LEFT
                     );
-                    xPos += (this.metadata[ch].advance) * scale;
+                    xPos += (this.metadata[ch].advance) * xScale;
 
                     lowest = yPos;
                 }
             }
         }
 
-        this.scrollBottom = -(lowest - this.fontSize) / this.outputTexture.height - 1;
+        this.scrollBottom = -(lowest - atlasHeight * yScale) / this.outputTexture.height - 1;
 
         this.vertices = Float32Array.from(letterQuads);
     }

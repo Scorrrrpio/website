@@ -26,6 +26,9 @@ export class AssetManager {
                 case ".png": case ".jpg":
                     data = this.#loadImageToBmp(url);
                     break;
+                case ".txt":
+                    data = this.loadTxt(url);
+                    break;
                 default:
                     throw new AssetLoadError("Failed to load from " + url +". No loader method for file extension " + fileType + ".");
             }
@@ -66,5 +69,11 @@ export class AssetManager {
             code: shaderCode,
         });
         return shaderModule;
+    }
+
+    async loadTxt(url) {
+        const response = await fetch(url);
+        if (!response.ok) { throw new AssetLoadError("Failed to fetch text file: " + url); }
+        return await response.text();
     }
 }

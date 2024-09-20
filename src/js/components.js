@@ -111,8 +111,18 @@ export class MeshComponent {
                     textureTriangle(assetManager, texture, device, format);
                 }
                 else if (data.texture.program === "text") {
-                    textTexture = new TextTexture(texture);
-                    await textTexture.initialize(assetManager, data.texture.content, device, format);
+                    if (data.texture.faces?.length > 1) throw new Error("Cannot render text on more than one face");
+
+                    let aspect = [1, 1];
+                    if (data.s) {
+                        switch (data.texture.faces[0]) {
+                            case "front": case "back": aspect = [data.s[0], data.s[1]]; break;  // x / y
+                            case "left": case "right": aspect = [data.s[2], data.s[1]]; break;  // z / y
+                            case "top": case "bottom": aspect = [data.s[0], data.s[2]]; break;  // x / z
+                        }
+                    }
+
+                    textTexture = await TextTexture.fromUrls(texture, data.texture.content, null, null, data.texture.fontSize, data.texture.margin, aspect, assetManager, device, format);
                 }
             }
 
@@ -124,12 +134,12 @@ export class MeshComponent {
 
             // create list of faces to texture
             const faceIDs = new Uint32Array([
-                data.texture.faces.includes("front") ? 1 : 0, 0, 0, 0,
-                data.texture.faces.includes("back") ? 1 : 0, 0, 0, 0,
-                data.texture.faces.includes("left") ? 1 : 0, 0, 0, 0,
-                data.texture.faces.includes("right") ? 1 : 0, 0, 0, 0,
-                data.texture.faces.includes("top") ? 1 : 0, 0, 0, 0,
-                data.texture.faces.includes("bottom") ? 1 : 0, 0, 0, 0,
+                data.texture.faces?.includes("front") ? 1 : 0, 0, 0, 0,
+                data.texture.faces?.includes("back") ? 1 : 0, 0, 0, 0,
+                data.texture.faces?.includes("left") ? 1 : 0, 0, 0, 0,
+                data.texture.faces?.includes("right") ? 1 : 0, 0, 0, 0,
+                data.texture.faces?.includes("top") ? 1 : 0, 0, 0, 0,
+                data.texture.faces?.includes("bottom") ? 1 : 0, 0, 0, 0,
             ]);
             // store in uniform buffer
             const faceIDsBuffer = device.createBuffer({
