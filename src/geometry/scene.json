@@ -108,8 +108,10 @@
                     "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
+                        "atlas": "media/fonts/hackAtlas64.png",
+                        "atlasMetadata": "media/fonts/hackMetadata64.json",
                         "content": "media/text/about.txt",
-                        "fontSize": 6,
+                        "fontSize": 16,
                         "margin": 32,
                         "faces": ["front"]
                     },
@@ -164,8 +166,10 @@
                     "s": [8, 8, 2],
                     "texture": {
                         "program": "text",
+                        "atlas": "media/fonts/hackAtlas64.png",
+                        "atlasMetadata": "media/fonts/hackMetadata64.json",
                         "content": "media/text/test.txt",
-                        "fontSize": 12,
+                        "fontSize": 16,
                         "margin": 32,
                         "faces": ["front"]
                     },

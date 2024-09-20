@@ -122,7 +122,10 @@ export class MeshComponent {
                         }
                     }
 
-                    textTexture = await TextTexture.fromUrls(texture, data.texture.content, null, null, data.texture.fontSize, data.texture.margin, aspect, assetManager, device, format);
+                    const fontUrl = data.texture.atlas;
+                    const fontMetadataUrl = data.texture.atlasMetadata;
+
+                    textTexture = await TextTexture.fromUrls(texture, data.texture.content, fontUrl, fontMetadataUrl, data.texture.fontSize, data.texture.margin, aspect, assetManager, device, format);
                 }
             }
 
