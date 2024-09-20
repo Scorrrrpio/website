@@ -857,6 +857,9 @@
         "x": 3,
         "y": 36
     },
+    "metadata": {
+        "pixelSize": 64
+    },
     "n": {
         "advance": 39,
         "height": 36,

@@ -65,6 +65,7 @@ export class TextTexture {
 
         // create text geometry
         this.metadata = await metadataPromise;
+        this.atlasPixelSize = this.metadata.metadata.pixelSize;
         this.#createTextGeometry(await textPromise);
 
         // create vertex buffer
@@ -83,14 +84,13 @@ export class TextTexture {
     }
 
     #createTextGeometry(text) {
-        const atlasFontHeight = 64;  // TODO encode in metadata
-        const xScale = (this.outputTexture.width / 512) * this.fontSize / (this.aspect[0] * 3);// * this.fontSize / this.aspect[0];
-        const yScale = (this.outputTexture.height / 512) * this.fontSize / (this.aspect[1] * 3);// * this.fontSize / this.aspect[1];
+        const xScale = (this.outputTexture.width / 512) * this.fontSize * (64 / this.atlasPixelSize) / (this.aspect[0] * 3);// * this.fontSize / this.aspect[0];
+        const yScale = (this.outputTexture.height / 512) * this.fontSize * (64 / this.atlasPixelSize) / (this.aspect[1] * 3);// * this.fontSize / this.aspect[1];
 
         // GEOMETRY
         // recall uv [0, 0] is bottom left corner
         let xPos = -this.outputTexture.width + this.margin;  // [-1, 1] x coord and x increases
-        let yPos = this.outputTexture.height - atlasFontHeight * yScale - this.margin;  // top (with space for glyph) and y decreases
+        let yPos = this.outputTexture.height - this.atlasPixelSize * yScale - this.margin;  // top (with space for glyph) and y decreases
         let lowest = 0;
         const letterQuads = [];
 
@@ -104,14 +104,14 @@ export class TextTexture {
             }
             if (xPos > -this.outputTexture.width + this.margin && xPos + wordLength > this.outputTexture.width) {
                 xPos = -this.outputTexture.width + this.margin;
-                yPos -= atlasFontHeight * yScale;
+                yPos -= this.atlasPixelSize * yScale;
             }
             // create letter geometry
             word += " ";
             for (const ch of word) {
                 if (ch === "\n") {
                     xPos = -this.outputTexture.width + this.margin;
-                    yPos -= atlasFontHeight * yScale;
+                    yPos -= this.atlasPixelSize * yScale;
                 }
                 else {
                     let x0 = (xPos + this.metadata[ch].x * xScale) / this.outputTexture.width;
@@ -133,7 +133,7 @@ export class TextTexture {
             }
         }
 
-        this.scrollBottom = -(lowest - atlasFontHeight * yScale) / this.outputTexture.height - 1;
+        this.scrollBottom = -(lowest - this.atlasPixelSize * yScale) / this.outputTexture.height - 1;
 
         this.vertices = Float32Array.from(letterQuads);
     }

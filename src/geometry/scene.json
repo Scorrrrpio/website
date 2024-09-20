@@ -111,7 +111,7 @@
                         "atlas": "media/fonts/hackAtlas64.png",
                         "atlasMetadata": "media/fonts/hackMetadata64.json",
                         "content": "media/text/about.txt",
-                        "fontSize": 16,
+                        "fontSize": 18,
                         "margin": 32,
                         "faces": ["front"]
                     },
