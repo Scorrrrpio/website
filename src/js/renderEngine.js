@@ -1,3 +1,5 @@
+import { mat4, vec4 } from "gl-matrix";
+
 export class RenderEngine {
     constructor(device, context, format, canvas, multisample) {
         this.device = device;
@@ -74,47 +76,58 @@ export class RenderEngine {
             pass.draw(r.vertexCount);
         }
 
-        // render debug content
-        // TODO refactor
-        /*
-        if (debug) {
-            for (const mesh of renderables) {
-                for (const instance of mesh.instances) {
-                    if (instance.debugVertexBuffer) {
-                        pass.setVertexBuffer(0, instance.debugVertexBuffer);
-                        pass.setPipeline(instance.debugPipeline);
-                        pass.setBindGroup(0, instance.debugBindGroup);
-                        pass.draw(instance.debugVertexCount);
-                    }
-                }
-            }
-        }
-        */
+        // end render pass
+		pass.end();
+
+        // create and submit GPUCommandBuffer
+		this.device.queue.submit([encoder.finish()]);
+
+
+        // HUD PASS
+        const aspect = canvas.width / canvas.height;
+        const ortho = mat4.ortho(mat4.create(), -aspect, aspect, -1, 1, -1, 1);
+        this.device.queue.writeBuffer(this.projectionBuffer, 0, ortho);
+
+        // create GPUCommandEncoder
+		const hudEncoder = this.device.createCommandEncoder();
+
+        // create input texture the size of canvas
+        this.canvasTexture = context.getCurrentTexture();
+
+        // begin render pass
+		const hudPass = hudEncoder.beginRenderPass({
+			colorAttachments: [{
+                view: this.msaaTexture.createView(),  // render to MSAA texture
+				loadOp: "load",
+				clearValue: { r: 0, g: 0, b: 0, a: 0 },
+				storeOp: "store",
+                resolveTarget: this.canvasTexture.createView(),
+			}],
+		});
+
+        hudPass.setViewport(0, 0, canvas.width, canvas.height, 0, 1);  // defaults to full canvas
 
         // render HUD
         if (document.pointerLockElement === canvas) {
-            pass.setPipeline(hud.pipeline);
-            pass.setBindGroup(0, hud.bindGroup);
-            pass.setVertexBuffer(0, hud.vertexBuffer);
-            pass.draw(hud.vertexCount);
+            hudPass.setBindGroup(0, hud.bindGroup);
+            hudPass.setPipeline(hud.pipeline);
+            hudPass.setVertexBuffer(0, hud.vertexBuffer);
+            hudPass.draw(hud.vertexCount);
         }
 
-		// end render pass
-		pass.end();
+        // end render pass
+		hudPass.end();
 
-		// create and submit GPUCommandBuffer
-		this.device.queue.submit([encoder.finish()]);
+        // create and submit GPUCommandBuffer
+		this.device.queue.submit([hudEncoder.finish()]);
 	}
 
-    handleResize(format, camera, canvas) {
+    handleResize(format, canvas) {
         const parent = canvas.parentElement;
 
         const devicePixelRatio = window.devicePixelRatio || 1;
         canvas.width = Math.floor(parent.clientWidth * devicePixelRatio);
         canvas.height = Math.floor(parent.clientHeight * devicePixelRatio);
-
-        // TODO AWFUL
-        camera.updateProjectionMatrix(canvas.width / canvas.height);
 
         if (this.msaaTexture) { this.msaaTexture.destroy(); }
         this.msaaTexture = this.device.createTexture({

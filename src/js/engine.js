@@ -29,7 +29,7 @@ export async function engine() {
     const scene = await SceneManager.fromURL(
         "geometry/scene.json",
         assetManager,
-        device, context, format, canvas,
+        device, format, canvas,
         renderEngine.viewBuffer, renderEngine.projectionBuffer,
         TOPOLOGY, MULTISAMPLE, DEBUG
     );
@@ -37,8 +37,9 @@ export async function engine() {
 
     // RESIZE HANDLING
     window.addEventListener("resize", () => {
+        renderEngine.handleResize(format, canvas);
         for (const e in scene.entitiesWith("CameraComponent")) {
-            renderEngine.handleResize(format, scene.components[e].CameraComponent, canvas);
+            scene.components[e].CameraComponent.updateProjectionMatrix(canvas.width / canvas.height);
         }
     });
 
@@ -47,7 +48,7 @@ export async function engine() {
     let frame = 0;
 	function gameLoop() {
         scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
-        renderEngine.render(scene.getActiveCamera(), scene.getRenderables(), scene.hud, context, canvas, DEBUG);
+        renderEngine.render(scene.getActiveCamera(), scene.getRenderables(), scene.getHUD(), context, canvas, DEBUG);
         requestAnimationFrame(gameLoop);
 	}
     

@@ -1,12 +1,12 @@
 import { lokiSpin, move, spinY } from "./animations";
-import { generateHUD } from "./hud";
+import { HUD } from "./hud";
 import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
 import { movePlayer, raycast } from "./physicsEngine";
 
 export class SceneManager {
-    static async fromURL(url, assetManager, device, context, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
+    static async fromURL(url, assetManager, device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         const scene = new SceneManager(url, assetManager);
-        await scene.initialize(device, context, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug);
+        await scene.initialize(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug);
         return scene;
     }
 
@@ -15,7 +15,7 @@ export class SceneManager {
         this.assetManager = assetManager;
     }
 
-    async initialize(device, context, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
+    async initialize(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         // ENTITIES
         this.entities = [];
         this.components = {};
@@ -24,7 +24,9 @@ export class SceneManager {
 
         // HUD
         // TODO HUD needs depth testing and MSAA for some reason?
-        this.hud = await generateHUD(this.assetManager, device, format, projectionBuffer, multisamples);
+        this.hud = this.createEntity();
+        const hud = await HUD.generate(this.assetManager, device, format, projectionBuffer, multisamples);
+        this.addComponent(this.hud, hud)
     }
 
     async #loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
@@ -209,6 +211,10 @@ export class SceneManager {
 
     getRenderables() {
         // TODO could be instance variable and update when objects are added/removed/modified
-        return this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e]["MeshComponent"]);
+        return this.entitiesWithComponents(["MeshComponent", "TransformComponent"]).map(e => this.components[e].MeshComponent);
+    }
+
+    getHUD() {
+        return this.entitiesWith("HUD").map((e) => this.components[e].HUD)[0];
     }
 }
