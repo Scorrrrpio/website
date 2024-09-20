@@ -47,6 +47,7 @@ export class RenderEngine {
 		// create GPUCommandEncoder
 		const encoder = this.device.createCommandEncoder();
 
+        // TODO pass function
         // create input texture the size of canvas
         this.canvasTexture = context.getCurrentTexture();
 
@@ -84,6 +85,7 @@ export class RenderEngine {
 
 
         // HUD PASS
+        // TODO HUD CameraComponent
         const aspect = canvas.width / canvas.height;
         const ortho = mat4.ortho(mat4.create(), -aspect, aspect, -1, 1, -1, 1);
         this.device.queue.writeBuffer(this.projectionBuffer, 0, ortho);

@@ -6,12 +6,12 @@ export class TextRenderer {
     constructor(outputTexture, format, text) {
         this.outputTexture = outputTexture;
         this.format = format;
-        this.text = text;  // TODO why not pass at render time?
+        this.text = text;  // TODO fetch from file
         // TODO as parameters
         this.atlasUrl = "media/text/hackAtlas64.png";
         this.metadataUrl = "media/text/hackMetadata64.json";
         this.fontSize = 48;
-        this.scroll = 0
+        this.scrollOffset = 0
     }
 
     async initialize(assetManager, device) {
@@ -44,7 +44,7 @@ export class TextRenderer {
         // SHADERS
         const [vertexModule, fragmentModule] = await assetManager.get("shaders/text.vert.wgsl", "shaders/text.frag.wgsl");
 
-        this.createTextGeometry(0);
+        this.#createTextGeometry(0);
 
         // create vertex buffer
         this.vertexBuffer = device.createBuffer({
@@ -75,10 +75,7 @@ export class TextRenderer {
         this.render(device);
     }
 
-    createTextGeometry(scroll = 0) {
-        this.scroll += scroll;
-        this.scroll = Math.max(0, this.scroll);
-
+    #createTextGeometry() {
         // GEOMETRY
         const atlasHeight = 64;
         const scale = this.fontSize / atlasHeight;
@@ -86,7 +83,8 @@ export class TextRenderer {
 
         // recall uv [0, 0] is bottom left corner
         let xPos = -this.outputTexture.width + margin;  // [-1, 1] x coord and x increases
-        let yPos = this.outputTexture.height - this.fontSize - margin + this.scroll;  // top (with space for glyph) and y decreases
+        let yPos = this.outputTexture.height - this.fontSize - margin;  // top (with space for glyph) and y decreases
+        let lowest = 0;
         const letterQuads = [];
 
         // TODO assumes target face is square
@@ -129,10 +127,31 @@ export class TextRenderer {
                         x0, y0, this.metadata[ch].u0, this.metadata[ch].v1,
                     );
                     xPos += (this.metadata[ch].advance) * scale;
+
+                    lowest = yPos;
                 }
             }
         }
         this.vertices = Float32Array.from(letterQuads);
+
+        this.scrollBottom = -(lowest - this.fontSize) / this.outputTexture.height - 1;
+    }
+
+    scroll(scroll) {
+        scroll /= this.outputTexture.height;
+
+        if (scroll < -this.scrollOffset) {  // prevent scrolling beyond top
+            for (let i = 1; i < this.vertices.length; i += 4) {
+                this.vertices[i] -= this.scrollOffset;
+            }
+            this.scrollOffset = 0;
+        }
+        else if (this.scrollBottom > this.scrollOffset + scroll) {  // prevent scrolling beyond bottom
+            for (let i = 1; i < this.vertices.length; i += 4) {
+                this.vertices[i] += scroll;
+            }
+            this.scrollOffset += scroll;
+        }
     }
 
     render(device) {

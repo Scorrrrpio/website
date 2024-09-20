@@ -173,7 +173,7 @@ export class SceneManager {
             [position[0] + camera.offset[0], position[1] + camera.offset[1], position[2] + camera.offset[2]],
             rotation
         );
-        if (hit) {  // TODO debug jank
+        if (hit) {
             if (inputs.leftMouse) {
                 // if link
                 if (this.components[hit].AABBComponent.href) {
@@ -192,7 +192,7 @@ export class SceneManager {
             }
             if (this.hasComponent(hit, "TextRenderer")) {
                 const scroll = this.components[this.player].InputComponent.scroll;
-                this.components[hit].TextRenderer.createTextGeometry(scroll);
+                this.components[hit].TextRenderer.scroll(scroll);
                 this.components[hit].TextRenderer.render(device);
             }
         }
