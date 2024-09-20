@@ -3,12 +3,12 @@
 working on some cool WebGPU stuff
 
 # TODO
+- automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)
+- better animation solution? (functions)
 - ECS class
 - once again add objects at runtime
 - favicon
 - include player in scene.json
-- automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)
-- better animation solution? (functions)
 - holdable objects (scene graph)
 - PHYSICS OVERHAUL
     - AABBs to OBBs / more collision mesh classes? (WIP)

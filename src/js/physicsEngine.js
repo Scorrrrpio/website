@@ -85,7 +85,7 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
     return closest;
 }
 
-export function movePlayer(boxes, inputs, position, rotation, camera, physics) {    
+export function movePlayer(boxes, inputs, position, rotation, physics) {    
     const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
     const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
     const strafeX = Math.cos(rotation[1]);
@@ -146,51 +146,40 @@ export function movePlayer(boxes, inputs, position, rotation, camera, physics) {
     for (const box of boxes) {
         if (nextAABB.checkCollision(box)) {
             // modify movement
-            movement = slide(nextAABB, box, movement, position, camera, physics);
+            movement = slide(nextAABB, box, movement, position, physics);
         }
     }
 
-    // move camera
+    // move
     position[0] += movement[0];
     position[1] += movement[1];
     position[2] += movement[2];
-
-    // update camera view matrix
-    camera.updateViewMatrix(position, rotation);
 }
 
-function slide(box1, box2, movement, position, camera, physics) {
+function slide(box1, box2, movement, position, physics) {
     // faces names are for player but based on world axes
     // y
-    if (box1.max[1] >= box2.max[1]) {  // bottom
-        if (position[1] > box2.max[1]) {  // from above
-            movement[1] = Math.max(0, movement[1]);
-            physics.grounded = true;
-            physics.jumpSpeed = 0;
-        }
+    if (box1.max[1] >= box2.max[1] && position[1] > box2.max[1]) {  // bottom
+        movement[1] = Math.max(0, movement[1]);
+        physics.grounded = true;
+        physics.jumpSpeed = 0;
     }
     else if (box1.min[1] < box2.min[1]) {  // top
-        if (position[1] + camera.offset[1] < box2.min[1]) {  // TODO I don't like this
-            movement[1] = Math.min(0, movement[1]);
-            physics.jumpSpeed = 0;
-        }
+        movement[1] = Math.min(0, movement[1]);
+        physics.jumpSpeed = 0;
     }
     // x
     if (box1.max[0] >= box2.max[0]) {  // left
-        //movement[0] = Math.max(box2.velocity[0], movement[0]);
         movement[0] = Math.max(box2.velocity[0], movement[0]);
     }
     else if (box1.min[0] <= box2.min[0]) {  // right
-        //movement[0] = Math.min(box2.velocity[0], movement[0]);
         movement[0] = Math.min(box2.velocity[0], movement[0]);
     }
     // z
     if (box1.max[2] >= box2.max[2]) {  // front
-        //movement[2] = Math.max(box2.velocity[2], movement[2]);
         movement[2] = Math.max(box2.velocity[2], movement[2]);
     }
     else if (box1.min[2] <= box2.min[2]) {  // back
-        //movement[2] = Math.min(box2.velocity[2], movement[2]);
         movement[2] = Math.min(box2.velocity[2], movement[2]);
     }
 

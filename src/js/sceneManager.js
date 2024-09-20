@@ -165,7 +165,8 @@ export class SceneManager {
         const rotation = this.components[this.player].InputComponent.look;
         const position = this.components[this.player].TransformComponent.position;
         const physics = this.components[this.player].PhysicsComponent;
-        movePlayer(colliders.map(e => this.components[e].AABBComponent), inputs, position, rotation, camera, physics);
+        movePlayer(colliders.map(e => this.components[e].AABBComponent), inputs, position, rotation, physics);
+        camera.updateViewMatrix(position, rotation);  // update camera view matrix
 
         // raycasting
         const hit = raycast(
