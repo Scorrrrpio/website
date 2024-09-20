@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "gl-matrix";
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
-import { TextRenderer } from "./renderText";
+import { TextTexture } from "./renderText";
 
 // TODO ideally eliminate these imports
 import { textureTriangle } from "./textureTriangle";
@@ -26,17 +26,20 @@ export class TransformComponent {
 }
 
 export class MeshComponent {
-    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline, textRenderer) {
+    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline, textTexture) {
         this.vertexBuffer = vb;
         this.vertexCount = vertexCount;
         this.modelBuffer = modelBuffer;
         this.bindGroup = bindGroup;
         this.pipeline = pipeline;
-        this.textRenderer = textRenderer;
+        this.textTexture = textTexture;
     }
 
     // TODO don't require assetManager
     static async assetToMesh(data, mesh, baseVert, baseFrag, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
+        // OVERRIDE SHADERS
+        const [vertOverride, fragOverride] = await assetManager.get(data.vertexShader, data.fragmentShader);
+
         // VERTEX BUFFER
         // TODO change ply reader AGAIN
         const floats = mesh.vertex.values.float32;
@@ -71,23 +74,17 @@ export class MeshComponent {
 
 
         // using data
-        // OVERRIDE SHADERS
-        let vertexShaderModule = baseVert;
-        let fragmentShaderModule = baseFrag;
-        if (data.vertexShader && data.fragmentShader) {
-            [vertexShaderModule, fragmentShaderModule] = await assetManager.get(data.vertexShader, data.fragmentShader);
-        }
-
         // OVERRIDE CULL MODE
         const cullMode = data.cullMode ? data.cullMode : "back";
 
         // TEXTURE
-        let textRenderer;  // TODO awful
+        let textTexture;  // TODO awful
         if (data.texture) {
             let texture;
             if (data.texture.url) {
                 // image texture
-                const [imgBmp] = await assetManager.get(data.texture.url);
+                const [imgPromise] = await assetManager.get(data.texture.url);
+                const imgBmp = await imgPromise;
                 // create texture on device
                 texture = device.createTexture({
                     label: "Image Texture",
@@ -114,8 +111,8 @@ export class MeshComponent {
                     textureTriangle(assetManager, texture, device, format);
                 }
                 else if (data.texture.program === "text") {
-                    textRenderer = new TextRenderer(texture, format, data.texture.content);
-                    await textRenderer.initialize(assetManager, device);
+                    textTexture = new TextTexture(texture);
+                    await textTexture.initialize(assetManager, data.texture.content, device, format);
                 }
             }
 
@@ -154,6 +151,10 @@ export class MeshComponent {
             );
         }
 
+        // await promises
+        const vertexShaderModule = await vertOverride ? await vertOverride : baseVert;
+        const fragmentShaderModule = await fragOverride ? await fragOverride : baseFrag;
+
         // Pipeline
         const pipeline = createPipeline(
             "FPV Render Pipeline",
@@ -172,7 +173,7 @@ export class MeshComponent {
 
 
         // TODO debug geometry
-        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline, textRenderer);
+        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline, textTexture);
     }
 }
 

@@ -30,7 +30,7 @@ export class SceneManager {
     }
 
     async #loadScene(canvas, device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
-        const [assets] = await this.assetManager.get(this.url);
+        const [assetPromise] = this.assetManager.get(this.url);
 
         // PLAYER
         const spawn = {
@@ -51,17 +51,22 @@ export class SceneManager {
         this.player = player;
 
 
+        const assets = await assetPromise;
         // TODO optimize (object pooling, instanced rendering)
         for (const asset of assets.objects) {  // each object in scene
             // ASSET FAMILY DEFAULT VALUES
-            const [baseMesh, baseVert, baseFrag] = await this.assetManager.get(asset.file, asset.vertexShader, asset.fragmentShader);
+            const [baseMeshPromise, baseVertPromise, baseFragPromise] = this.assetManager.get(asset.file, asset.vertexShader, asset.fragmentShader);
+
             // collision mesh based on geometry
+            const baseMesh = await baseMeshPromise;
             const floats = baseMesh.vertex.values.float32;
             const colliderGenerators = {
                 aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
             }
             const baseCollider = colliderGenerators[asset.collision]?.(floats.data, floats.properties);
 
+            const baseVert = await baseVertPromise;
+            const baseFrag = await baseFragPromise;
             // INSTANCE-SPECIFIC VALUES
             for (const instance of asset.instances) {
                 const entity = this.createEntity();
@@ -77,8 +82,8 @@ export class SceneManager {
                     collider.modelTransform(transform.model);
                     this.addComponent(entity, collider);
                 }
-                if (mesh.textRenderer) {  // TODO awful
-                    this.addComponent(entity, mesh.textRenderer);
+                if (mesh.textTexture) {  // TODO awful
+                    this.addComponent(entity, mesh.textTexture);
                 }
             }
         }
@@ -191,10 +196,9 @@ export class SceneManager {
                     window.open(this.components[hit].AABBComponent.href, "__blank");
                 }
             }
-            if (this.hasComponent(hit, "TextRenderer")) {
+            if (this.hasComponent(hit, "TextTexture")) {
                 const scroll = this.components[this.player].InputComponent.scroll;
-                this.components[hit].TextRenderer.scroll(scroll);
-                this.components[hit].TextRenderer.render(device);
+                this.components[hit].TextTexture.scroll(scroll, device);
             }
         }
 

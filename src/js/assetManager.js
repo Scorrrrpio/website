@@ -7,8 +7,9 @@ export class AssetManager {
         this.cache = new Map();
     }
 
-    async get(...urls) {
-        return await Promise.all(urls.map((url) => {
+    get(...urls) {
+        return urls.map((url) => {
+            if (!url) return Promise.resolve(null);
             if (this.cache.has(url)) { return this.cache.get(url); }
             let data;
             const fileType = url.slice(url.lastIndexOf("."));
@@ -26,11 +27,11 @@ export class AssetManager {
                     data = this.#loadImageToBmp(url);
                     break;
                 default:
-                    throw new AssetLoadError("Failed to load from ${url}. No loader method for file extension ${fileType}.");
+                    throw new AssetLoadError("Failed to load from " + url +". No loader method for file extension " + fileType + ".");
             }
             this.cache.set(url, data);
             return data;
-        }));
+        });
     }
 
     async #loadJson(url) {

@@ -1,31 +1,34 @@
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
 
 // TODO awful format
-// TODO some can be const not this
-export class TextRenderer {
-    constructor(outputTexture, format, text) {
+export class TextTexture {
+    constructor(outputTexture) {
         this.outputTexture = outputTexture;
-        this.format = format;
-        this.text = text;  // TODO fetch from file
+        this.scrollOffset = 0
         // TODO as parameters
+        this.textUrl;
         this.atlasUrl = "media/text/hackAtlas64.png";
         this.metadataUrl = "media/text/hackMetadata64.json";
         this.fontSize = 48;
-        this.scrollOffset = 0
     }
 
-    async initialize(assetManager, device) {
+    // TODO some can be const not this
+    async initialize(assetManager, text, device, format) {
         // CONSTANTS
         const MULTISAMPLE = 4;
 
-        // load glyph atlas to bmp and metadata json
-        [this.atlasBmp, this.metadata] = await assetManager.get(this.atlasUrl, this.metadataUrl);
+        // SHADERS
+        const [vertPromise, fragPromise] = assetManager.get("shaders/text.vert.wgsl", "shaders/text.frag.wgsl");
 
+        // load glyph atlas to bmp and metadata json
+        const [atlasPromise, metadataPromise] = assetManager.get(this.atlasUrl, this.metadataUrl);
+        
+        this.atlasBmp = await atlasPromise
         // GLYPH ATLAS TEXTURE
         this.atlasTexture = device.createTexture({
             label: "Instance Texture",
             size: [this.atlasBmp.width, this.atlasBmp.height, 1],
-            format: this.format,
+            format: format,
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         });
 
@@ -41,41 +44,38 @@ export class TextRenderer {
             minFilter: "linear",
         });
 
-        // SHADERS
-        const [vertexModule, fragmentModule] = await assetManager.get("shaders/text.vert.wgsl", "shaders/text.frag.wgsl");
-
-        this.#createTextGeometry(0);
-
-        // create vertex buffer
-        this.vertexBuffer = device.createBuffer({
-            label: "Text Geometry",
-            size: this.vertices.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-        });
-
-        device.queue.writeBuffer(this.vertexBuffer, 0, this.vertices);
-
         // BIND GROUP and LAYOUT
         const BGL = createBindGroupLayout(device, "Text BGL", "texture", "sampler");
         this.BG = createBindGroup(device, "Text Bind Group", BGL, this.atlasTexture.createView(), this.sampler);
 
-
-        // PIPELINE
-        const vbAttributes = createVBAttributes(["x", "y", "u", "v"]);
-        this.pipeline = createPipeline("Text Render Pipeline", device, BGL, vertexModule, 4, vbAttributes, fragmentModule, this.format, "triangle-list", "none", false, MULTISAMPLE);
-
         // 4xMSAA TEXTURES
         this.msaaTexture = device.createTexture({
-            format: this.format,
+            format: format,
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
             size: [this.outputTexture.width, this.outputTexture.height],
             sampleCount: MULTISAMPLE,
         });
 
-        this.render(device);
+        // create text geometry
+        this.metadata = await metadataPromise;
+        this.#createTextGeometry(text);
+
+        // create vertex buffer
+        const vbAttributes = createVBAttributes(["x", "y", "u", "v"]);
+        this.vertexBuffer = device.createBuffer({
+            label: "Text Geometry",
+            size: this.vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(this.vertexBuffer, 0, this.vertices);
+
+        // PIPELINE
+        this.pipeline = createPipeline("Text Render Pipeline", device, BGL, await vertPromise, 4, vbAttributes, await fragPromise, format, "triangle-list", "none", false, MULTISAMPLE);
+
+        this.#render(device);
     }
 
-    #createTextGeometry() {
+    #createTextGeometry(text) {
         // GEOMETRY
         const atlasHeight = 64;
         const scale = this.fontSize / atlasHeight;
@@ -89,7 +89,7 @@ export class TextRenderer {
 
         // TODO assumes target face is square
         // TODO font scales with face
-        const words = this.text.split(" ");
+        const words = text.split(" ");
         for (let word of words) {
             let wordLength = 0;
             for (const ch of word) {
@@ -132,12 +132,13 @@ export class TextRenderer {
                 }
             }
         }
-        this.vertices = Float32Array.from(letterQuads);
 
         this.scrollBottom = -(lowest - this.fontSize) / this.outputTexture.height - 1;
+
+        this.vertices = Float32Array.from(letterQuads);
     }
 
-    scroll(scroll) {
+    scroll(scroll, device) {
         scroll /= this.outputTexture.height;
 
         if (scroll < -this.scrollOffset) {  // prevent scrolling beyond top
@@ -152,9 +153,11 @@ export class TextRenderer {
             }
             this.scrollOffset += scroll;
         }
+
+        this.#render(device);
     }
 
-    render(device) {
+    #render(device) {
         device.queue.writeBuffer(this.vertexBuffer, 0, this.vertices);
 
         // create GPUCommandEncoder

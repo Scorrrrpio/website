@@ -10,6 +10,9 @@ export class HUD {
     constructor() {}
 
     async initialize(assetManager, device, format, projectionBuffer, multisamples) {
+        // shaders
+        const [vertPromise, fragPromise] = assetManager.get("shaders/hud.vert.wgsl", "shaders/hud.frag.wgsl");
+
         // geometry
         const crosshair = new Float32Array([
             // X,    Y
@@ -29,9 +32,6 @@ export class HUD {
         device.queue.writeBuffer(this.vertexBuffer, 0, crosshair);
         const hudVBAttributes = createVBAttributes(["x", "y"]);
 
-        // shaders
-        const [hudVertexModule, hudFragmentModule] = await assetManager.get("shaders/hud.vert.wgsl", "shaders/hud.frag.wgsl");
-
         // bind group
         const hudBGL = createBindGroupLayout(device, "HUD BGL", { visibility: GPUShaderStage.VERTEX, buffer: {type: "uniform"}});
         this.bindGroup = createBindGroup(device, "HUD Bind Group", hudBGL, { buffer: projectionBuffer });
@@ -41,10 +41,10 @@ export class HUD {
             "HUD Pipeline",
             device,
             hudBGL,
-            hudVertexModule,
+            await vertPromise,
             2,
             hudVBAttributes,
-            hudFragmentModule,
+            await fragPromise,
             format,
             "line-list",
             "none",

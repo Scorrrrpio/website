@@ -164,7 +164,8 @@ function slide(box1, box2, movement, position, physics) {
         physics.grounded = true;
         physics.jumpSpeed = 0;
     }
-    else if (box1.min[1] < box2.min[1]) {  // top
+    // TODO hardcoded weirdness
+    else if (box1.min[1] < box2.min[1] && position[1] + 2 < box2.min[1]) {  // top
         movement[1] = Math.min(0, movement[1]);
         physics.jumpSpeed = 0;
     }

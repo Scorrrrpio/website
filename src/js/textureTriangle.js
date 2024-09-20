@@ -3,6 +3,9 @@ import { lerpVector } from "./lerp";
 import { createPipeline, createVBAttributes } from "./wgpuHelpers";
 
 export async function textureTriangle(assetManager, texture, device, format) {
+	// SHADERS
+	const [vertPromise, fragPromise] = assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
+
 	// GEOMETRY
 	const vertices = new Float32Array([
 		// X,  Y,    R    G    B    A
@@ -39,19 +42,15 @@ export async function textureTriangle(assetManager, texture, device, format) {
 	device.queue.writeBuffer(vertexBuffer, 0, vertices);
 	const vbAttributes = createVBAttributes(["x", "y", "r", "g", "b", "a"]);
 
-
-	// SHADERS
-	const [vertexModule, fragmentModule] = await assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
-
 	// PIPELINE
 	const pipeline = createPipeline(
 		"Hello Triangle Texture Pipeline",
 		device,
 		"auto",
-		vertexModule,
+		await vertPromise,
 		6,
 		vbAttributes,
-		fragmentModule,
+		await fragPromise,
 		format,
 		"triangle-list",
 		"none",
