@@ -130,6 +130,8 @@ export class SceneManager {
         return this.entities.filter((e) => this.hasComponent(e, name));
     }
 
+
+    // UPDATE
     update(frame, device) {  // TODO why async
         // TODO reimplement adding entities at runtime
 
@@ -157,14 +159,21 @@ export class SceneManager {
     }
 
     #movePlayer(colliders, device) {
+        // movement
         const camera = this.components[this.player].CameraComponent;
         const inputs = this.components[this.player].InputComponent.inputs;
         const rotation = this.components[this.player].InputComponent.look;
         const position = this.components[this.player].TransformComponent.position;
         const physics = this.components[this.player].PhysicsComponent;
         movePlayer(colliders.map(e => this.components[e].AABBComponent), inputs, position, rotation, camera, physics);
-        const hit = raycast(this, colliders, [position[0] + camera.offset[0], position[1] + camera.offset[1], position[2] + camera.offset[2]], rotation);  // TODO not snappy
-        if (hit) {
+
+        // raycasting
+        const hit = raycast(
+            this, colliders,
+            [position[0] + camera.offset[0], position[1] + camera.offset[1], position[2] + camera.offset[2]],
+            rotation
+        );
+        if (hit) {  // TODO debug jank
             if (inputs.leftMouse) {
                 // if link
                 if (this.components[hit].AABBComponent.href) {

@@ -31,7 +31,7 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
     let closestDist = Infinity;
     // TODO review
     for (const e of entities) {
-        const box = ECS.components[e].AABBComponent
+        const box = ECS.components[e].AABBComponent;
         let intersect = true;
 
         let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
@@ -70,6 +70,9 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
 
         if (tzmin > tmin) tmin = tzmin;
         if (tzmax < tmax) tmax = tzmax;
+
+        // ignore intersections behind the caster
+        if (tmin < 0) intersect = false;
 
         if (intersect) {
             if (tmin < closestDist) {
