@@ -70,7 +70,7 @@ export class SceneManager {
             // BIND GROUP LAYOUT
             let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
             // TEXTURE
-            let texture;
+            let texturePromise;
             if (instance.texture) {
                 // Override bind group layout
                 bindGroupLayout = createBindGroupLayout(
@@ -81,16 +81,16 @@ export class SceneManager {
                 if (instance.texture.type === "image") {
                     const [imgPromise] = await this.assetManager.get(instance.texture.url);
                     const imgBmp = await imgPromise;
-                    texture = this.#createImageTexture(imgBmp, device, format);
+                    texturePromise = this.#createImageTexture(imgBmp, device, format);
                 }
                 else if (instance.texture.type === "program") {
-                    texture = this.#createProgramTexture(instance.texture, instance.s, entity, device, format);
+                    texturePromise = this.#createProgramTexture(instance.texture, instance.s, entity, device, format);
                 }
             }
             // MESH COMPONENT
             const cullMode = instance.cullMode ? instance.cullMode : "back";  // cull mode override
             const mesh = await MeshComponent.assetToMesh(
-                instance, await meshPromise, await vertPromise, await fragPromise, await texture, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug
+                instance, await meshPromise, vertPromise, fragPromise, texturePromise, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug
             );
             this.ecs.addComponent(entity, mesh);
 
@@ -148,7 +148,6 @@ export class SceneManager {
             const fontMetadataUrl = instanceTexture.atlasMetadata;
 
             // TEXT
-            // TODO no await, fetch here
             const textTexture = await TextTexture.fromUrls(
                 texture,                   // output texture
                 instanceTexture.content,  // text content

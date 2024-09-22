@@ -30,8 +30,15 @@ export class MeshComponent {
         this.pipeline = pipeline;
     }
 
-    // TODO don't require assetManager
-    static async assetToMesh(data, mesh, vertexShaderModule, fragmentShaderModule, texture, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug=false) {
+    static async assetToMesh(data, mesh, vertPromise, fragPromise, texturePromise, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug=false) {
+        // MODEL BUFFER
+        const modelBuffer = device.createBuffer({
+            label: "Model Uniform Buffer",
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        
+        
         // VERTEX BUFFER
         // TODO change ply reader AGAIN
         const floats = mesh.vertex.values.float32;
@@ -47,14 +54,6 @@ export class MeshComponent {
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         });
         device.queue.writeBuffer(vb, 0, floats.data);
-
-
-        // MODEL BUFFER
-        const modelBuffer = device.createBuffer({
-            label: "Model Uniform Buffer",
-            size: 64,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
 
 
         // BIND GROUP
@@ -89,7 +88,7 @@ export class MeshComponent {
             bindGroup = createBindGroup(
                 device, "OVERRIDE Bind Group", bindGroupLayout,
                 {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP
-                texture.createView(), sampler, {buffer: faceIDsBuffer}  // texture
+                (await texturePromise).createView(), sampler, {buffer: faceIDsBuffer}  // texture
             );
         }
         else {
@@ -104,10 +103,10 @@ export class MeshComponent {
             "FPV Render Pipeline",
             device,
             bindGroupLayout,
-            vertexShaderModule,
+            await vertPromise,
             vProps,
             vbAttributes,
-            fragmentShaderModule,
+            await fragPromise,
             format,
             topology,
             cullMode,
@@ -166,7 +165,7 @@ export class AABBComponent extends ColliderComponent {
         return new AABBComponent(this.min, this.max, this.hred, this.ghost, this.velocity, this.debug);
     }
 
-    // TODO no rotation (use Transform but need collider debugging)
+    // TODO no rotation (use Transform but need collider debugging first)
     modelTransform(model) {
         this.min = [0, 0, 0];
         this.max = [0, 0, 0];
