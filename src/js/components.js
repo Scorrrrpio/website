@@ -1,9 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
-import { TextTexture } from "./renderText";
-
-// TODO ideally eliminate these imports
-import { textureTriangle } from "./textureTriangle";
+import { createBindGroup, createPipeline, createVBAttributes } from "./wgpuHelpers";
 
 export class TransformComponent {
     constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1], animation) {
@@ -26,33 +22,28 @@ export class TransformComponent {
 }
 
 export class MeshComponent {
-    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline, textTexture) {
+    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline) {
         this.vertexBuffer = vb;
         this.vertexCount = vertexCount;
         this.modelBuffer = modelBuffer;
         this.bindGroup = bindGroup;
         this.pipeline = pipeline;
-        this.textTexture = textTexture;
     }
 
     // TODO don't require assetManager
-    static async assetToMesh(data, mesh, baseVert, baseFrag, assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
-        // OVERRIDE SHADERS
-        const [vertOverride, fragOverride] = await assetManager.get(data.vertexShader, data.fragmentShader);
-
+    static async assetToMesh(data, mesh, vertexShaderModule, fragmentShaderModule, texture, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug=false) {
         // VERTEX BUFFER
         // TODO change ply reader AGAIN
         const floats = mesh.vertex.values.float32;
-        const vCount = floats.data.length / floats.properties.length;
+        const vCount = floats.data.length / floats.properties.length;  // VERTEX COUNT
         const vProps = floats.properties.length;
-
-        // vertex buffer atrributes array
-        const vbAttributes = createVBAttributes(floats.properties);
+        
+        const vbAttributes = createVBAttributes(floats.properties);  // vertex buffer atrributes array
         //console.log("VB ATTRIBUTES\n", vbAttributes);  // TODO grouping
 
         const vb = device.createBuffer({
             label: data.file,
-            size: floats.data.byteLength,
+            size: floats.data.byteLength,  // TODO precompute while loading ply
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         });
         device.queue.writeBuffer(vb, 0, floats.data);
@@ -65,70 +56,12 @@ export class MeshComponent {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
-        // BIND GROUP and LAYOUT
-        let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
-        let bindGroup = createBindGroup(
-            device, "Base Bind Group", bindGroupLayout,
-            {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}  // MVP
-        );
 
-
-        // using data
-        // OVERRIDE CULL MODE
-        const cullMode = data.cullMode ? data.cullMode : "back";
+        // BIND GROUP
+        let bindGroup;  // depends on texture
 
         // TEXTURE
-        let textTexture;  // TODO awful
         if (data.texture) {
-            let texture;
-            if (data.texture.url) {
-                // image texture
-                const [imgPromise] = await assetManager.get(data.texture.url);
-                const imgBmp = await imgPromise;
-                // create texture on device
-                texture = device.createTexture({
-                    label: "Image Texture",
-                    size: [imgBmp.width, imgBmp.height, 1],
-                    format: format,
-                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-                });
-                device.queue.copyExternalImageToTexture(
-                    { source: imgBmp },
-                    { texture: texture },
-                    [imgBmp.width, imgBmp.height, 1],
-                );
-            }
-            else if (data.texture.program) {
-                // program texture
-                const textureSize = [512, 512];
-                texture = device.createTexture({
-                    label: "Program Texture",
-                    size: textureSize,
-                    format: format,
-                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-                });
-                if (data.texture.program === "helloTriangle") {
-                    textureTriangle(assetManager, texture, device, format);
-                }
-                else if (data.texture.program === "text") {
-                    if (data.texture.faces?.length > 1) throw new Error("Cannot render text on more than one face");
-
-                    let aspect = [1, 1];
-                    if (data.s) {
-                        switch (data.texture.faces[0]) {
-                            case "front": case "back": aspect = [data.s[0], data.s[1]]; break;  // x / y
-                            case "left": case "right": aspect = [data.s[2], data.s[1]]; break;  // z / y
-                            case "top": case "bottom": aspect = [data.s[0], data.s[2]]; break;  // x / z
-                        }
-                    }
-
-                    const fontUrl = data.texture.atlas;
-                    const fontMetadataUrl = data.texture.atlasMetadata;
-
-                    textTexture = await TextTexture.fromUrls(texture, data.texture.content, fontUrl, fontMetadataUrl, data.texture.fontSize, data.texture.margin, aspect, assetManager, device, format);
-                }
-            }
-
             // create texture sampler
             const sampler = device.createSampler({
                 magFilter: "linear",
@@ -153,22 +86,20 @@ export class MeshComponent {
             device.queue.writeBuffer(faceIDsBuffer, 0, faceIDs);
 
             // OVERRIDE BIND GROUP
-            bindGroupLayout = createBindGroupLayout(
-                device, "Texture Bind Group Layout",
-                "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
-            );
             bindGroup = createBindGroup(
                 device, "OVERRIDE Bind Group", bindGroupLayout,
                 {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP
                 texture.createView(), sampler, {buffer: faceIDsBuffer}  // texture
             );
         }
+        else {
+            bindGroup = createBindGroup(
+                device, "Base Bind Group", bindGroupLayout,
+                {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}  // MVP
+            );
+        }
 
-        // await promises
-        const vertexShaderModule = await vertOverride ? await vertOverride : baseVert;
-        const fragmentShaderModule = await fragOverride ? await fragOverride : baseFrag;
-
-        // Pipeline
+        // PIPELINE
         const pipeline = createPipeline(
             "FPV Render Pipeline",
             device,
@@ -186,7 +117,7 @@ export class MeshComponent {
 
 
         // TODO debug geometry
-        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline, textTexture);
+        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline);
     }
 }
 

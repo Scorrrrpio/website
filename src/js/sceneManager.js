@@ -1,6 +1,11 @@
 import { ECS } from "./ecs";
 import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
 import { HUD } from "./hud";
+import { createBindGroupLayout } from "./wgpuHelpers";
+
+// TODO eliminate?
+import { TextTexture } from "./renderText";
+import { textureTriangle } from "./textureTriangle";
 
 export class SceneManager {
     // SETUP
@@ -62,8 +67,30 @@ export class SceneManager {
             this.ecs.addComponent(entity, transform);
 
             // MESH
+            // BIND GROUP LAYOUT
+            let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
+            // TEXTURE
+            let texture;
+            if (instance.texture) {
+                // Override bind group layout
+                bindGroupLayout = createBindGroupLayout(
+                    device, "Texture Bind Group Layout",
+                    "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
+                );
+
+                if (instance.texture.type === "image") {
+                    const [imgPromise] = await this.assetManager.get(instance.texture.url);
+                    const imgBmp = await imgPromise;
+                    texture = this.#createImageTexture(imgBmp, device, format);
+                }
+                else if (instance.texture.type === "program") {
+                    texture = this.#createProgramTexture(instance.texture, instance.s, entity, device, format);
+                }
+            }
+            // MESH COMPONENT
+            const cullMode = instance.cullMode ? instance.cullMode : "back";  // cull mode override
             const mesh = await MeshComponent.assetToMesh(
-                instance, await meshPromise, await vertPromise, await fragPromise, this.assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug
+                instance, await meshPromise, await vertPromise, await fragPromise, await texture, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug
             );
             this.ecs.addComponent(entity, mesh);
 
@@ -78,11 +105,70 @@ export class SceneManager {
                 collider.modelTransform(transform.model);
                 this.ecs.addComponent(entity, collider);
             }
+        }
+    }
+
+
+    // TEXTURE CREATION
+    #createImageTexture(imgBmp, device, format) {
+        // create texture on device
+        const texture = device.createTexture({
+            label: "Image Texture",
+            size: [imgBmp.width, imgBmp.height, 1],
+            format: format,
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        device.queue.copyExternalImageToTexture(
+            { source: imgBmp },
+            { texture: texture },
+            [imgBmp.width, imgBmp.height, 1],
+        );
+        return texture;
+    }
+
+    async #createProgramTexture(instanceTexture, scale, entity, device, format) {
+        const textureSize = [512, 512];
+
+        const texture = device.createTexture({
+            label: "Program Texture",
+            size: textureSize,
+            format: format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+        });
+
+        if (instanceTexture.program === "helloTriangle") {
+            const [vertPromise, fragPromise] = this.assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
+            textureTriangle(vertPromise, fragPromise, texture, device, format);
+        }
+        else if (instanceTexture.program === "text") {
+            if (instanceTexture.faces?.length != 1) throw new Error("Cannot render text on more than one face");
+
+            const aspect = this.#getFaceAspect(scale, instanceTexture.faces[0]);
+            const fontUrl = instanceTexture.atlas;
+            const fontMetadataUrl = instanceTexture.atlasMetadata;
 
             // TEXT
-            if (mesh.textTexture) {  // TODO awful
-                this.ecs.addComponent(entity, mesh.textTexture);
-            }
+            // TODO no await, fetch here
+            const textTexture = await TextTexture.fromUrls(
+                texture,                   // output texture
+                instanceTexture.content,  // text content
+                fontUrl, fontMetadataUrl,  // glyph atlas and metadata urls
+                instanceTexture.fontSize, instanceTexture.margin,
+                aspect,                    // aspect ratio
+                this.assetManager,
+                device, format
+            );
+            this.ecs.addComponent(entity, textTexture);
+        }
+
+        return texture;
+    }
+
+    #getFaceAspect(scale=[1, 1, 1], face) {
+        switch (face) {
+            case "front": case "back": return [scale[0], scale[1]];  // x / y
+            case "left": case "right": return [scale[2], scale[1]];  // z / y
+            case "top": case "bottom": return [scale[0], scale[2]];  // x / z
         }
     }
 

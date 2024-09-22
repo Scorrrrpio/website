@@ -2,10 +2,7 @@
 import { lerpVector } from "./lerp";
 import { createPipeline, createVBAttributes } from "./wgpuHelpers";
 
-export async function textureTriangle(assetManager, texture, device, format) {
-	// SHADERS
-	const [vertPromise, fragPromise] = assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
-
+export async function textureTriangle(vertPromise, fragPromise, texture, device, format) {
 	// GEOMETRY
 	const vertices = new Float32Array([
 		// X,  Y,    R    G    B    A
