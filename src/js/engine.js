@@ -38,8 +38,8 @@ export async function engine() {
     // RESIZE HANDLING
     window.addEventListener("resize", () => {
         renderEngine.handleResize(format, canvas);
-        for (const e in scene.entitiesWith("CameraComponent")) {
-            scene.components[e].CameraComponent.updateProjectionMatrix(canvas.width / canvas.height);
+        for (const e in scene.ecs.entitiesWith("CameraComponent")) {
+            scene.ecs.components[e].CameraComponent.updateProjectionMatrix(canvas.width / canvas.height);
         }
     });
 
@@ -53,7 +53,7 @@ export async function engine() {
         const camera = scene.getActiveCamera();
         const renderables = scene.getRenderables();
         const hud = scene.getHUD();
-        renderEngine.render(scene, camera, renderables, hud, context, canvas, DEBUG);
+        renderEngine.render(scene.ecs, camera, renderables, hud, context, canvas, DEBUG);
         requestAnimationFrame(gameLoop);
 	}
     
@@ -87,9 +87,9 @@ export async function engine() {
         }
         
         // enable player controls
-        const controlled = scene.entitiesWith("InputComponent");
+        const controlled = scene.ecs.entitiesWith("InputComponent");
         for (const e of controlled) {
-            scene.getComponent(e, "InputComponent").enableControls(canvas);
+            scene.ecs.getComponent(e, "InputComponent").enableControls(canvas);
         }
         gameLoop();  // black until start
     });
