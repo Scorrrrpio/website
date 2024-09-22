@@ -26,7 +26,7 @@ export async function engine() {
     const renderEngine = new RenderEngine(device, format, canvas, MULTISAMPLE);
 
     // SCENE MANAGER
-    const scene = await SceneManager.fromURL(
+    const sceneManager = await SceneManager.fromURL(
         "geometry/scene.json",
         assetManager,
         device, format, canvas,
@@ -38,8 +38,8 @@ export async function engine() {
     // RESIZE HANDLING
     window.addEventListener("resize", () => {
         renderEngine.handleResize(format, canvas);
-        for (const e in scene.ecs.entitiesWith("CameraComponent")) {
-            scene.ecs.components[e].CameraComponent.updateProjectionMatrix(canvas.width / canvas.height);
+        for (const e in sceneManager.entitiesWith("CameraComponent")) {
+            sceneManager.getComponent(e, "CameraComponent").updateProjectionMatrix(canvas.width / canvas.height);
         }
     });
 
@@ -48,12 +48,12 @@ export async function engine() {
     let frame = 0;
 	function gameLoop() {
         // update
-        scene.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
+        sceneManager.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
         // render
-        const camera = scene.getActiveCamera();
-        const renderables = scene.getRenderables();
-        const hud = scene.getHUD();
-        renderEngine.render(scene.ecs, camera, renderables, hud, context, canvas, DEBUG);
+        const camera = sceneManager.getActiveCamera();
+        const renderables = sceneManager.getRenderables();
+        const hud = sceneManager.getHUD();
+        renderEngine.render(sceneManager, camera, renderables, hud, context, canvas, DEBUG);
         requestAnimationFrame(gameLoop);
 	}
     
@@ -87,9 +87,9 @@ export async function engine() {
         }
         
         // enable player controls
-        const controlled = scene.ecs.entitiesWith("InputComponent");
+        const controlled = sceneManager.entitiesWith("InputComponent");
         for (const e of controlled) {
-            scene.ecs.getComponent(e, "InputComponent").enableControls(canvas);
+            sceneManager.getComponent(e, "InputComponent").enableControls(canvas);
         }
         gameLoop();  // black until start
     });

@@ -1,12 +1,12 @@
-import { HUD } from "./hud";
-import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
 import { ECS } from "./ecs";
+import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
+import { HUD } from "./hud";
 
 export class SceneManager {
     // SETUP
     static async fromURL(url, assetManager, device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         const scene = new SceneManager(url, assetManager);
-        await scene.initialize(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug);
+        await scene.loadScene(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug);
         return scene;
     }
 
@@ -16,8 +16,11 @@ export class SceneManager {
         this.ecs = new ECS();
     }
 
-    async initialize(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
+    async loadScene(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
+        const [assetPromise] = this.assetManager.get(this.url);
+
         // PLAYER
+        // TODO from scene json
         const player = this.ecs.createEntity();
         const spawn = {
             p: [0, 2.001, 0],
@@ -36,18 +39,13 @@ export class SceneManager {
 
 
         // HUD
-        // TODO HUD needs depth testing and MSAA for some reason?
+        // TODO from scene json
+        // TODO HUD needs MSAA for some reason?
         this.hud = this.ecs.createEntity();
         const hud = HUD.generate(this.assetManager, device, format, projectionBuffer, multisamples);
         const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
         this.ecs.addComponent(this.hud, await hud)
         this.ecs.addComponent(this.hud, hudCam);
-
-        await this.#loadScene(device, viewBuffer, projectionBuffer, format, topology, multisamples, debug);
-    }
-
-    async #loadScene(device, viewBuffer, projectionBuffer, format, topology, multisamples, debug) {
-        const [assetPromise] = this.assetManager.get(this.url);
 
         const assets = await assetPromise;
         // TODO optimize (object pooling, instanced rendering)
@@ -85,6 +83,16 @@ export class SceneManager {
                 }
             }
         }
+    }
+
+
+    // ECS INTERFACE
+    entitiesWith(...names) {
+        return this.ecs.entitiesWith(...names);
+    }
+
+    getComponent(entity, name) {
+        return this.ecs.getComponent(entity, name);
     }
 
 

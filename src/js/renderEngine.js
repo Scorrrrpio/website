@@ -35,19 +35,23 @@ export class RenderEngine {
         });
     }
 
-	render(ecs, activeCamera, meshes, huds, context, canvas, debug=false) {
+	render(sceneManager, activeCamera, meshes, huds, context, canvas, debug=false) {
         // GET COMPONENTS
-        const camera = ecs.components[activeCamera].CameraComponent;
-        const renderables = meshes.map((m) => ecs.components[m].MeshComponent);
-        const hud = huds.map((h) => ecs.components[h].HUD);
-        const hudCamera = huds.map((h) => ecs.components[h].CameraComponent)[0];
+        const camera = sceneManager.getComponent(activeCamera, "CameraComponent");
+        const renderables = meshes.map((m) => sceneManager.getComponent(m, "MeshComponent"));
+        const hud = huds.map((h) => sceneManager.getComponent(h, "HUD"));
+        const hudCamera = huds.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
 
         this.canvasTexture = context.getCurrentTexture();  // create texture the size of canvas
 
         // 3D PASS
         // write mvp matrices to uniform buffers
-        for (const mesh of meshes) {
-            this.device.queue.writeBuffer(ecs.components[mesh].MeshComponent.modelBuffer, 0, ecs.components[mesh].TransformComponent.model);
+        for (const m of meshes) {
+            const mesh = {
+                buffer: sceneManager.getComponent(m, "MeshComponent").modelBuffer,
+                model: sceneManager.getComponent(m, "TransformComponent").model,
+            }
+            this.device.queue.writeBuffer(mesh.buffer, 0, mesh.model);
         }
         this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(camera.view));
         this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(camera.projection));
