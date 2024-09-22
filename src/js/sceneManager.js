@@ -48,39 +48,40 @@ export class SceneManager {
         this.ecs.addComponent(this.hud, hudCam);
 
         const assets = await assetPromise;
-        // TODO optimize (object pooling, instanced rendering)
-        for (const asset of assets.objects) {  // each object in scene
-            // ASSET FAMILY DEFAULT VALUES
-            const [baseMeshPromise, baseVertPromise, baseFragPromise] = this.assetManager.get(asset.file, asset.vertexShader, asset.fragmentShader);
 
-            // collision mesh based on geometry
-            const baseMesh = await baseMeshPromise;
-            const floats = baseMesh.vertex.values.float32;
+        for (const instance of assets.entities) {
+            // fetch mesh components
+            const [meshPromise, vertPromise, fragPromise] = this.assetManager.get(
+                assets.geometry[instance.mesh], assets.shaders[instance.shader].vert, assets.shaders[instance.shader].frag
+            );
+
+            const entity = this.ecs.createEntity();
+
+            // TRANSFORM
+            const transform = new TransformComponent(instance.p, instance.r, instance.s, instance.animation);
+            this.ecs.addComponent(entity, transform);
+
+            // MESH
+            const mesh = await MeshComponent.assetToMesh(
+                instance, await meshPromise, await vertPromise, await fragPromise, this.assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug
+            );
+            this.ecs.addComponent(entity, mesh);
+
+            // COLLIDER
+            const floats = (await meshPromise).vertex.values.float32;
             const colliderGenerators = {
                 aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
             }
-            const baseCollider = colliderGenerators[asset.collision]?.(floats.data, floats.properties);
+            const collider = colliderGenerators[instance.collider]?.(floats.data, floats.properties);
+            if (collider) {
+                collider.setProperties(instance.href, instance.ghost, instance.v);
+                collider.modelTransform(transform.model);
+                this.ecs.addComponent(entity, collider);
+            }
 
-            const baseVert = await baseVertPromise;
-            const baseFrag = await baseFragPromise;
-            // INSTANCE-SPECIFIC VALUES
-            for (const instance of asset.instances) {
-                const entity = this.ecs.createEntity();
-                const transform = new TransformComponent(instance.p, instance.r, instance.s, instance.animation);
-                const mesh = await MeshComponent.assetToMesh(
-                    instance, baseMesh, baseVert, baseFrag, this.assetManager, device, format, viewBuffer, projectionBuffer, topology, multisamples, debug
-                );
-                this.ecs.addComponent(entity, transform);
-                this.ecs.addComponent(entity, mesh);
-                if (baseCollider) {
-                    const collider = baseCollider.copy();
-                    collider.setProperties(instance.href, instance.ghost, instance.v);
-                    collider.modelTransform(transform.model);
-                    this.ecs.addComponent(entity, collider);
-                }
-                if (mesh.textTexture) {  // TODO awful
-                    this.ecs.addComponent(entity, mesh.textTexture);
-                }
+            // TEXT
+            if (mesh.textTexture) {  // TODO awful
+                this.ecs.addComponent(entity, mesh.textTexture);
             }
         }
     }

@@ -5,9 +5,9 @@ working on some cool WebGPU stuff
 # TODO
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)
 - better animation solution? (functions)
-- ECS class
 - once again add objects at runtime
 - favicon
+- redo url spawn locations (url to scene and spawn)
 - include player in scene.json
 - holdable objects (scene graph)
 - PHYSICS OVERHAUL
@@ -22,9 +22,9 @@ working on some cool WebGPU stuff
 - lazy loading / performance improvements
 - rendering optimizations
 - collision optimizations
-- redo url spawn locations
 - mobile controls
 - skeleton
+- GLTF or GLB
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z
