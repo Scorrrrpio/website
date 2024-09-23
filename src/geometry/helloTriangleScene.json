@@ -1,0 +1,19 @@
+{
+    "geometry": {
+        "triangle": "geometry/helloTriangle.ply"
+    },
+    "shaders": {
+        "helloTriangle": { "vert": "shaders/helloTriangle.vert.wgsl", "frag": "shaders/helloTriangle.frag.wgsl" }
+    },
+    "entities": [
+        {
+            "camera": {
+                "ortho": true
+            }
+        },
+        {
+            "mesh": "triangle",
+            "shader": "helloTriangle"
+        }
+    ]
+}

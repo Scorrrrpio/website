@@ -8,6 +8,7 @@ import { HUDComponent } from "./components/hud";
 import { InputComponent } from "./components/input";
 import { MeshComponent } from "./components/mesh";
 import { PhysicsComponent } from "./components/physics";
+import { TextureProgramComponent } from "./components/textureProgram";
 import { TransformComponent } from "./components/transform";
 
 // TODO eliminate?
@@ -31,24 +32,6 @@ export class SceneManager {
     async loadScene(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         const [assetPromise] = this.assetManager.get(this.url);
 
-        // PLAYER
-        // TODO from scene json
-        const player = this.ecs.createEntity();
-        const spawn = {
-            p: [0, 2.001, 0],
-            r: [0, 0, 0],
-        };
-        const inputs = new InputComponent();
-        const physics = new PhysicsComponent();
-        const playerTransform = new TransformComponent(spawn.p, spawn.r);
-        const camera = new CameraComponent(canvas.width / canvas.height, [0, 2, 0]);
-        camera.updateViewMatrix(playerTransform.position, playerTransform.rotation);
-        this.ecs.addComponent(player, camera);
-        this.ecs.addComponent(player, playerTransform);
-        this.ecs.addComponent(player, inputs);
-        this.ecs.addComponent(player, physics);
-        this.player = player;
-
 
         // HUD
         // TODO from scene json
@@ -62,68 +45,95 @@ export class SceneManager {
         const assets = await assetPromise;
 
         // TODO in separate manifest file instead of scene?
-        const animationPromise = AnimationComponent.loadCustom(...assets.animations);  // load custom animations
+        let animationPromise;
+        if (assets.animations) {
+            animationPromise = AnimationComponent.loadCustom(...assets.animations);  // load custom animations
+        }
         //const textureProgramPromise = 
-
         for (const instance of assets.entities) {
-            // fetch mesh components
-            const [meshPromise, vertPromise, fragPromise] = this.assetManager.get(
-                assets.geometry[instance.mesh], assets.shaders[instance.shader].vert, assets.shaders[instance.shader].frag
-            );
-
             const entity = this.ecs.createEntity();
+
+            // CAMERA
+            if (instance.camera) {
+                const camera = new CameraComponent(canvas.width / canvas.height, instance.camera.offset, instance.camera.ortho);
+                camera.updateViewMatrix(instance.p, instance.r);
+                this.ecs.addComponent(entity, camera);
+                if (!this.activeCamera) this.activeCamera = entity;
+            }
+
+            // INPUT
+            if (instance.input) {
+                const inputs = new InputComponent();
+                this.ecs.addComponent(entity, inputs);
+                this.player = entity;
+            }
+
+            // PHYSICS
+            if (instance.physics) {
+                const physics = new PhysicsComponent();
+                this.ecs.addComponent(entity, physics);
+            }
 
             // TRANSFORM
             const transform = new TransformComponent(instance.p, instance.r, instance.s);
             this.ecs.addComponent(entity, transform);
 
             // MESH
-            // BIND GROUP LAYOUT
-            let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
-            // TEXTURE
-            let texturePromise;
-            if (instance.texture) {
-                // Override bind group layout
-                bindGroupLayout = createBindGroupLayout(
-                    device, "Texture Bind Group Layout",
-                    "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
+            if (instance.mesh) {
+                // fetch mesh components
+                const [meshPromise, vertPromise, fragPromise] = this.assetManager.get(
+                    assets.geometry[instance.mesh], assets.shaders[instance.shader].vert, assets.shaders[instance.shader].frag
                 );
+                // BIND GROUP LAYOUT
+                let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
+                // TEXTURE
+                let texturePromise;
+                if (instance.texture) {
+                    // Override bind group layout
+                    bindGroupLayout = createBindGroupLayout(
+                        device, "Texture Bind Group Layout",
+                        "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
+                    );
 
-                if (instance.texture.type === "image") {
-                    const [imgPromise] = await this.assetManager.get(instance.texture.url);
-                    const imgBmp = await imgPromise;
-                    texturePromise = this.#createImageTexture(imgBmp, device, format);
+                    if (instance.texture.type === "image") {
+                        const [imgPromise] = await this.assetManager.get(instance.texture.url);
+                        const imgBmp = await imgPromise;
+                        texturePromise = this.#createImageTexture(imgBmp, device, format);
+                    }
+                    else if (instance.texture.type === "program") {
+                        texturePromise = this.#createProgramTexture(instance.texture, instance.s, entity, device, format);
+                    }
                 }
-                else if (instance.texture.type === "program") {
-                    texturePromise = this.#createProgramTexture(instance.texture, instance.s, entity, device, format);
+                // MESH COMPONENT
+                const cullMode = instance.cullMode ? instance.cullMode : "back";  // cull mode override
+                const mesh = await MeshComponent.assetToMesh(
+                    instance, await meshPromise, vertPromise, fragPromise, texturePromise, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug
+                );
+                this.ecs.addComponent(entity, mesh);
+
+
+                // COLLIDER
+                // TODO dependency on mesh
+                const floats = (await meshPromise).vertex.values.float32;
+                const colliderGenerators = {
+                    aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
                 }
-            }
-            // MESH COMPONENT
-            const cullMode = instance.cullMode ? instance.cullMode : "back";  // cull mode override
-            const mesh = await MeshComponent.assetToMesh(
-                instance, await meshPromise, vertPromise, fragPromise, texturePromise, device, format, bindGroupLayout, viewBuffer, projectionBuffer, cullMode, topology, multisamples, debug
-            );
-            this.ecs.addComponent(entity, mesh);
+                const collider = colliderGenerators[instance.collider]?.(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
+                if (collider) {
+                    collider.modelTransform(transform.model);
+                    this.ecs.addComponent(entity, collider);
+                }
 
-            // COLLIDER
-            const floats = (await meshPromise).vertex.values.float32;
-            const colliderGenerators = {
-                aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
-            }
-            const collider = colliderGenerators[instance.collider]?.(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
-            if (collider) {
-                collider.modelTransform(transform.model);
-                this.ecs.addComponent(entity, collider);
-            }
-
-            // ANIMATION
-            if (instance.animation) {
-                const animationParams = instance.animation === "move" ? [transform, collider] : [transform];
-                const animation = new AnimationComponent(instance.animation, ...animationParams);
-                this.ecs.addComponent(entity, animation);
+                // ANIMATION
+                // TODO dependency on collider
+                if (instance.animation) {
+                    const animationParams = instance.animation === "move" ? [transform, collider] : [transform];
+                    const animation = new AnimationComponent(instance.animation, ...animationParams);
+                    this.ecs.addComponent(entity, animation);
+                }
             }
         }
-
+        
         await animationPromise;
     }
 
@@ -156,8 +166,13 @@ export class SceneManager {
         });
 
         if (instanceTexture.program === "helloTriangle") {
-            const [vertPromise, fragPromise] = this.assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
-            textureTriangle(vertPromise, fragPromise, texture, device, format);
+            //const [vertPromise, fragPromise] = this.assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
+            //textureTriangle(vertPromise, fragPromise, texture, device, format);
+
+            // TODO WIP
+            const textureProgram = new TextureProgramComponent(texture, "geometry/helloTriangleScene.json", this.assetManager, device, format);
+            await textureProgram.init();
+            textureProgram.render();
         }
         else if (instanceTexture.program === "text") {
             if (instanceTexture.faces?.length != 1) throw new Error("Cannot render text on more than one face");
@@ -206,14 +221,15 @@ export class SceneManager {
     update(frame, device) {
         // TODO reimplement adding entities at runtime
         this.ecs.updateAnimations();
-        this.ecs.movePlayer(this.player, device);
+        // TODO get rid of this.player
+        if (this.player) this.ecs.movePlayer(this.player, device);
     }
 
 
     // RENDERING
     getActiveCamera() {
         // TODO select active camera
-        return this.ecs.entitiesWith("CameraComponent")[0];
+        return this.activeCamera;
     }
 
     getRenderables() {

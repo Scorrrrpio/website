@@ -32,7 +32,7 @@ export class CameraComponent {
         }
     }
 
-    updateViewMatrix(position, rotation) {
+    updateViewMatrix(position=[0, 0, 0], rotation=[0, 0, 0]) {
         mat4.rotateX(this.view, mat4.create(), rotation[0]);
         mat4.rotateY(this.view, this.view, rotation[1]);
         mat4.rotateZ(this.view, this.view, rotation[2]);

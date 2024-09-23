@@ -12,6 +12,7 @@ export class AnimationComponent {
         AnimationComponent.lookup[this.name]?.(...this.parameters);
     }
 
+    // import custom animations
     static async loadCustom(...paths) {
         for (const path of paths) {
             const module = await import(/* webpackIgnore: true */ path).catch(() =>

@@ -39,7 +39,7 @@ export class AssetManager {
 
     async #loadJson(url) {
         const response = await fetch(url);
-        if (!response.ok) { throw new AssetLoadError("Failed to load from ${url}."); }
+        if (!response.ok) { throw new AssetLoadError("Failed to load from " + url + "."); }
         return response.json();
     }
 

@@ -1,15 +1,23 @@
+import { TextureEngine } from "../engine";
+
 export class TextureProgramComponent {
     static programs = {};
 
-    constructor(outputTexture, aspect=[1, 1]) {
+    constructor(outputTexture, scene, assetManager, device, format, aspect=[1, 1]) {
         // TODO Enginception
+        this.textureEngine = new TextureEngine(outputTexture, scene, assetManager, device, format);
     }
 
-    // TODO
-    update() {}
+    async init() {
+        await this.textureEngine.init();
+    }
 
-    render() {}
+    render() {
+        //this.textureEngine.update();  // TODO defined in module
+        this.textureEngine.render();
+    }
 
+    // TODO meaningless
     static async loadCustom(...paths) {
         for (const path of paths) {
             const module = await import(/* webpackIgnore: true */ path).catch(() =>

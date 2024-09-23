@@ -3,15 +3,12 @@ import { AssetManager } from "./assetManager";
 import { RenderEngine } from "./renderEngine";
 import { SceneManager } from "./sceneManager";
 
-// TODO to engine class
-// output target (canvas or texture)
-// starting scene
-
 export class Engine {
-    constructor(target, scene) {
+    constructor(target, scene, assetManager=null) {
         // engine
         this.target = target;
         this.scene = scene;
+        this.assetManager = assetManager;
         this.frame = 0;
         // CONSTANTS
         this.TOPOLOGY = "triangle-list";
@@ -20,7 +17,7 @@ export class Engine {
     }
 
     async init() {
-        await this.wgpuSetup();
+        await this.#wgpuSetup();
         await this.createEngineComponents();
 
         // RESIZE HANDLING
@@ -31,21 +28,10 @@ export class Engine {
             }
         });
 
-        // TODO testing
-        const textureSize = [512, 512];
-        const texture = this.device.createTexture({
-            label: "Program Texture",
-            size: textureSize,
-            format: this.format,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-        });
-        const subengine = new TextureEngine(texture, this.scene, this.device, this.format);
-        subengine.init();
-
         this.start();  // START GAME
     }
 
-    async wgpuSetup() {
+    async #wgpuSetup() {
         // WEBGPU SETUP
         if (!(this.target instanceof Element)) { throw new Error("Root Engine target must be a canvas element"); }
         const devicePixelRatio = window.devicePixelRatio || 1;
@@ -60,14 +46,15 @@ export class Engine {
 
     async createEngineComponents() {
         // ASSET MANAGER
-        this.assetManager = new AssetManager(this.device);
+        // allows for sharing
+        if (!this.assetManager) this.assetManager = new AssetManager(this.device);
 
         // RENDER ENGINE
         this.renderEngine = new RenderEngine(this.device, this.format, this.target, this.MULTISAMPLE);
 
         // SCENE MANAGER
         this.sceneManager = await SceneManager.fromURL(
-            "geometry/scene.json",
+            this.scene,
             this.assetManager,
             this.device, this.format, this.target,
             this.renderEngine.viewBuffer, this.renderEngine.projectionBuffer,
@@ -108,6 +95,8 @@ export class Engine {
             for (const e of controlled) {
                 this.sceneManager.getComponent(e, "InputComponent").enableControls(this.target);
             }
+
+            console.log("Starting engine!");
             this.gameLoop();  // black until start
         });
     }
@@ -131,8 +120,8 @@ export class Engine {
 }
 
 export class TextureEngine extends Engine {
-    constructor(target, scene, device, format) {
-        super(null, scene);
+    constructor(target, scene, assetManager, device, format) {
+        super(null, scene, assetManager);  // assetManager shared with root engine
         this.target = target;
         this.device = device;
         this.format = format;
@@ -143,13 +132,16 @@ export class TextureEngine extends Engine {
         this.start();
     }
 
-    wgpuSetup() {
-        console.warn("Skipping wgpuSetup call for SubEngine - device and format come from root Engine.");
-    }
-
     start() {
         console.log("Starting subengine!");
         this.update();
         this.render();
+    }
+
+    render() {
+        const camera = this.sceneManager.getActiveCamera();
+        const renderables = this.sceneManager.getRenderables();
+        const hud = this.sceneManager.getHUD();
+        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.target, this.target, this.DEBUG);
     }
 }

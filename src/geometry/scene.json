@@ -27,6 +27,14 @@
     ],
     "entities": [
         {
+            "camera": {
+                "offset": [0, 2, 0]
+            },
+            "input": true,
+            "physics": true,
+            "p": [0, 2.001, 0]
+        },
+        {
             "mesh": "cube",
             "shader": "grid",
             "collider": "aabb",
