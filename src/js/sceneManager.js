@@ -2,17 +2,17 @@ import { ECS } from "./ecs";
 import { createBindGroupLayout } from "./wgpuHelpers";
 
 import { AABBComponent } from "./components/collider";
+import { AnimationComponent } from "./components/animations";
 import { CameraComponent } from "./components/camera";
 import { HUDComponent } from "./components/hud";
 import { InputComponent } from "./components/input";
 import { MeshComponent } from "./components/mesh";
-import { PhysicsComponent } from "./physics";
+import { PhysicsComponent } from "./components/physics";
 import { TransformComponent } from "./components/transform";
 
 // TODO eliminate?
-import { TextTexture } from "./renderText";
+import { TextTexture } from "./components/textTexture";
 import { textureTriangle } from "./textureTriangle";
-import { AnimationComponent } from "./components/animations";
 
 export class SceneManager {
     // SETUP
@@ -63,6 +63,7 @@ export class SceneManager {
 
         // TODO in separate manifest file instead of scene?
         const animationPromise = AnimationComponent.loadCustom(...assets.animations);  // load custom animations
+        //const textureProgramPromise = 
 
         for (const instance of assets.entities) {
             // fetch mesh components
@@ -73,7 +74,7 @@ export class SceneManager {
             const entity = this.ecs.createEntity();
 
             // TRANSFORM
-            const transform = new TransformComponent(instance.p, instance.r, instance.s, instance.animation);
+            const transform = new TransformComponent(instance.p, instance.r, instance.s);
             this.ecs.addComponent(entity, transform);
 
             // MESH
@@ -166,6 +167,7 @@ export class SceneManager {
             const fontMetadataUrl = instanceTexture.atlasMetadata;
 
             // TEXT
+            // TODO uv target range (allows multiple faces)
             const textTexture = await TextTexture.fromUrls(
                 texture,                   // output texture
                 instanceTexture.content,  // text content

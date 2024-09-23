@@ -36,6 +36,9 @@ export class RenderEngine {
     }
 
 	render(sceneManager, activeCamera, meshes, huds, context, canvas, debug=false) {
+        if (!context) {  // TODO to texture
+            return;
+        }
         // GET COMPONENTS
         const camera = sceneManager.getComponent(activeCamera, "CameraComponent");
         const renderables = meshes.map((m) => sceneManager.getComponent(m, "MeshComponent"));

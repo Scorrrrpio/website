@@ -1,16 +1,14 @@
-import { AssetLoadError } from "../errors";
+export class TextureProgramComponent {
+    static programs = {};
 
-export class AnimationComponent {
-    static lookup = {};
-
-    constructor(name, ...parameters) {
-        this.name = name;
-        this.parameters = parameters;
+    constructor(outputTexture, aspect=[1, 1]) {
+        // TODO Enginception
     }
 
-    animate() {
-        AnimationComponent.lookup[this.name]?.(...this.parameters);
-    }
+    // TODO
+    update() {}
+
+    render() {}
 
     static async loadCustom(...paths) {
         for (const path of paths) {
@@ -18,8 +16,9 @@ export class AnimationComponent {
                 { throw new AssetLoadError("Failed to load custom animation script from " + path); }
             );
             for (const [name, fn] of Object.entries(module)) {
-                AnimationComponent.lookup[name] = fn;
+                TextureProgramComponent.programs[name] = fn;
             }
+            debugger;
         }
     }
 }

@@ -177,4 +177,9 @@ export class InputComponent {
             }
         });
     }
+
+    setSense(xSense, ySense) {
+        this.xSense = xSense;
+        this.ySense = ySense;
+    }
 }

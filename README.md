@@ -25,6 +25,8 @@ working on some cool WebGPU stuff
 - mobile controls
 - skeleton
 - GLTF or GLB
+- custom components (extend component class, if not instanceof throw error)
+- private instance variables
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z

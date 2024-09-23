@@ -3,94 +3,153 @@ import { AssetManager } from "./assetManager";
 import { RenderEngine } from "./renderEngine";
 import { SceneManager } from "./sceneManager";
 
-export async function engine() {
-    // CONSTANTS
-    const TOPOLOGY = "triangle-list";
-    const MULTISAMPLE = 4;
-    const DEBUG = false;
+// TODO to engine class
+// output target (canvas or texture)
+// starting scene
 
+export class Engine {
+    constructor(target, scene) {
+        // engine
+        this.target = target;
+        this.scene = scene;
+        this.frame = 0;
+        // CONSTANTS
+        this.TOPOLOGY = "triangle-list";
+        this.MULTISAMPLE = 4;
+        this.DEBUG = false;
+    }
 
-    // WEBGPU SETUP
-	const canvas = document.querySelector("canvas");
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = canvas.clientWidth * devicePixelRatio;
-    canvas.height = canvas.clientHeight * devicePixelRatio;
+    async init() {
+        await this.wgpuSetup();
+        await this.createEngineComponents();
 
-    const { device, context, format } = await wgpuSetup(canvas);
+        // RESIZE HANDLING
+        window.addEventListener("resize", () => {
+            this.renderEngine.handleResize(this.format, this.target);
+            for (const e in this.sceneManager.entitiesWith("CameraComponent")) {
+                this.sceneManager.getComponent(e, "CameraComponent").updateProjectionMatrix(this.target.width / this.target.height);
+            }
+        });
 
+        // TODO testing
+        const textureSize = [512, 512];
+        const texture = this.device.createTexture({
+            label: "Program Texture",
+            size: textureSize,
+            format: this.format,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+        });
+        const subengine = new TextureEngine(texture, this.scene, this.device, this.format);
+        subengine.init();
 
-    // ASSET MANAGER
-    const assetManager = new AssetManager(device);
+        this.start();  // START GAME
+    }
 
-    // RENDER ENGINE
-    const renderEngine = new RenderEngine(device, format, canvas, MULTISAMPLE);
+    async wgpuSetup() {
+        // WEBGPU SETUP
+        if (!(this.target instanceof Element)) { throw new Error("Root Engine target must be a canvas element"); }
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        this.target.width = this.target.clientWidth * devicePixelRatio;
+        this.target.height = this.target.clientHeight * devicePixelRatio;
 
-    // SCENE MANAGER
-    const sceneManager = await SceneManager.fromURL(
-        "geometry/scene.json",
-        assetManager,
-        device, format, canvas,
-        renderEngine.viewBuffer, renderEngine.projectionBuffer,
-        TOPOLOGY, MULTISAMPLE, DEBUG
-    );
+        const { device, context, format } = await wgpuSetup(this.target);
+        this.device = device;
+        this.context = context;
+        this.format = format;
+    }
 
+    async createEngineComponents() {
+        // ASSET MANAGER
+        this.assetManager = new AssetManager(this.device);
 
-    // RESIZE HANDLING
-    window.addEventListener("resize", () => {
-        renderEngine.handleResize(format, canvas);
-        for (const e in sceneManager.entitiesWith("CameraComponent")) {
-            sceneManager.getComponent(e, "CameraComponent").updateProjectionMatrix(canvas.width / canvas.height);
-        }
-    });
+        // RENDER ENGINE
+        this.renderEngine = new RenderEngine(this.device, this.format, this.target, this.MULTISAMPLE);
 
-
-    // GAME LOOP
-    let frame = 0;
-	function gameLoop() {
-        // update
-        sceneManager.update(frame++, device, format, TOPOLOGY, MULTISAMPLE, DEBUG);
-        // render
-        const camera = sceneManager.getActiveCamera();
-        const renderables = sceneManager.getRenderables();
-        const hud = sceneManager.getHUD();
-        renderEngine.render(sceneManager, camera, renderables, hud, context, canvas, DEBUG);
-        requestAnimationFrame(gameLoop);
-	}
+        // SCENE MANAGER
+        this.sceneManager = await SceneManager.fromURL(
+            "geometry/scene.json",
+            this.assetManager,
+            this.device, this.format, this.target,
+            this.renderEngine.viewBuffer, this.renderEngine.projectionBuffer,
+            this.TOPOLOGY, this.MULTISAMPLE, this.DEBUG
+        );
+    }
     
+    start() {
+        // remove loading ui
+        const loading = document.getElementById("loading");
+        loading.remove();
+        const playButton = document.getElementById("play-svg");
+        playButton.style.display = "block";
+        const controlsText = document.getElementById("controls");
+        controlsText.style.display = "block";
 
-    // START GAME
-    // remove loading ui
-    const loading = document.getElementById("loading");
-    loading.remove();
-    const playButton = document.getElementById("play-svg");
-    playButton.style.display = "block";
-    const controlsText = document.getElementById("controls");
-    controlsText.style.display = "block";
+        // start game with play button
+        playButton.addEventListener("click", () => {
+            // remove play button
+            playButton.remove();
+            controlsText.style.display = "none";
 
-    // start game with play button
-    playButton.addEventListener("click", () => {
-        // remove play button
-        playButton.remove();
-        controlsText.style.display = "none";
+            // request pointer lock (and handle browser differences)
+            // chromium returns Promise, firefox returns undefined
+            const lockPromise = this.target.requestPointerLock({ unadjustedMovement: true });
+            if (lockPromise) {
+                lockPromise.catch((error) => {
+                    if (error.name === "NotSupportedError") {
+                        console.log("Cannot disable mouse acceleration in this browser");
+                        this.target.requestPointerLock();
+                    }
+                    else throw error;
+                })
+            }
+            
+            // enable player controls
+            const controlled = this.sceneManager.entitiesWith("InputComponent");
+            for (const e of controlled) {
+                this.sceneManager.getComponent(e, "InputComponent").enableControls(this.target);
+            }
+            this.gameLoop();  // black until start
+        });
+    }
 
-        // request pointer lock (and handle browser differences)
-        // chromium returns Promise, firefox returns undefined
-        const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
-        if (lockPromise) {
-            lockPromise.catch((error) => {
-                if (error.name === "NotSupportedError") {
-                    console.log("Cannot disable mouse acceleration in this browser");
-                    canvas.requestPointerLock();
-                }
-                else throw error;
-            })
-        }
-        
-        // enable player controls
-        const controlled = sceneManager.entitiesWith("InputComponent");
-        for (const e of controlled) {
-            sceneManager.getComponent(e, "InputComponent").enableControls(canvas);
-        }
-        gameLoop();  // black until start
-    });
+    gameLoop() {
+        this.update();
+        this.render();
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    update() {
+        this.sceneManager.update(this.frame++, this.device, this.format, this.TOPOLOGY, this.MULTISAMPLE, this.DEBUG);
+    }
+
+    render() {
+        const camera = this.sceneManager.getActiveCamera();
+        const renderables = this.sceneManager.getRenderables();
+        const hud = this.sceneManager.getHUD();
+        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.context, this.target, this.DEBUG);
+    }
+}
+
+export class TextureEngine extends Engine {
+    constructor(target, scene, device, format) {
+        super(null, scene);
+        this.target = target;
+        this.device = device;
+        this.format = format;
+    }
+
+    async init() {
+        await this.createEngineComponents();
+        this.start();
+    }
+
+    wgpuSetup() {
+        console.warn("Skipping wgpuSetup call for SubEngine - device and format come from root Engine.");
+    }
+
+    start() {
+        console.log("Starting subengine!");
+        this.update();
+        this.render();
+    }
 }

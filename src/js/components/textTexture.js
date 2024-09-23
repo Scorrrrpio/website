@@ -1,4 +1,4 @@
-import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
+import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "../wgpuHelpers";
 
 export class TextTexture {
     static async fromUrls(outputTexture, textUrl, atlasUrl, metadataUrl, fontSize, margin, aspect, assetManager, device, format) {

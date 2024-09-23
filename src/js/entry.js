@@ -1,4 +1,4 @@
-import { engine } from "./engine";
+import { Engine } from "./engine";
 
 const canvas = document.querySelector("canvas");
 const controls = document.getElementById("controls");
@@ -14,7 +14,9 @@ function removeElements(...elements) {
     }
 }
 
-engine().catch((error) => {
+
+const engine = new Engine(canvas, "geometry/scene.json");
+engine.init().catch((error) => {
     removeElements(playButton, loading, canvas, controls);
     if (error.name === "UnsupportedWebGPUError") {
         removeElements(loadFailedDialogue, errorDialogue);

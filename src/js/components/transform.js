@@ -1,12 +1,11 @@
 import { mat4 } from "gl-matrix";
 
 export class TransformComponent {
-    constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1], animation) {
+    constructor(position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1]) {
         this.position = position;
         this.rotation = rotation;
         this.scale = scale;
         this.createModelMatrix();
-        this.animation = animation;  // TODO bad solution
     }
 
     createModelMatrix() {

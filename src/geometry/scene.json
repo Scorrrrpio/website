@@ -19,8 +19,11 @@
         "debug": { "vert": "shaders/debug.vert.wgsl", "frag": "shaders/debug.frag.wgsl" }
     },
     "animations": [
-        "/animations/spin.js",
-        "/animations/move.js"
+        "/plugins/animations/spin.js",
+        "/plugins/animations/move.js"
+    ],
+    "texturePrograms": [
+        "/plugins/textures/helloTriangle.js"
     ],
     "entities": [
         {
