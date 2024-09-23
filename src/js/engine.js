@@ -119,7 +119,13 @@ export class Engine {
     }
 }
 
-export class TextureEngine extends Engine {
+// TODO move into components folder
+// solutions:
+// both Engine classes inherit from subclass (eliminate circular dependency)
+// dynamic loading
+// unify into one class
+// don't extend
+export class TextureProgramComponent extends Engine {
     constructor(target, scene, assetManager, device, format) {
         super(null, scene, assetManager);  // assetManager shared with root engine
         this.target = target;

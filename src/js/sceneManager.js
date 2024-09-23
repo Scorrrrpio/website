@@ -8,8 +8,14 @@ import { HUDComponent } from "./components/hud";
 import { InputComponent } from "./components/input";
 import { MeshComponent } from "./components/mesh";
 import { PhysicsComponent } from "./components/physics";
-import { TextureProgramComponent } from "./components/textureProgram";
+import { TextureProgramComponent } from "./engine";
 import { TransformComponent } from "./components/transform";
+
+// TODO dynamic component imports?
+/*async function loadComponent {}
+ *const {ComponentName} = await import("./path/to/componentFile");
+ *return ComponentName;
+*/
 
 // TODO eliminate
 import { TextTexture } from "./components/textTexture";
@@ -170,7 +176,6 @@ export class SceneManager {
             // TODO WIP
             const textureProgram = new TextureProgramComponent(texture, "geometry/helloTriangleScene.json", this.assetManager, device, format);
             await textureProgram.init();
-            textureProgram.render();
         }
         else if (instanceTexture.program === "text") {
             if (instanceTexture.faces?.length != 1) throw new Error("Cannot render text on more than one face");
