@@ -18,6 +18,10 @@
         "lokiSphere": {"vert": "shaders/lokiSphere.vert.wgsl", "frag": "shaders/lokiSphere.frag.wgsl" },
         "debug": { "vert": "shaders/debug.vert.wgsl", "frag": "shaders/debug.frag.wgsl" }
     },
+    "animations": [
+        "/animations/spin.js",
+        "/animations/move.js"
+    ],
     "entities": [
         {
             "mesh": "cube",

@@ -61,6 +61,9 @@ export class SceneManager {
 
         const assets = await assetPromise;
 
+        // TODO in separate manifest file instead of scene?
+        const animationPromise = AnimationComponent.loadCustom(...assets.animations);  // load custom animations
+
         for (const instance of assets.entities) {
             // fetch mesh components
             const [meshPromise, vertPromise, fragPromise] = this.assetManager.get(
@@ -119,6 +122,8 @@ export class SceneManager {
                 this.ecs.addComponent(entity, animation);
             }
         }
+
+        await animationPromise;
     }
 
 

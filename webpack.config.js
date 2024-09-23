@@ -20,6 +20,7 @@ module.exports = {
 		new copyWebpackPlugin({
 			patterns: [
 				{ from: "src/styles", to: "" },
+				{ from: "src/animations", to: "animations" },
 				{ from: "src/geometry", to: "geometry" },
 				{ from: "src/shaders", to: "shaders" },
 				{ from: "src/media", to: "media" }
