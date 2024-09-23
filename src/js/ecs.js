@@ -42,11 +42,22 @@ export class ECS {
 
 
     // UPDATE LOOP
-    updateAnimations() {
+    updateAnimations(frame) {
         const animated = this.entitiesWith("AnimationComponent");
         for (const e of animated) {
-            this.components[e].AnimationComponent.animate();
+            const animationParams = this.#getAnimationParameters(e, frame);
+            this.components[e].AnimationComponent.animate(...animationParams);
         }
+    }
+
+    #getAnimationParameters(entity, frame) {
+        // TODO better solution (custom animations extend animation class, define parameters)
+        const paramMap = {
+            "default": [this.components[entity].TransformComponent],
+            "move": [this.components[entity].TransformComponent, this.components[entity].AABBComponent],
+            "helloTriangle": [this.components[entity].MeshComponent, frame]
+        }
+        return paramMap[this.getComponent(entity, "AnimationComponent").name] || paramMap.default;
     }
 
     movePlayer(player, device) {

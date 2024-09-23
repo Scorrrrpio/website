@@ -38,11 +38,12 @@ export class RenderEngine {
 
 	render(sceneManager, activeCamera, meshes, huds, context, debug=false) {
         // GET COMPONENTS
-        const camera = sceneManager.getComponent(activeCamera, "CameraComponent");
+        const camera = sceneManager.getComponent(activeCamera, "CameraComponent");  // TODO not required
         const renderables = meshes.map((m) => sceneManager.getComponent(m, "MeshComponent"));
         const hud = huds.map((h) => sceneManager.getComponent(h, "HUDComponent"));
         const hudCamera = huds.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
 
+        // TODO rename context
         if (context instanceof GPUCanvasContext) this.canvasTexture = context.getCurrentTexture();  // create texture the size of canvas
 
         // 3D PASS
@@ -78,7 +79,7 @@ export class RenderEngine {
 
 
         // HUD PASS
-        if (document.pointerLockElement === this.target) {
+        if (document.pointerLockElement === this.target) {  // TODO move conditional into engine, pass null
             // write HUD projection matrix to unifrom buffer
             this.device.queue.writeBuffer(this.projectionBuffer, 0, hudCamera.projection);
 

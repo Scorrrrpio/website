@@ -5,6 +5,9 @@
     "shaders": {
         "helloTriangle": { "vert": "shaders/helloTriangle.vert.wgsl", "frag": "shaders/helloTriangle.frag.wgsl" }
     },
+    "animations": [
+        "/plugins/animations/helloTriangle.js"
+    ],
     "entities": [
         {
             "camera": {
@@ -13,7 +16,8 @@
         },
         {
             "mesh": "triangle",
-            "shader": "helloTriangle"
+            "shader": "helloTriangle",
+            "animation": "helloTriangle"
         }
     ]
 }

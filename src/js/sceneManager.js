@@ -11,9 +11,8 @@ import { PhysicsComponent } from "./components/physics";
 import { TextureProgramComponent } from "./components/textureProgram";
 import { TransformComponent } from "./components/transform";
 
-// TODO eliminate?
+// TODO eliminate
 import { TextTexture } from "./components/textTexture";
-import { textureTriangle } from "./textureTriangle";
 
 export class SceneManager {
     // SETUP
@@ -127,8 +126,7 @@ export class SceneManager {
                 // ANIMATION
                 // TODO dependency on collider
                 if (instance.animation) {
-                    const animationParams = instance.animation === "move" ? [transform, collider] : [transform];
-                    const animation = new AnimationComponent(instance.animation, ...animationParams);
+                    const animation = new AnimationComponent(instance.animation);
                     this.ecs.addComponent(entity, animation);
                 }
             }
@@ -220,7 +218,7 @@ export class SceneManager {
     // UPDATE
     update(frame, device) {
         // TODO reimplement adding entities at runtime
-        this.ecs.updateAnimations();
+        this.ecs.updateAnimations(frame);
         // TODO get rid of this.player
         if (this.player) this.ecs.movePlayer(this.player, device);
     }

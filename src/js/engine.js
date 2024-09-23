@@ -115,7 +115,7 @@ export class Engine {
         const camera = this.sceneManager.getActiveCamera();
         const renderables = this.sceneManager.getRenderables();
         const hud = this.sceneManager.getHUD();
-        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.context, this.target, this.DEBUG);
+        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.context, this.DEBUG);
     }
 }
 
@@ -132,16 +132,17 @@ export class TextureEngine extends Engine {
         this.start();
     }
 
+    // TODO start after main engine
+    // TODO synchronize frames with root engine
     start() {
         console.log("Starting subengine!");
-        this.update();
-        this.render();
+        this.gameLoop();
     }
 
     render() {
         const camera = this.sceneManager.getActiveCamera();
         const renderables = this.sceneManager.getRenderables();
         const hud = this.sceneManager.getHUD();
-        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.target, this.target, this.DEBUG);
+        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.target, this.DEBUG);
     }
 }

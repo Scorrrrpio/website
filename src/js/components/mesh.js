@@ -1,7 +1,9 @@
 import { createBindGroup, createPipeline, createVBAttributes } from "../wgpuHelpers";
 
 export class MeshComponent {
-    constructor(vb, vertexCount, modelBuffer, bindGroup, pipeline) {
+    constructor(device, vertices, vb, vertexCount, modelBuffer, bindGroup, pipeline) {
+        this.device = device;
+        this.vertices = vertices;
         this.vertexBuffer = vb;
         this.vertexCount = vertexCount;
         this.modelBuffer = modelBuffer;
@@ -32,7 +34,6 @@ export class MeshComponent {
             size: floats.data.byteLength,  // TODO precompute while loading ply
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         });
-        device.queue.writeBuffer(vb, 0, floats.data);
 
 
         // BIND GROUP
@@ -95,6 +96,12 @@ export class MeshComponent {
 
 
         // TODO debug geometry
-        return new MeshComponent(vb, vCount, modelBuffer, bindGroup, pipeline);
+        const meshComponent = new MeshComponent(device, floats, vb, vCount, modelBuffer, bindGroup, pipeline);
+        meshComponent.writeVertexBuffer();
+        return meshComponent;
+    }
+
+    writeVertexBuffer() {
+        this.device.queue.writeBuffer(this.vertexBuffer, 0, this.vertices.data);
     }
 }

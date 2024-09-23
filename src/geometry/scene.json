@@ -22,9 +22,6 @@
         "/plugins/animations/spin.js",
         "/plugins/animations/move.js"
     ],
-    "texturePrograms": [
-        "/plugins/textures/helloTriangle.js"
-    ],
     "entities": [
         {
             "camera": {

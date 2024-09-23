@@ -4,11 +4,9 @@ working on some cool WebGPU stuff
 
 # TODO
 - automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)
-- better animation solution? (functions)
 - once again add objects at runtime
 - favicon
 - redo url spawn locations (url to scene and spawn)
-- include player in scene.json
 - holdable objects (scene graph)
 - PHYSICS OVERHAUL
     - AABBs to OBBs / more collision mesh classes? (WIP)
