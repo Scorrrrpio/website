@@ -12,6 +12,7 @@ import { TransformComponent } from "./components/transform";
 // TODO eliminate?
 import { TextTexture } from "./renderText";
 import { textureTriangle } from "./textureTriangle";
+import { AnimationComponent } from "./components/animations";
 
 export class SceneManager {
     // SETUP
@@ -105,11 +106,17 @@ export class SceneManager {
             const colliderGenerators = {
                 aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
             }
-            const collider = colliderGenerators[instance.collider]?.(floats.data, floats.properties);
+            const collider = colliderGenerators[instance.collider]?.(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
             if (collider) {
-                collider.setProperties(instance.href, instance.ghost, instance.v);
                 collider.modelTransform(transform.model);
                 this.ecs.addComponent(entity, collider);
+            }
+
+            // ANIMATION
+            if (instance.animation) {
+                const animationParams = instance.animation === "move" ? [transform, collider] : [transform];
+                const animation = new AnimationComponent(instance.animation, ...animationParams);
+                this.ecs.addComponent(entity, animation);
             }
         }
     }

@@ -18,30 +18,16 @@ class ColliderComponent {
         }
     }
 
-    copy() {
-        throw new Error("Copy behaviour must be implemented by subclasses of ColliderComponent");
-    }
-
-    setProperties(href=null, ghost=false, velocity=[0, 0, 0]) {
-        this.href = href;
-        this.ghost = ghost;
-        this.velocity = velocity;
-    }
-
     static checkCollision(other) {
         throw new Error("checkCollision must be implemented by subclasses of ColliderComponent");
     }
 }
 
 export class AABBComponent extends ColliderComponent {
-    constructor(min, max, href, ghost, velocity, debug=false) {
+    constructor(min, max, href, ghost, velocity) {
         super([min, max], href, ghost, velocity);
         this.min = min;
         this.max = max;
-    }
-
-    copy() {
-        return new AABBComponent(this.min, this.max, this.hred, this.ghost, this.velocity, this.debug);
     }
 
     // TODO no rotation (use Transform but need collider debugging first)
@@ -94,7 +80,7 @@ export class AABBComponent extends ColliderComponent {
         return vertices;
     }
 
-    static createMesh(data, properties) {
+    static createMesh(data, properties, href, ghost, velocity) {
         const xIndex = properties.indexOf("x");
         const yIndex = properties.indexOf("y");
         const zIndex = properties.indexOf("z");
@@ -117,7 +103,7 @@ export class AABBComponent extends ColliderComponent {
                 if (data[i] > aabb.max[2]) { aabb.max[2] = data[i]; }
             }
         }
-        return new AABBComponent(aabb.min, aabb.max);
+        return new AABBComponent(aabb.min, aabb.max, href, ghost, velocity);
     }
 
     static createPlayerAABB(position) {

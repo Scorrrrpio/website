@@ -1,4 +1,3 @@
-import { lokiSpin, move, spinY } from "./animations";
 import { movePlayer, raycast } from "./physicsEngine";
 
 export class ECS {
@@ -44,19 +43,9 @@ export class ECS {
 
     // UPDATE LOOP
     updateAnimations() {
-        // update animations
-        const animations = {
-            spinY: spinY,
-            lokiSpin: lokiSpin,
-            move: move
-        }
-        // TODO not ideal
-        const animated = this.entitiesWith("TransformComponent").filter(e => this.components[e].TransformComponent.animation);
+        const animated = this.entitiesWith("AnimationComponent");
         for (const e of animated) {
-            animations[this.components[e]["TransformComponent"].animation]?.(
-                this.components[e].TransformComponent,
-                this.components[e].AABBComponent
-            );
+            this.components[e].AnimationComponent.animate();
         }
     }
 
