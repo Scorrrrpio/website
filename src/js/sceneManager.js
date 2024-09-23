@@ -8,6 +8,7 @@ import { HUDComponent } from "./components/hud";
 import { InputComponent } from "./components/input";
 import { MeshComponent } from "./components/mesh";
 import { PhysicsComponent } from "./components/physics";
+import { TextComponent } from "./components/text";
 import { TextureProgramComponent } from "./engine";
 import { TransformComponent } from "./components/transform";
 
@@ -16,9 +17,6 @@ import { TransformComponent } from "./components/transform";
  *const {ComponentName} = await import("./path/to/componentFile");
  *return ComponentName;
 */
-
-// TODO eliminate
-import { TextTexture } from "./components/textTexture";
 
 export class SceneManager {
     // SETUP
@@ -169,11 +167,8 @@ export class SceneManager {
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
         });
 
+        // TODO hardcoding
         if (instanceTexture.program === "helloTriangle") {
-            //const [vertPromise, fragPromise] = this.assetManager.get("shaders/helloTriangle.vert.wgsl", "shaders/helloTriangle.frag.wgsl");
-            //textureTriangle(vertPromise, fragPromise, texture, device, format);
-
-            // TODO WIP
             const textureProgram = new TextureProgramComponent(texture, "geometry/helloTriangleScene.json", this.assetManager, device, format);
             await textureProgram.init();
         }
@@ -186,7 +181,7 @@ export class SceneManager {
 
             // TEXT
             // TODO uv target range (allows multiple faces)
-            const textTexture = await TextTexture.fromUrls(
+            const textTexture = await TextComponent.fromUrls(
                 texture,                   // output texture
                 instanceTexture.content,  // text content
                 fontUrl, fontMetadataUrl,  // glyph atlas and metadata urls

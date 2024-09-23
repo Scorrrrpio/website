@@ -96,9 +96,9 @@ export class ECS {
                     window.open(this.components[hit].AABBComponent.href, "__blank");
                 }
             }
-            if (this.hasComponent(hit, "TextTexture")) {
+            if (this.hasComponent(hit, "TextComponent")) {
                 const scroll = this.components[player].InputComponent.scroll;
-                this.components[hit].TextTexture.scroll(scroll, device);
+                this.components[hit].TextComponent.scroll(scroll, device);
             }
         }
 

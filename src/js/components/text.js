@@ -1,10 +1,10 @@
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "../wgpuHelpers";
 
-export class TextTexture {
+export class TextComponent {
     static async fromUrls(outputTexture, textUrl, atlasUrl, metadataUrl, fontSize, margin, aspect, assetManager, device, format) {
-        const textTexture = new TextTexture(outputTexture, textUrl, atlasUrl, metadataUrl, aspect, fontSize, margin);
-        await textTexture.initialize(assetManager, device, format);
-        return textTexture;
+        const text = new TextComponent(outputTexture, textUrl, atlasUrl, metadataUrl, aspect, fontSize, margin);
+        await text.initialize(assetManager, device, format);
+        return text;
     }
 
     constructor(outputTexture, textUrl, atlasUrl, metadataUrl, aspect=[1, 1], fontSize=48, margin=32) {
