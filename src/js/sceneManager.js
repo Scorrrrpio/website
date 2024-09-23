@@ -1,7 +1,13 @@
 import { ECS } from "./ecs";
-import { MeshComponent, TransformComponent, AABBComponent, CameraComponent, InputComponent, PhysicsComponent } from "./components";
-import { HUD } from "./hud";
 import { createBindGroupLayout } from "./wgpuHelpers";
+
+import { AABBComponent } from "./components/collider";
+import { CameraComponent } from "./components/camera";
+import { HUDComponent } from "./components/hud";
+import { InputComponent } from "./components/input";
+import { MeshComponent } from "./components/mesh";
+import { PhysicsComponent } from "./physics";
+import { TransformComponent } from "./components/transform";
 
 // TODO eliminate?
 import { TextTexture } from "./renderText";
@@ -45,9 +51,9 @@ export class SceneManager {
 
         // HUD
         // TODO from scene json
-        // TODO HUD needs MSAA for some reason?
+        // TODO HUDComponent needs MSAA for some reason?
         this.hud = this.ecs.createEntity();
-        const hud = HUD.generate(this.assetManager, device, format, projectionBuffer, multisamples);
+        const hud = HUDComponent.generate(this.assetManager, device, format, projectionBuffer, multisamples);
         const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
         this.ecs.addComponent(this.hud, await hud)
         this.ecs.addComponent(this.hud, hudCam);
@@ -202,7 +208,7 @@ export class SceneManager {
     }
 
     getHUD() {
-        // TODO multiple HUDs
-        return this.ecs.entitiesWith("HUD");
+        // TODO multiple HUDComponents
+        return this.ecs.entitiesWith("HUDComponent");
     }
 }

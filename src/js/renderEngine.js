@@ -39,7 +39,7 @@ export class RenderEngine {
         // GET COMPONENTS
         const camera = sceneManager.getComponent(activeCamera, "CameraComponent");
         const renderables = meshes.map((m) => sceneManager.getComponent(m, "MeshComponent"));
-        const hud = huds.map((h) => sceneManager.getComponent(h, "HUD"));
+        const hud = huds.map((h) => sceneManager.getComponent(h, "HUDComponent"));
         const hudCamera = huds.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
 
         this.canvasTexture = context.getCurrentTexture();  // create texture the size of canvas

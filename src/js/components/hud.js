@@ -1,8 +1,8 @@
-import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "./wgpuHelpers";
+import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "../wgpuHelpers";
 
-export class HUD {
+export class HUDComponent {
     static async generate(assetManager, device, format, projectionBuffer, multisamples) {
-        const hud = new HUD();
+        const hud = new HUDComponent();
         await hud.initialize(assetManager, device, format, projectionBuffer, multisamples);
         return hud;
     }

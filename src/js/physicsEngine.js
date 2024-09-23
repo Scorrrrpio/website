@@ -1,4 +1,4 @@
-import { AABBComponent } from "./components";
+import { AABBComponent } from "./components/collider";
 
 function normalizeXZ(v, speed) {
     const magnitude = Math.sqrt(v[0] * v[0] + v[2] * v[2]);

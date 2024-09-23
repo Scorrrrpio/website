@@ -25,7 +25,7 @@ export class ECS {
 
     getComponent(entity, name) {
         if (!this.components[entity] || !this.components[entity][name]) {
-            throw new Error("Component ${name} not found for entity ${entity}.")
+            throw new Error("Component " + name + " not found for entity" + entity + ".")
         }
         return this.components[entity][name];
     }
