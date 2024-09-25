@@ -1,5 +1,4 @@
-// LERP FUNCTION
-// TODO import
+// LERP FUNCTIONS
 function lerpVector(vOut, v1, v2, t) {
     if (vOut.length != v1.length || vOut.length != v2.length) {
         return;
@@ -34,7 +33,7 @@ export function helloTriangle(meshComponent, frame) {
 		-1.0, -0.73, 1.0, 0.0, 0.0, 1.0,
 		1.0, -0.73, 0.0, 1.0, 0.0, 1.0
 	]);
-
+	
 	frame %= 1800;
 	if (frame < 600) {
 		lerpVector(meshComponent.vertices.data, triangleRGB, triangleGBR, frame / 600);

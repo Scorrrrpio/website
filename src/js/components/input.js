@@ -178,6 +178,12 @@ export class InputComponent {
         });
     }
 
+    stopAll() {
+        for (const input of this.inputs) {
+            this.inputs[input] = false;
+        }
+    }
+
     setSense(xSense, ySense) {
         this.xSense = xSense;
         this.ySense = ySense;

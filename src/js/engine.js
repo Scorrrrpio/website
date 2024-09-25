@@ -91,10 +91,10 @@ export class Engine {
             }
             
             // enable player controls
-            const controlled = this.sceneManager.entitiesWith("InputComponent");
-            for (const e of controlled) {
-                this.sceneManager.getComponent(e, "InputComponent").enableControls(this.target);
-            }
+            this.sceneManager.enableControls(this.target);  // TODO don't pass this.target
+
+            // start sub-engines
+            this.sceneManager.startSubEngines();
 
             console.log("Starting engine!");
             this.gameLoop();  // black until start
@@ -135,7 +135,6 @@ export class TextureProgramComponent extends Engine {
 
     async init() {
         await this.createEngineComponents();
-        this.start();
     }
 
     // TODO start after main engine

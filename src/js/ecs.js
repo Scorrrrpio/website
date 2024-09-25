@@ -15,6 +15,7 @@ export class ECS {
     }
 
     addComponent(entity, component) {
+        // TODO allow multiple of the same component?
         const name = component.constructor.name;
         if (!this.components[entity]) {
             this.components[entity] = {};
@@ -22,16 +23,15 @@ export class ECS {
         this.components[entity][name] = component;
     }
 
+    hasComponent(entity, name) {
+        return this.components[entity] && this.components[entity][name];
+    }
+
     getComponent(entity, name) {
-        if (!this.components[entity] || !this.components[entity][name]) {
+        if (!this.hasComponent(entity, name)) {
             throw new Error("Component " + name + " not found for entity" + entity + ".")
         }
         return this.components[entity][name];
-    }
-
-    hasComponent(entity, name) {
-        if (!this.components[entity] || !this.components[entity][name]) return false;
-        return true;
     }
 
     entitiesWith(...names) {
@@ -41,18 +41,31 @@ export class ECS {
     }
 
 
-    // UPDATE LOOP
+    // START
+    enableControls(canvas) {
+        const controllable = this.entitiesWith("InputComponent");
+        controllable.forEach((c) => this.getComponent(c, "InputComponent").enableControls(canvas));
+    }
+
+    startSubEngines() {
+        const subengines = this.entitiesWith("TextureProgramComponent");
+        subengines.forEach((s) => this.getComponent(s, "TextureProgramComponent").start());
+    }
+
+
+    // UPDATE
     updateAnimations(frame) {
         const animated = this.entitiesWith("AnimationComponent");
         for (const e of animated) {
             const animationParams = this.#getAnimationParameters(e, frame);
-            this.components[e].AnimationComponent.animate(...animationParams);
+            this.getComponent(e, "AnimationComponent").animate(...animationParams);
         }
     }
 
     #getAnimationParameters(entity, frame) {
         // TODO better solution (custom animations extend animation class, define parameters)
         const paramMap = {
+            // Cannot use this.getComponent()
             "default": [this.components[entity].TransformComponent],
             "move": [this.components[entity].TransformComponent, this.components[entity].AABBComponent],
             "helloTriangle": [this.components[entity].MeshComponent, frame]
@@ -64,13 +77,14 @@ export class ECS {
         // TODO this type of thing as instance variable
         const colliders = this.entitiesWith("AABBComponent");
 
+        const camera = this.getComponent(player, "CameraComponent");
+        const input = this.getComponent(player, "InputComponent");
+        const rotation = input.look;
+        const position = this.getComponent(player, "TransformComponent").position;
+        const physics = this.getComponent(player, "PhysicsComponent");
+
         // movement
-        const camera = this.components[player].CameraComponent;
-        const inputs = this.components[player].InputComponent.inputs;
-        const rotation = this.components[player].InputComponent.look;
-        const position = this.components[player].TransformComponent.position;
-        const physics = this.components[player].PhysicsComponent;
-        movePlayer(colliders.map(e => this.components[e].AABBComponent), inputs, position, rotation, physics);
+        movePlayer(colliders.map(e => this.getComponent(e, "AABBComponent")), input.inputs, position, rotation, physics);
         camera.updateViewMatrix(position, rotation);  // update camera view matrix
 
         // raycasting
@@ -80,29 +94,21 @@ export class ECS {
             rotation
         );
         if (hit) {
-            if (inputs.leftMouse) {
+            if (input.inputs.leftMouse) {
                 // if link
-                if (this.components[hit].AABBComponent.href) {
+                if (this.getComponent(hit, "AABBComponent").href) {
                     console.log("bang");
-                    // stop movement
-                    inputs.w = false;
-                    inputs.a = false;
-                    inputs.s = false;
-                    inputs.d = false;
-                    inputs.space = false;
-                    inputs.leftMouse = false;
-                    inputs.rightMouse = false;
-                    // open link
-                    window.open(this.components[hit].AABBComponent.href, "__blank");
+                    input.stopAll();  // stop movement
+                    window.open(this.getComponent(hit, "AABBComponent").href, "__blank");  // open link
                 }
             }
             if (this.hasComponent(hit, "TextComponent")) {
-                const scroll = this.components[player].InputComponent.scroll;
-                this.components[hit].TextComponent.scroll(scroll, device);
+                const scroll = input.scroll;
+                this.getComponent(hit, "TextComponent").scroll(scroll, device);
             }
         }
 
         // reset scroll deltaY between frames
-        this.components[player].InputComponent.scroll = 0;
+        input.scroll = 0;
     }
 }

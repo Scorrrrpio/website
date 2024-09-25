@@ -171,6 +171,7 @@ export class SceneManager {
         if (instanceTexture.program === "helloTriangle") {
             const textureProgram = new TextureProgramComponent(texture, "geometry/helloTriangleScene.json", this.assetManager, device, format);
             await textureProgram.init();
+            this.ecs.addComponent(entity, textureProgram);
         }
         else if (instanceTexture.program === "text") {
             if (instanceTexture.faces?.length != 1) throw new Error("Cannot render text on more than one face");
@@ -212,6 +213,16 @@ export class SceneManager {
 
     getComponent(entity, name) {
         return this.ecs.getComponent(entity, name);
+    }
+
+
+    // START
+    enableControls(canvas) {
+        this.ecs.enableControls(canvas);
+    }
+
+    startSubEngines() {
+        this.ecs.startSubEngines();
     }
 
 

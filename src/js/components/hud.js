@@ -13,6 +13,7 @@ export class HUDComponent {
         // shaders
         const [vertPromise, fragPromise] = assetManager.get("shaders/hud.vert.wgsl", "shaders/hud.frag.wgsl");
 
+        // TODO read from file
         // geometry
         const crosshair = new Float32Array([
             // X,    Y
