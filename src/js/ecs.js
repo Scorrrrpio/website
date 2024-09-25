@@ -17,10 +17,20 @@ export class ECS {
     addComponent(entity, component) {
         // TODO allow multiple of the same component?
         const name = component.constructor.name;
+        let parentClass = Object.getPrototypeOf(component);
+        let parentName = null;
+
+        // get name of root class
+        while (parentClass && parentClass !== Object.prototype) {
+            parentName = parentClass.constructor.name;
+            parentClass = Object.getPrototypeOf(parentClass);
+        }
+        parentName = parentName || name;
+
         if (!this.components[entity]) {
             this.components[entity] = {};
         }
-        this.components[entity][name] = component;
+        this.components[entity][parentName] = component;
     }
 
     hasComponent(entity, name) {
@@ -29,7 +39,7 @@ export class ECS {
 
     getComponent(entity, name) {
         if (!this.hasComponent(entity, name)) {
-            throw new Error("Component " + name + " not found for entity" + entity + ".")
+            throw new Error("Component " + name + " not found for entity " + entity + ".");
         }
         return this.components[entity][name];
     }
@@ -43,6 +53,7 @@ export class ECS {
 
     // START
     enableControls(canvas) {
+        console.log(this.components);
         const controllable = this.entitiesWith("InputComponent");
         controllable.forEach((c) => this.getComponent(c, "InputComponent").enableControls(canvas));
     }
@@ -57,25 +68,13 @@ export class ECS {
     updateAnimations(frame) {
         const animated = this.entitiesWith("AnimationComponent");
         for (const e of animated) {
-            const animationParams = this.#getAnimationParameters(e, frame);
-            this.getComponent(e, "AnimationComponent").animate(...animationParams);
+            this.getComponent(e, "AnimationComponent").animate(this, e, frame);
         }
-    }
-
-    #getAnimationParameters(entity, frame) {
-        // TODO better solution (custom animations extend animation class, define parameters)
-        const paramMap = {
-            // Cannot use this.getComponent()
-            "default": [this.components[entity].TransformComponent],
-            "move": [this.components[entity].TransformComponent, this.components[entity].AABBComponent],
-            "helloTriangle": [this.components[entity].MeshComponent, frame]
-        }
-        return paramMap[this.getComponent(entity, "AnimationComponent").name] || paramMap.default;
     }
 
     movePlayer(player, device) {
         // TODO this type of thing as instance variable
-        const colliders = this.entitiesWith("AABBComponent");
+        const colliders = this.entitiesWith("ColliderComponent");
 
         const camera = this.getComponent(player, "CameraComponent");
         const input = this.getComponent(player, "InputComponent");
@@ -84,7 +83,7 @@ export class ECS {
         const physics = this.getComponent(player, "PhysicsComponent");
 
         // movement
-        movePlayer(colliders.map(e => this.getComponent(e, "AABBComponent")), input.inputs, position, rotation, physics);
+        movePlayer(colliders.map(e => this.getComponent(e, "ColliderComponent")), input.inputs, position, rotation, physics);
         camera.updateViewMatrix(position, rotation);  // update camera view matrix
 
         // raycasting
@@ -96,19 +95,15 @@ export class ECS {
         if (hit) {
             if (input.inputs.leftMouse) {
                 // if link
-                if (this.getComponent(hit, "AABBComponent").href) {
+                if (this.getComponent(hit, "ColliderComponent").href) {
                     console.log("bang");
-                    input.stopAll();  // stop movement
-                    window.open(this.getComponent(hit, "AABBComponent").href, "__blank");  // open link
+                    input.setAllFalse();  // stop movement
+                    window.open(this.getComponent(hit, "ColliderComponent").href, "__blank");  // open link
                 }
             }
             if (this.hasComponent(hit, "TextComponent")) {
-                const scroll = input.scroll;
-                this.getComponent(hit, "TextComponent").scroll(scroll, device);
+                this.getComponent(hit, "TextComponent").scroll(input.readScroll(), device);
             }
         }
-
-        // reset scroll deltaY between frames
-        input.scroll = 0;
     }
 }

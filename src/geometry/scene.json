@@ -246,7 +246,7 @@
             "collider": "aabb",
             "p": [60, 2.5, -8],
             "s": [2, 2, 2],
-            "animation": "spinY",
+            "animation": "SpinY",
             "ghost": "true"
         },
         {
@@ -255,7 +255,7 @@
             "collider": "aabb",
             "p": [60, 2.5, 8],
             "s": [0, 2, 2],
-            "animation": "spinY",
+            "animation": "SpinY",
             "texture": {
                 "type": "program",
                 "program": "helloTriangle",
@@ -286,7 +286,7 @@
             "collider": "aabb",
             "p": [-20, 0.5, 0],
             "s": [2, 1, 2],
-            "animation": "move",
+            "animation": "Move",
             "v": [-0.01, 0, 0]
         },
 
@@ -400,7 +400,7 @@
             "p": [60, 7, 0],
             "r": [1.57079632679, 0, 0],
             "s": [4, 4, 4],
-            "animation": "lokiSpin",
+            "animation": "LokiSpin",
             "cullMode": "none"
         }
     ]

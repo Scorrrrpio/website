@@ -17,7 +17,7 @@
         {
             "mesh": "triangle",
             "shader": "helloTriangle",
-            "animation": "helloTriangle"
+            "animation": "HelloTriangle"
         }
     ]
 }

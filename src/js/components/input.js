@@ -1,4 +1,5 @@
-// TODO more versatile (bonus feature)
+// TODO more versatile
+// register keys to listen for
 export class InputComponent {
     constructor() {
         this.inputs = {
@@ -18,7 +19,7 @@ export class InputComponent {
         this.minLook = -this.maxLook;
         this.scrollSense = 1;
 
-        this.look = [0, 0, 0];
+        this.look = [0, 0, 0];  // TODO out of component scope?
         this.scroll = 0;
     }
 
@@ -121,11 +122,7 @@ export class InputComponent {
         canvas.addEventListener("click", () => {
             if (document.pointerLockElement !== canvas) {
                 // stop movement
-                this.inputs.w = false;
-                this.inputs.a = false;
-                this.inputs.s = false;
-                this.inputs.d = false;
-                this.inputs.space = false;
+                this.setAllFalse();
 
                 // request pointer lock (and handle browser differences)
                 // chromium returns Promise, firefox returns undefined
@@ -178,14 +175,18 @@ export class InputComponent {
         });
     }
 
-    stopAll() {
-        for (const input of this.inputs) {
-            this.inputs[input] = false;
-        }
+    setAllFalse() {
+        Object.keys(this.inputs).forEach((input) => this.inputs[input] = false);
     }
 
     setSense(xSense, ySense) {
         this.xSense = xSense;
         this.ySense = ySense;
+    }
+
+    readScroll() {
+        const frameScroll = this.scroll;
+        this.scroll = 0;
+        return frameScroll;
     }
 }

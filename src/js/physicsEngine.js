@@ -31,7 +31,8 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
     let closestDist = Infinity;
     // TODO review
     for (const e of entities) {
-        const box = ECS.components[e].AABBComponent;
+        const box = ECS.getComponent(e, "ColliderComponent");
+        if (!(box instanceof AABBComponent)) { console.warn("Cannot compute raycast collisions for non-AABB"); continue; }
         let intersect = true;
 
         let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
@@ -144,6 +145,7 @@ export function movePlayer(boxes, inputs, position, rotation, physics) {
     const nextAABB = AABBComponent.createPlayerAABB(nextPos);
 
     for (const box of boxes) {
+        if (!(box instanceof AABBComponent)) { console.warn("Cannot compute collisions for non-AABB"); continue; }
         if (nextAABB.checkCollision(box)) {
             // modify movement
             movement = slide(nextAABB, box, movement, position, physics);

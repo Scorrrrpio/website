@@ -2,7 +2,7 @@ import { ECS } from "./ecs";
 import { createBindGroupLayout } from "./wgpuHelpers";
 
 import { AABBComponent } from "./components/collider";
-import { AnimationComponent } from "./components/animations";
+import { AnimationComponent } from "./components/animationComponent";
 import { CameraComponent } from "./components/camera";
 import { HUDComponent } from "./components/hud";
 import { InputComponent } from "./components/input";

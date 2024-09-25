@@ -137,7 +137,6 @@ export class TextureProgramComponent extends Engine {
         await this.createEngineComponents();
     }
 
-    // TODO start after main engine
     // TODO synchronize frames with root engine
     start() {
         console.log("Starting subengine!");
