@@ -1,6 +1,7 @@
-export class HelloTriangle {
-	static requiredComponents = ["MeshComponent"];
+import { getAnimationClass } from "../../js/templates/animation";
+const Animation = getAnimationClass();
 
+export class HelloTriangle extends Animation {
 	// arrays for lerping
 	static triangleRGB = new Float32Array([
 		// X,  Y,    R    G    B    A
@@ -21,7 +22,8 @@ export class HelloTriangle {
 		1.0, -0.73, 0.0, 1.0, 0.0, 1.0
 	]);
 
-	static animate(meshComponent, frame=0) {
+	static animate(entity, ecs, frame=0) {
+		const meshComponent = ecs.getComponent(entity, "MeshComponent");
 		frame %= 1800;
 		if (frame < 600) {
 			HelloTriangle.#lerpVector(

@@ -3,7 +3,6 @@
 working on some cool WebGPU stuff
 
 # TODO
-- automate texture shader creation from scene.json (helloTriangle.\*.wgsl is hardcoded) (eliminate createShaderModule)
 - once again add objects at runtime
 - favicon
 - redo url spawn locations (url to scene and spawn)
@@ -17,7 +16,7 @@ working on some cool WebGPU stuff
     - Global variables
     - render debug over everything (no depth testing)
     - collider outlines
-- lazy loading / performance improvements
+- lazy loading / loading performance improvements
 - rendering optimizations
 - collision optimizations
 - mobile controls

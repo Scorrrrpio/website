@@ -53,14 +53,13 @@ export class ECS {
 
     // START
     enableControls(canvas) {
-        console.log(this.components);
         const controllable = this.entitiesWith("InputComponent");
         controllable.forEach((c) => this.getComponent(c, "InputComponent").enableControls(canvas));
     }
 
     startSubEngines() {
-        const subengines = this.entitiesWith("TextureProgramComponent");
-        subengines.forEach((s) => this.getComponent(s, "TextureProgramComponent").start());
+        const subengines = this.entitiesWith("Engine");
+        subengines.forEach((s) => this.getComponent(s, "Engine").start());
     }
 
 
@@ -68,7 +67,7 @@ export class ECS {
     updateAnimations(frame) {
         const animated = this.entitiesWith("AnimationComponent");
         for (const e of animated) {
-            this.getComponent(e, "AnimationComponent").animate(this, e, frame);
+            this.getComponent(e, "AnimationComponent").animate(e, this, frame);
         }
     }
 

@@ -1,5 +1,7 @@
 import { AssetLoadError } from "../errors";
-import { Animation } from "../templates/animation";
+import { getAnimationClass } from "../templates/animation";
+
+const Animation = getAnimationClass();
 
 export class AnimationComponent {
     static lookup = {};
@@ -8,25 +10,24 @@ export class AnimationComponent {
         this.name = name;
     }
 
-    animate(ecs, entity, frame) {
-        const parameters = AnimationComponent.lookup[this.name].requiredComponents.map((comp) => ecs.getComponent(entity, comp));
-        AnimationComponent.lookup[this.name].animate(...parameters, frame);  // TODO frame solution
+    animate(entity, ecs, frame) {
+        AnimationComponent.lookup[this.name].animate(entity, ecs, frame);  // TODO frame solution
     }
 
     // import custom animations
-    static async loadCustom(...paths) {
-        for (const path of paths) {
-            const module = await import(/* webpackIgnore: true */ path).catch(() => {
-                throw new AssetLoadError("Failed to load custom animation script from " + path);
-            });
-            for (const [name, fn] of Object.entries(module)) {
-                if (fn.prototype.constructor.animate) {  // TODO fn.prototype instanceof Animation
-                    AnimationComponent.lookup[name] = fn;
-                }
-                else {
-                    throw new Error("'" + name + "' in file " + path + " does not inherit from Animation class");
-                }
+    static async loadCustomAnimations() {
+        const context = require.context("../../plugins/animations", false, /\.js$/);
+        context.keys().forEach((key) => {
+            const module = context(key);
+            const className = key.replace("./", "").replace(".js", "");
+            const AnimationClass = module[className];
+
+            if (AnimationClass?.prototype instanceof Animation) {
+                AnimationComponent.lookup[className] = module[className];
             }
-        }
+            else {
+                console.warn("Skipped bundling custom Animation in " + key + ". Custom animations must inherit from the Animation class and subclass name must match file name.");
+            }
+        });
     }
 }

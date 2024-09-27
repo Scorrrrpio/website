@@ -19,8 +19,8 @@
         "debug": { "vert": "shaders/debug.vert.wgsl", "frag": "shaders/debug.frag.wgsl" }
     },
     "animations": [
-        "/plugins/animations/spin.js",
-        "/plugins/animations/move.js"
+        "/plugins/animations/Spin.js",
+        "/plugins/animations/Move.js"
     ],
     "entities": [
         {

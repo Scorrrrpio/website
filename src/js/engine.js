@@ -2,6 +2,7 @@ import { wgpuSetup } from "./wgpuSetup";
 import { AssetManager } from "./assetManager";
 import { RenderEngine } from "./renderEngine";
 import { SceneManager } from "./sceneManager";
+import { AnimationComponent } from "./components/animationComponent";
 
 export class Engine {
     constructor(target, scene, assetManager=null) {
@@ -17,6 +18,8 @@ export class Engine {
     }
 
     async init() {
+        const animationPromise = AnimationComponent.loadCustomAnimations();
+
         await this.#wgpuSetup();
         await this.createEngineComponents();
 
@@ -28,6 +31,8 @@ export class Engine {
             }
         });
 
+        await animationPromise;
+        
         this.start();  // START GAME
     }
 

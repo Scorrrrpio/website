@@ -46,13 +46,6 @@ export class SceneManager {
         this.ecs.addComponent(this.hud, hudCam);
 
         const assets = await assetPromise;
-
-        // TODO in separate manifest file instead of scene?
-        let animationPromise;
-        if (assets.animations) {
-            animationPromise = AnimationComponent.loadCustom(...assets.animations);  // load custom animations
-        }
-        //const textureProgramPromise = 
         for (const instance of assets.entities) {
             const entity = this.ecs.createEntity();
 
@@ -135,8 +128,6 @@ export class SceneManager {
                 }
             }
         }
-        
-        await animationPromise;
     }
 
 

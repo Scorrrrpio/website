@@ -6,7 +6,7 @@
         "helloTriangle": { "vert": "shaders/helloTriangle.vert.wgsl", "frag": "shaders/helloTriangle.frag.wgsl" }
     },
     "animations": [
-        "/plugins/animations/helloTriangle.js"
+        "/plugins/animations/HelloTriangle.js"
     ],
     "entities": [
         {
