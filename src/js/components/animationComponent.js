@@ -1,4 +1,4 @@
-import { AssetLoadError } from "../errors";
+import { BundleError } from "../errors";
 import { getAnimationClass } from "../templates/animation";
 
 const Animation = getAnimationClass();
@@ -26,7 +26,7 @@ export class AnimationComponent {
                 AnimationComponent.lookup[className] = module[className];
             }
             else {
-                console.warn("Skipped bundling custom Animation in " + key + ". Custom animations must inherit from the Animation class and subclass name must match file name.");
+                throw new BundleError("Skipped bundling custom Animation in " + key + ". Custom animations must inherit from the Animation class and subclass name must match file name.");
             }
         });
     }

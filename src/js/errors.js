@@ -11,3 +11,10 @@ export class AssetLoadError extends Error {
         this.name = "AssetLoadError";
     }
 }
+
+export class BundleError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "BundleError";
+    }
+}
