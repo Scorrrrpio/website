@@ -100,9 +100,10 @@ export class TextComponent {
             let wordLength = 0;
             for (const ch of word) {
                 if (ch === "\n") break;
+                else if (!this.metadata[ch]) continue;
                 wordLength += this.metadata[ch].advance * xScale;
             }
-            if (xPos > -this.outputTexture.width + this.margin && xPos + wordLength > this.outputTexture.width) {
+            if (xPos > -this.outputTexture.width + this.margin && xPos + wordLength > this.outputTexture.width - this.margin) {
                 xPos = -this.outputTexture.width + this.margin;
                 yPos -= this.atlasPixelSize * yScale;
             }
@@ -113,6 +114,7 @@ export class TextComponent {
                     xPos = -this.outputTexture.width + this.margin;
                     yPos -= this.atlasPixelSize * yScale;
                 }
+                else if (!this.metadata[ch]) continue;
                 else {
                     let x0 = (xPos + this.metadata[ch].x * xScale) / this.outputTexture.width;
                     let y1 = (yPos + this.metadata[ch].y * yScale) / this.outputTexture.height;

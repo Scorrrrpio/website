@@ -1,0 +1,27 @@
+// WHAT I HAVE LEARNED BUILDING A GAME ENGINE
+
+A month and a half ago I started building a game engine using WebGPU and JavaScript. The initial vision for the project was a 3D FPS personal website. I grew up playing browser games at the back of class and wanted to capture some of that magic in my portfolio.
+
+Here is what I have learned so far:
+
+> BUILD SOMETHING FUN
+
+I started this project with the aim of taking action and just building something instead of sitting on my hands and waiting for the perfect moment. I didn't choose an idea that would be profitable or impressive or difficult; I chose the one that I wanted to build. This made sitting down to code everyday effortless.
+
+> DESIGN THE ARCHITECTURE BEFOREHAND
+
+While the "just build" mindset was necessary in the beginning, it led to weeks of refactoring later. The early code had very high coupling between components; adding new features often required rewriting old ones. If I had taken a couple hours up front to understand the components of a game engine and how they interact I could have saved a lot of work.
+
+> ALL HAIL THE ECS
+
+The Holy Grail of the refactor was the Entity Component System. It dramatically streamlined the process of adding new features to the engine by deconstructing my complex object structure into a flexible collection of components. The most exciting realization was that an entire sub-engine could be attached as a component to render a subprogram to surfaces of a mesh.
+
+> THE BEST PROJECTS ARE NEVER FINISHED
+
+TODO comments are like the hydra: for each completed, two rise to take its place. The sky's the limit with engine development. It was important for me to keep in mind the original vision for the project when prioritizing features to build.
+
+> THROUGH AWFUL CODE, GREAT CODE
+
+"If you want to increase your success rate, double your failure rate." The only way to approach perfection is to try again and again and again. I have wasted years waiting for the perfect moment. You cannot control when it comes, but you will be better prepared to seize it with dozens of failures under your belt.
+
+// 29 September 2024

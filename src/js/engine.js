@@ -101,7 +101,6 @@ export class Engine {
             // start sub-engines
             this.sceneManager.startSubEngines();
 
-            console.log("Starting engine!");
             this.gameLoop();  // black until start
         });
     }
@@ -144,7 +143,6 @@ export class TextureProgramComponent extends Engine {
 
     // TODO synchronize frames with root engine
     start() {
-        console.log("Starting subengine!");
         this.gameLoop();
     }
 

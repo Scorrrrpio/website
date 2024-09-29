@@ -270,7 +270,7 @@
                 "program": "text",
                 "atlas": "media/fonts/hackAtlas64.png",
                 "atlasMetadata": "media/fonts/hackMetadata64.json",
-                "content": "media/text/test.txt",
+                "content": "media/text/engine-learnings.txt",
                 "fontSize": 16,
                 "margin": 32,
                 "faces": ["front"]
