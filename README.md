@@ -3,6 +3,7 @@
 working on some cool WebGPU stuff
 
 # TODO
+- map editor
 - once again add objects at runtime
 - favicon
 - redo url spawn locations (url to scene and spawn)
@@ -16,11 +17,10 @@ working on some cool WebGPU stuff
     - Global variables
     - render debug over everything (no depth testing)
     - collider outlines
-- lazy loading / loading performance improvements
+- lazy loading / loading performance improvements / skeleton
 - rendering optimizations
 - collision optimizations
 - mobile controls
-- skeleton
 - GLTF or GLB
 - custom components (extend component class, if not instanceof throw error)
 - private instance variables
