@@ -86,7 +86,8 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
     return closest;
 }
 
-export function movePlayer(boxes, inputs, position, rotation, physics) {    
+// TODO ScriptComponent on player
+export function movePlayer(boxes, inputs, position, rotation, playerPhysics) {    
     const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
     const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
     const strafeX = Math.cos(rotation[1]);
@@ -112,24 +113,24 @@ export function movePlayer(boxes, inputs, position, rotation, physics) {
         movement[2] -= strafeZ;
     }
 
-    movement = normalizeXZ(movement, physics.maxSpeed);
+    movement = normalizeXZ(movement, playerPhysics.maxSpeed);
 
     // jumping
     if (inputs.space) {
-        if (physics.grounded) {
-            physics.jumpSpeed = physics.jumpImpulse;
-            physics.grounded = false;
+        if (playerPhysics.grounded) {
+            playerPhysics.jumpSpeed = playerPhysics.jumpImpulse;
+            playerPhysics.grounded = false;
         }
     }
-    movement[1] += physics.jumpSpeed;
-    if (!physics.grounded) { physics.jumpSpeed -= physics.gravity; }
-    physics.grounded = false;
+    movement[1] += playerPhysics.jumpSpeed;
+    if (!playerPhysics.grounded) { playerPhysics.jumpSpeed -= playerPhysics.gravity; }
+    playerPhysics.grounded = false;
 
     // absolute floor
     position[1] = Math.max(0, position[1]);  // floor
     if (position[1] === 0) {
-        physics.jumpSpeed = 0;
-        physics.grounded = true;
+        playerPhysics.jumpSpeed = 0;
+        playerPhysics.grounded = true;
         movement[1] = Math.max(0, movement[1]);
     }
     
@@ -148,7 +149,7 @@ export function movePlayer(boxes, inputs, position, rotation, physics) {
         if (!(box instanceof AABBComponent)) { console.warn("Cannot compute collisions for non-AABB"); continue; }
         if (nextAABB.checkCollision(box)) {
             // modify movement
-            movement = slide(nextAABB, box, movement, position, physics);
+            movement = slide(nextAABB, box, movement, position, playerPhysics);
         }
     }
 
@@ -158,18 +159,18 @@ export function movePlayer(boxes, inputs, position, rotation, physics) {
     position[2] += movement[2];
 }
 
-function slide(box1, box2, movement, position, physics) {
+function slide(box1, box2, movement, position, playerPhysics) {
     // faces names are for player but based on world axes
     // y
     if (box1.max[1] >= box2.max[1] && position[1] > box2.max[1]) {  // bottom
         movement[1] = Math.max(0, movement[1]);
-        physics.grounded = true;
-        physics.jumpSpeed = 0;
+        playerPhysics.grounded = true;
+        playerPhysics.jumpSpeed = 0;
     }
     // TODO hardcoded weirdness
     else if (box1.min[1] < box2.min[1] && position[1] + 2 < box2.min[1]) {  // top
         movement[1] = Math.min(0, movement[1]);
-        physics.jumpSpeed = 0;
+        playerPhysics.jumpSpeed = 0;
     }
     // x
     if (box1.max[0] >= box2.max[0]) {  // left

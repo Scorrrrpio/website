@@ -7,6 +7,7 @@ class Animation {
 }
 
 // Singleton
+// TODO I really hate this
 export function getAnimationClass() {
     if (!AnimationInstance) {
         AnimationInstance = Animation;

@@ -11,7 +11,7 @@ export class AnimationComponent {
     }
 
     animate(entity, ecs, frame) {
-        AnimationComponent.lookup[this.name].animate(entity, ecs, frame);  // TODO frame solution
+        AnimationComponent.lookup[this.name].animate(entity, ecs, frame);
     }
 
     // import custom animations

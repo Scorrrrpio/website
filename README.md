@@ -22,6 +22,7 @@ working on some cool WebGPU stuff
 - collision optimizations
 - mobile controls
 - GLTF or GLB
+- rename plugins folder
 - custom components (extend component class, if not instanceof throw error)
 - private instance variables
 

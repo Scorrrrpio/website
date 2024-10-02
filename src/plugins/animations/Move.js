@@ -1,6 +1,7 @@
 import { getAnimationClass } from "../../js/templates/animation";
 const Animation = getAnimationClass();
 
+// TODO ScriptComponent not AnimationComponent
 export class Move extends Animation {
     static animate(entity, ecs) {
         const transform = ecs.getComponent(entity, "TransformComponent");

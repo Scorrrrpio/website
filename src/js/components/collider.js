@@ -1,24 +1,23 @@
-import { vec3 } from "gl-matrix";  // TODO why?
+import { vec3 } from "gl-matrix";
 
 // COLLIDERS
-// TODO why does this exist
 class ColliderComponent {
     constructor(verts, href=null, ghost=false, velocity=[0, 0, 0]) {
         this.verts = verts;
         this.href = href;
         this.ghost = ghost;
-        this.velocity = velocity;  // TODO why?
+        this.velocity = velocity;  // TODO assimilate into physics.js
     }
 
-    translate(vector) {
-        for (const i in verts) {
-            verts[i][0] += vector[0];
-            verts[i][1] += vector[1];
-            verts[i][2] += vector[2];
-        }
+    modelTransform() {
+        throw new Error("modelTransform must be implemented by subclasses of ColliderComponent");
     }
 
-    static checkCollision(other) {
+    static createMesh() {
+        throw new Error("createMesh must be implemented by subclasses of ColliderComponent");
+    }
+
+    static checkCollision() {
         throw new Error("checkCollision must be implemented by subclasses of ColliderComponent");
     }
 }
@@ -30,21 +29,18 @@ export class AABBComponent extends ColliderComponent {
         this.max = max;
     }
 
-    // TODO no rotation (use Transform but need collider debugging first)
     modelTransform(model) {
+        // ensure no rotation
+        if (model[1] !== 0 || model[2] !== 0 || model[4] !== 0 || model[6] !== 0 || model[8] !== 0 || model[9] !== 0) {
+            this.ghost = true;
+            console.warn("Skipped attempt to transform AABB with rotation. Consider using an OBB instead");
+            return;
+        }
+
         this.min = [0, 0, 0];
         this.max = [0, 0, 0];
         vec3.transformMat4(this.min, this.verts[0], model);
         vec3.transformMat4(this.max, this.verts[1], model);
-    }
-
-    translate(vector) {
-        this.min[0] += vector[0];
-        this.min[1] += vector[1];
-        this.min[2] += vector[2];
-        this.max[0] += vector[0];
-        this.max[1] += vector[1];
-        this.max[2] += vector[2];
     }
     
     toVertices() {
