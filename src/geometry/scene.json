@@ -290,7 +290,7 @@
         {
             "mesh": "cubeWrap",
             "shader": "texture",
-            "collision": "aabb",
+            "collider": "aabb",
             "p": [0, 10.25, 0],
             "s": [0.5, 0.5, 0.5],
             "texture": {
@@ -364,21 +364,21 @@
         {
             "mesh": "cube",
             "shader": "invisible",
-            "collision": "aabb",
+            "collider": "aabb",
             "p": [0, 8, 128],
             "s": [30, 16, 2]
         },
         {
             "mesh": "cube",
             "shader": "invisible",
-            "collision": "aabb",
+            "collider": "aabb",
             "p": [-11.5, 8, 176],
             "s": [9, 16, 128]
         },
         {
             "mesh": "cube",
             "shader": "invisible",
-            "collision": "aabb",
+            "collider": "aabb",
             "p": [11.5, 8, 176],
             "s": [9, 16, 128]
         },

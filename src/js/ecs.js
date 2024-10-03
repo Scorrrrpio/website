@@ -71,32 +71,31 @@ export class ECS {
         }
     }
 
+    // TODO script on player
     movePlayer(player, device) {
         // TODO this type of thing as instance variable
         const colliders = this.entitiesWith("ColliderComponent");
 
         const camera = this.getComponent(player, "CameraComponent");
         const input = this.getComponent(player, "InputComponent");
-        const rotation = input.look;
-        const position = this.getComponent(player, "TransformComponent").position;
+        const transform = this.getComponent(player, "TransformComponent");
         const physics = this.getComponent(player, "PhysicsComponent");
 
+        const [mouseX, mouseY] = input.readMouseDelta();
+        transform.rotate([mouseX, mouseY, 0]);
+
         // movement
-        movePlayer(colliders.map(e => this.getComponent(e, "ColliderComponent")), input.inputs, position, rotation, physics);
-        camera.updateViewMatrix(position, rotation);  // update camera view matrix
+        movePlayer(colliders.map(e => this.getComponent(e, "ColliderComponent")), input, transform, physics);
+        camera.updateViewMatrix(transform);  // update camera view matrix
 
         // raycasting
-        const hit = raycast(
-            this, colliders,
-            [position[0] + camera.offset[0], position[1] + camera.offset[1], position[2] + camera.offset[2]],
-            rotation
-        );
+        const hit = raycast(this, colliders, camera.getEye(transform.position), transform.rotation);
         if (hit) {
-            if (input.inputs.leftMouse) {
+            if (input.mouse[0]) {
                 // if link
                 if (this.getComponent(hit, "ColliderComponent").href) {
                     console.log("bang");
-                    input.setAllFalse();  // stop movement
+                    input.clearAll();
                     window.open(this.getComponent(hit, "ColliderComponent").href, "__blank");  // open link
                 }
             }

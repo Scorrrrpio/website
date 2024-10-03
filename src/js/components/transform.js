@@ -8,6 +8,14 @@ export class TransformComponent {
         this.createModelMatrix();
     }
 
+    rotate(rotation=[0, 0, 0]) {
+        this.rotation = [
+            this.rotation[0] + rotation[0],
+            this.rotation[1] + rotation[1],
+            this.rotation[2] + rotation[2]
+        ]
+    }
+
     createModelMatrix() {
         const model = mat4.create();
         mat4.translate(model, model, this.position);

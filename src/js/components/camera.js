@@ -11,12 +11,24 @@ export class CameraComponent {
     far = 1000.0;
     projection = mat4.create();
 
-    constructor(aspect, offset=[0, 0, 0], ortho=false) {
+    constructor(aspect, offset=[0, 0, 0], ortho=false, maxLook, minLook) {
         this.offset = offset;
         // projection matrix setup
         this.aspect = aspect;
         this.orthographic = ortho;
         this.updateProjectionMatrix();
+
+        // clamp look angle
+        this.maxLook = maxLook;
+        this.minLook = minLook || maxLook ? -maxLook : maxLook;
+    }
+
+    getEye(position=[0, 0, 0]) {
+        return [
+            position[0] + this.offset[0],
+            position[1] + this.offset[1],
+            position[2] + this.offset[2],
+        ];
     }
 
     updateProjectionMatrix(aspect = this.aspect, fov = this.fov, near = this.near, far = this.far) {
@@ -32,10 +44,14 @@ export class CameraComponent {
         }
     }
 
-    updateViewMatrix(position=[0, 0, 0], rotation=[0, 0, 0]) {
+    updateViewMatrix(transform) {
+        const rotation = transform.rotation;
+        rotation[0] = Math.max(this.minLook, Math.min(this.maxLook, rotation[0]));
         mat4.rotateX(this.view, mat4.create(), rotation[0]);
         mat4.rotateY(this.view, this.view, rotation[1]);
         mat4.rotateZ(this.view, this.view, rotation[2]);
+
+        const position = transform.position;
         mat4.translate(this.view, this.view, [-position[0]-this.offset[0], -position[1]-this.offset[1], -position[2]-this.offset[2]]);
     }
 }

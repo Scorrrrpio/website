@@ -1,89 +1,33 @@
-// TODO more versatile
-// register keys to listen for
 export class InputComponent {
     constructor() {
-        this.inputs = {
-            w: false,
-            a: false,
-            s: false,
-            d: false,
-            space: false,
-            leftMouse: false,
-            rightMouse: false,
-        }
+        this.keyboard = {};  // holds currently pressed keys
+        this.mouse = {};  // holds currently pressed mouse buttons
 
-        // TODO allow changing
         this.xSense = 0.002;
         this.ySense = 0.002;
-        this.maxLook = Math.PI / 2;
-        this.minLook = -this.maxLook;
         this.scrollSense = 1;
 
-        this.look = [0, 0, 0];  // TODO out of component scope?
+        this.mouseDelta = [0, 0];
         this.scroll = 0;
     }
 
     enableControls(canvas) {
-        const controlsText = document.getElementById("controls");
         // keyboard input
         document.addEventListener("keydown", (event) => {
-            if (document.pointerLockElement === canvas) {
-                switch(event.code) {
-                    case "KeyW":
-                        this.inputs.w = true;
-                        break;
-                    case "KeyA":
-                        this.inputs.a = true;
-                        break;
-                    case "KeyS":
-                        this.inputs.s = true;
-                        break;
-                    case "KeyD":
-                        this.inputs.d = true;
-                        break;
-                    case "Space":
-                        this.inputs.space = true;
-                        break;
-                }
-            }
+            if (document.pointerLockElement === canvas) this.keyboard[event.code] = true;
         });
 
         document.addEventListener("keyup", (event) => {
-            if (document.pointerLockElement === canvas) {
-                switch(event.code) {
-                    case "KeyW":
-                        this.inputs.w = false;
-                        break;
-                    case "KeyA":
-                        this.inputs.a = false;
-                        break;
-                    case "KeyS":
-                        this.inputs.s = false;
-                        break;
-                    case "KeyD":
-                        this.inputs.d = false;
-                        break;
-                    case "Space":
-                        this.inputs.space = false;
-                        break;
-                }
-            }
+            if (document.pointerLockElement === canvas) delete this.keyboard[event.code];
         });
 
-        // show controls
+        // TODO as script (unrelated to input handling)
+        // show/hide controls text on pointer lock change
+        const controlsText = document.getElementById("controls");
         document.addEventListener("pointerlockchange", () => {
-            if (document.pointerLockElement === canvas) {
-                // show controls text
-                controlsText.style.display = "none";
-            }
+            if (document.pointerLockElement === canvas) { controlsText.style.display = "none"; }
             else {
-                // stop movement
-                this.inputs.w = false;
-                this.inputs.a = false;
-                this.inputs.s = false;
-                this.inputs.d = false;
-                this.inputs.space = false;
-                // show controls text
+                this.clearAll();
                 controlsText.style.display = "block";
             }
         })
@@ -91,9 +35,8 @@ export class InputComponent {
         // mouse movement
         document.addEventListener("mousemove", (event) => {
             if (document.pointerLockElement === canvas) {
-                this.look[1] += event.movementX * this.xSense;
-                this.look[0] += event.movementY * this.ySense;
-                this.look[0] = Math.max(this.minLook, Math.min(this.maxLook, this.look[0]));
+                this.mouseDelta[1] += event.movementX * this.xSense;
+                this.mouseDelta[0] += event.movementY * this.ySense;
 
                 // TODO browser issue
                 // random spikes for movementX/movementY when usng mouse
@@ -112,19 +55,14 @@ export class InputComponent {
             }
         });
 
+        // scrolling
         document.addEventListener("wheel", (event) => {
-            if (document.pointerLockElement === canvas) {
-                this.scroll += event.deltaY * this.scrollSense;
-            }
+            if (document.pointerLockElement === canvas) this.scroll += event.deltaY * this.scrollSense;
         });
 
         // request pointer lock within canvas
         canvas.addEventListener("click", () => {
             if (document.pointerLockElement !== canvas) {
-                // stop movement
-                this.setAllFalse();
-
-                // request pointer lock (and handle browser differences)
                 // chromium returns Promise, firefox returns undefined
                 const lockPromise = canvas.requestPointerLock({ unadjustedMovement: true });
                 if (lockPromise) {
@@ -135,48 +73,23 @@ export class InputComponent {
                         else throw error;
                     })
                 }
-
-                if (document.pointerLockElement === canvas) {
-                    controlsText.style.display = "none";
-                }
+                // hide control text
+                if (document.pointerLockElement === canvas) controlsText.style.display = "none";  // TODO move to script
             }
         });
 
         canvas.addEventListener("mousedown", (event) => {
-            if (document.pointerLockElement === canvas) {
-                // in game
-                switch (event.button) {
-                    case 0:
-                        // left
-                        this.inputs.leftMouse = true;
-                        break;
-                    case 2:
-                        this.inputs.rightMouse = true;
-                        // right
-                        break;
-                }
-            }
+            if (document.pointerLockElement === canvas) this.mouse[event.button] = true;
         });
 
         canvas.addEventListener("mouseup", (event) => {
-            if (document.pointerLockElement === canvas) {
-                // in game
-                switch (event.button) {
-                    case 0:
-                        // left
-                        this.inputs.leftMouse = false;
-                        break;
-                    case 2:
-                        this.inputs.rightMouse = false;
-                        // right
-                        break;
-                }
-            }
+            if (document.pointerLockElement === canvas) delete this.mouse[event.button];
         });
     }
 
-    setAllFalse() {
-        Object.keys(this.inputs).forEach((input) => this.inputs[input] = false);
+    clearAll() {
+        Object.keys(this.keyboard).forEach((key) => delete this.keyboard[key]);
+        Object.keys(this.mouse).forEach((button) => delete this.mouse[button]);
     }
 
     setSense(xSense, ySense) {
@@ -184,9 +97,16 @@ export class InputComponent {
         this.ySense = ySense;
     }
 
+    // READ AND RESET
     readScroll() {
         const frameScroll = this.scroll;
         this.scroll = 0;
         return frameScroll;
+    }
+
+    readMouseDelta() {
+        const frameMouse = this.mouseDelta;
+        this.mouseDelta = [0, 0];
+        return frameMouse;
     }
 }

@@ -25,6 +25,7 @@ working on some cool WebGPU stuff
 - rename plugins folder
 - custom components (extend component class, if not instanceof throw error)
 - private instance variables
+- universal user file importer (Animations, Components, etc. all in one place)
 
 # NOTES
 - blender cube .ply export: Forward Y, Up Z

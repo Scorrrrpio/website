@@ -1,8 +1,8 @@
 import { ECS } from "./ecs";
 import { createBindGroupLayout } from "./wgpuHelpers";
 
-import { AABBComponent } from "./components/collider";
-import { AnimationComponent } from "./components/animationComponent";
+import { AABBComponent, SphereComponent } from "./components/collider";
+import { AnimationComponent } from "./components/animation";
 import { CameraComponent } from "./components/camera";
 import { HUDComponent } from "./components/hud";
 import { InputComponent } from "./components/input";
@@ -13,6 +13,7 @@ import { TextureProgramComponent } from "./engine";
 import { TransformComponent } from "./components/transform";
 
 // TODO dynamic component imports?
+// like in animationComponent
 /*async function loadComponent {}
  *const {ComponentName} = await import("./path/to/componentFile");
  *return ComponentName;
@@ -41,18 +42,24 @@ export class SceneManager {
         // TODO HUDComponent needs MSAA for some reason?
         this.hud = this.ecs.createEntity();
         const hud = HUDComponent.generate(this.assetManager, device, format, projectionBuffer, multisamples);
+        const hudTransform = new TransformComponent();
         const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
-        this.ecs.addComponent(this.hud, await hud)
+        this.ecs.addComponent(this.hud, hudTransform);
         this.ecs.addComponent(this.hud, hudCam);
+        this.ecs.addComponent(this.hud, await hud)
 
         const assets = await assetPromise;
         for (const instance of assets.entities) {
             const entity = this.ecs.createEntity();
 
+            // TRANSFORM
+            const transform = new TransformComponent(instance.p, instance.r, instance.s);
+            this.ecs.addComponent(entity, transform);
+
             // CAMERA
             if (instance.camera) {
-                const camera = new CameraComponent(canvas.width / canvas.height, instance.camera.offset, instance.camera.ortho);
-                camera.updateViewMatrix(instance.p, instance.r);
+                const camera = new CameraComponent(canvas.width / canvas.height, instance.camera.offset, instance.camera.ortho, Math.PI / 2);
+                camera.updateViewMatrix(transform);
                 this.ecs.addComponent(entity, camera);
                 if (!this.activeCamera) this.activeCamera = entity;
             }
@@ -70,9 +77,11 @@ export class SceneManager {
                 this.ecs.addComponent(entity, physics);
             }
 
-            // TRANSFORM
-            const transform = new TransformComponent(instance.p, instance.r, instance.s);
-            this.ecs.addComponent(entity, transform);
+            // PHYSICS
+            if (instance.v) {
+                const physics = new PhysicsComponent(instance.v);
+                this.ecs.addComponent(entity, physics);
+            }
 
             // MESH
             if (instance.mesh) {
@@ -112,9 +121,9 @@ export class SceneManager {
                 // TODO dependency on mesh
                 const floats = (await meshPromise).vertex.values.float32;
                 const colliderGenerators = {
-                    aabb: AABBComponent.createMesh,  // TODO other types (sphere, mesh)
+                    aabb: AABBComponent,  // TODO other types (sphere, mesh)
                 }
-                const collider = colliderGenerators[instance.collider]?.(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
+                const collider = colliderGenerators[instance.collider]?.createFromMesh(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
                 if (collider) {
                     collider.modelTransform(transform.model);
                     this.ecs.addComponent(entity, collider);

@@ -13,11 +13,11 @@ class ColliderComponent {
         throw new Error("modelTransform must be implemented by subclasses of ColliderComponent");
     }
 
-    static createMesh() {
+    static createFromMesh() {
         throw new Error("createMesh must be implemented by subclasses of ColliderComponent");
     }
 
-    static checkCollision() {
+    checkCollision() {
         throw new Error("checkCollision must be implemented by subclasses of ColliderComponent");
     }
 }
@@ -76,7 +76,7 @@ export class AABBComponent extends ColliderComponent {
         return vertices;
     }
 
-    static createMesh(data, properties, href, ghost, velocity) {
+    static createFromMesh(data, properties, href, ghost, velocity) {
         const xIndex = properties.indexOf("x");
         const yIndex = properties.indexOf("y");
         const zIndex = properties.indexOf("z");

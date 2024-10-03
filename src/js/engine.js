@@ -2,7 +2,7 @@ import { wgpuSetup } from "./wgpuSetup";
 import { AssetManager } from "./assetManager";
 import { RenderEngine } from "./renderEngine";
 import { SceneManager } from "./sceneManager";
-import { AnimationComponent } from "./components/animationComponent";
+import { AnimationComponent } from "./components/animation";  // TODO AnimationManager? (probably going to refactor into ScriptManager)
 
 export class Engine {
     constructor(target, scene, assetManager=null) {

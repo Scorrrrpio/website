@@ -19,7 +19,7 @@ function normalize(v) {
     return v;
 }
 
-export function raycast(ECS, entities, rayOrigin, rotation) {
+export function raycast(ecs, colliders, rayOrigin, rotation) {
     const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
     const forwardY = Math.sin(rotation[0]);
     const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
@@ -30,9 +30,9 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
     let closest;
     let closestDist = Infinity;
     // TODO review
-    for (const e of entities) {
-        const box = ECS.getComponent(e, "ColliderComponent");
-        if (!(box instanceof AABBComponent)) { console.warn("Cannot compute raycast collisions for non-AABB"); continue; }
+    for (const e of colliders) {
+        const box = ecs.getComponent(e, "ColliderComponent");
+        if (!(box instanceof AABBComponent)) { continue; }
         let intersect = true;
 
         let tmin = (box.min[0] - rayOrigin[0]) / rayDirection[0];
@@ -87,7 +87,10 @@ export function raycast(ECS, entities, rayOrigin, rotation) {
 }
 
 // TODO ScriptComponent on player
-export function movePlayer(boxes, inputs, position, rotation, playerPhysics) {    
+export function movePlayer(boxes, playerInputs, playerTransform, playerPhysics) {    
+    const position = playerTransform.position;
+    const rotation = playerTransform.rotation;
+
     const forwardX = Math.cos(rotation[0]) * Math.sin(rotation[1]);
     const forwardZ = Math.cos(rotation[0]) * Math.cos(rotation[1]);
     const strafeX = Math.cos(rotation[1]);
@@ -96,19 +99,19 @@ export function movePlayer(boxes, inputs, position, rotation, playerPhysics) {
     let movement = [0, 0, 0];
 
     // horizontal movement
-    if (inputs.w) {
+    if (playerInputs.keyboard.KeyW) {
         movement[0] += forwardX;
         movement[2] -= forwardZ;
     }
-    if (inputs.a) {
+    if (playerInputs.keyboard.KeyA) {
         movement[0] -= strafeX;
         movement[2] += strafeZ;
     }
-    if (inputs.s) {
+    if (playerInputs.keyboard.KeyS) {
         movement[0] -= forwardX;
         movement[2] += forwardZ;
     }
-    if (inputs.d) {
+    if (playerInputs.keyboard.KeyD) {
         movement[0] += strafeX;
         movement[2] -= strafeZ;
     }
@@ -116,7 +119,7 @@ export function movePlayer(boxes, inputs, position, rotation, playerPhysics) {
     movement = normalizeXZ(movement, playerPhysics.maxSpeed);
 
     // jumping
-    if (inputs.space) {
+    if (playerInputs.keyboard.Space) {
         if (playerPhysics.grounded) {
             playerPhysics.jumpSpeed = playerPhysics.jumpImpulse;
             playerPhysics.grounded = false;
@@ -146,7 +149,6 @@ export function movePlayer(boxes, inputs, position, rotation, playerPhysics) {
     const nextAABB = AABBComponent.createPlayerAABB(nextPos);
 
     for (const box of boxes) {
-        if (!(box instanceof AABBComponent)) { console.warn("Cannot compute collisions for non-AABB"); continue; }
         if (nextAABB.checkCollision(box)) {
             // modify movement
             movement = slide(nextAABB, box, movement, position, playerPhysics);
@@ -154,9 +156,9 @@ export function movePlayer(boxes, inputs, position, rotation, playerPhysics) {
     }
 
     // move
-    position[0] += movement[0];
-    position[1] += movement[1];
-    position[2] += movement[2];
+    playerTransform.position[0] += movement[0];
+    playerTransform.position[1] += movement[1];
+    playerTransform.position[2] += movement[2];
 }
 
 function slide(box1, box2, movement, position, playerPhysics) {

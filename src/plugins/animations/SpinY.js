@@ -7,7 +7,7 @@ const Animation = getAnimationClass();
 export class SpinY extends Animation {
     static animate(entity, ecs) {
         const transform = ecs.getComponent(entity, "TransformComponent");
-        transform.rotation[1] += 0.02;
+        transform.rotate([0, 0.02, 0]);
         transform.createModelMatrix();
     }
 }
