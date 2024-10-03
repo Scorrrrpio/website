@@ -4,7 +4,7 @@ export class PhysicsComponent {
         this.jumpImpulse = 0.25;
         this.gravity = 0.01;
         // variable
-        this.jumpSpeed = 0;
+        this.jumpSpeed = 0;  // TODO velocity vector
         this.grounded = false;
     }
 }

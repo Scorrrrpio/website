@@ -52,9 +52,14 @@ export class ECS {
 
 
     // START
-    enableControls(canvas) {
+    enableControls() {
         const controllable = this.entitiesWith("InputComponent");
-        controllable.forEach((c) => this.getComponent(c, "InputComponent").enableControls(canvas));
+        controllable.forEach((c) => this.getComponent(c, "InputComponent").enableControls());
+    }
+
+    disableControls() {
+        const controllable = this.entitiesWith("InputComponent");
+        controllable.forEach((c) => this.getComponent(c, "InputComponent").disableControls());
     }
 
     startSubEngines() {
@@ -81,6 +86,7 @@ export class ECS {
         const transform = this.getComponent(player, "TransformComponent");
         const physics = this.getComponent(player, "PhysicsComponent");
 
+        const scroll = input.readScroll();
         const [mouseX, mouseY] = input.readMouseDelta();
         transform.rotate([mouseX, mouseY, 0]);
 
@@ -100,7 +106,7 @@ export class ECS {
                 }
             }
             if (this.hasComponent(hit, "TextComponent")) {
-                this.getComponent(hit, "TextComponent").scroll(input.readScroll(), device);
+                this.getComponent(hit, "TextComponent").scroll(scroll, device);
             }
         }
     }

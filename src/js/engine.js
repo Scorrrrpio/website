@@ -76,33 +76,55 @@ export class Engine {
         const controlsText = document.getElementById("controls");
         controlsText.style.display = "block";
 
+        // TODO pointerlock checking and handling as script
+        // show/hide controls text on pointer lock change
+        document.addEventListener("pointerlockchange", () => {
+            if (document.pointerLockElement === this.target) {
+                this.sceneManager.enableControls();
+                controlsText.style.display = "none";
+            }
+            else {
+                this.sceneManager.disableControls();
+                controlsText.style.display = "block";
+            }
+        });
+
         // start game with play button
         playButton.addEventListener("click", () => {
             // remove play button
             playButton.remove();
             controlsText.style.display = "none";
 
-            // request pointer lock (and handle browser differences)
-            // chromium returns Promise, firefox returns undefined
-            const lockPromise = this.target.requestPointerLock({ unadjustedMovement: true });
-            if (lockPromise) {
-                lockPromise.catch((error) => {
-                    if (error.name === "NotSupportedError") {
-                        console.log("Cannot disable mouse acceleration in this browser");
-                        this.target.requestPointerLock();
-                    }
-                    else throw error;
-                })
-            }
-            
-            // enable player controls
-            this.sceneManager.enableControls(this.target);  // TODO don't pass this.target
+            this.#requestPointerLock();
+
+            // request pointer lock within canvas
+            this.target.addEventListener("click", () => {
+                if (document.pointerLockElement !== this.target) {
+                    this.#requestPointerLock();
+                }
+            });
 
             // start sub-engines
             this.sceneManager.startSubEngines();
 
             this.gameLoop();  // black until start
         });
+    }
+
+    #requestPointerLock() {
+        // request pointer lock (and handle browser differences)
+        // chromium returns Promise, firefox returns undefined
+        const lockPromise = this.target.requestPointerLock({ unadjustedMovement: true });
+        if (lockPromise) {
+            lockPromise.catch((error) => {
+                if (error.name === "NotSupportedError") {
+                    if (!this.accelErrorThrown) console.warn("Cannot disable mouse acceleration in this browser");
+                    this.accelErrorThrown = true;
+                    this.target.requestPointerLock();
+                }
+                else throw error;
+            })
+        }
     }
 
     gameLoop() {
@@ -112,7 +134,7 @@ export class Engine {
     }
 
     update() {
-        this.sceneManager.update(this.frame++, this.device, this.format, this.TOPOLOGY, this.MULTISAMPLE, this.DEBUG);
+        this.sceneManager.update(this.frame++, this.device, this.target);
     }
 
     render() {

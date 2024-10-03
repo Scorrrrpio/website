@@ -217,9 +217,8 @@ export class SceneManager {
 
 
     // START
-    enableControls(canvas) {
-        this.ecs.enableControls(canvas);
-    }
+    enableControls() { this.ecs.enableControls(); }
+    disableControls() { this.ecs.disableControls(); }
 
     startSubEngines() {
         this.ecs.startSubEngines();
