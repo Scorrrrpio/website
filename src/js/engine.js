@@ -140,8 +140,9 @@ export class Engine {
     render() {
         const camera = this.sceneManager.getActiveCamera();
         const renderables = this.sceneManager.getRenderables();
-        const hud = this.sceneManager.getHUD();
-        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.context, this.DEBUG);
+        // TODO script!
+        const hud = (document.pointerLockElement === this.target) ? this.sceneManager.getHUD() : null;
+        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.context.getCurrentTexture(), this.DEBUG);
     }
 }
 
@@ -171,7 +172,9 @@ export class TextureProgramComponent extends Engine {
     render() {
         const camera = this.sceneManager.getActiveCamera();
         const renderables = this.sceneManager.getRenderables();
-        const hud = this.sceneManager.getHUD();
+        // TODO workaround
+        //const hud = this.sceneManager.getHUD();
+        const hud = null;
         this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.target, this.DEBUG);
     }
 }

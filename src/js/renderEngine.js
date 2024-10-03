@@ -36,19 +36,16 @@ export class RenderEngine {
         });
     }
 
-	render(sceneManager, activeCamera, meshes, huds, context, debug=false) {
+	render(sceneManager, activeCamera, meshes, huds, outputTexture, debug=false) {
         // GET COMPONENTS
         const camera = sceneManager.getComponent(activeCamera, "CameraComponent");  // TODO not required
         const renderables = meshes.map((m) => sceneManager.getComponent(m, "MeshComponent"));
-        const hud = huds.map((h) => sceneManager.getComponent(h, "HUDComponent"));
-        const hudCamera = huds.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
-
-        // TODO rename context
-        if (context instanceof GPUCanvasContext) this.canvasTexture = context.getCurrentTexture();  // create texture the size of canvas
+        const hud = huds?.map((h) => sceneManager.getComponent(h, "HUDComponent"));
+        const hudCamera = huds?.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
 
         // 3D PASS
         // write mvp matrices to uniform buffers
-        for (const m of meshes) {
+        for (const m of meshes) {  // TODO only write what changes
             const mesh = {
                 buffer: sceneManager.getComponent(m, "MeshComponent").modelBuffer,
                 model: sceneManager.getComponent(m, "TransformComponent").model,
@@ -65,7 +62,7 @@ export class RenderEngine {
 				loadOp: "clear",
 				clearValue: { r: 0, g: 0, b: 0, a: 1 },
 				storeOp: "store",
-                resolveTarget: context instanceof GPUCanvasContext ? this.canvasTexture.createView() : this.target.createView(),
+                resolveTarget: outputTexture.createView(),
 			}],
             depthStencilAttachment: {
                 view: this.depthTexture.createView(),
@@ -79,18 +76,17 @@ export class RenderEngine {
 
 
         // HUD PASS
-        if (document.pointerLockElement === this.target) {  // TODO move conditional into engine, pass null
+        if (huds) {
             // write HUD projection matrix to unifrom buffer
             this.device.queue.writeBuffer(this.projectionBuffer, 0, hudCamera.projection);
 
             // HUD pass descriptor (no depth testing)
             const hudPassDescriptor = {
                 colorAttachments: [{
-                    view: this.msaaTexture.createView(),  // render to MSAA texture
+                    view: outputTexture.createView(),  // no MSAA
                     loadOp: "load",  // do not clear
                     clearValue: { r: 0, g: 0, b: 0, a: 0 },
                     storeOp: "store",
-                    resolveTarget: context instanceof GPUCanvasContext ? this.canvasTexture.createView() : this.target.createView(),
                 }],
             };
 

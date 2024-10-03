@@ -1,7 +1,7 @@
 import { ECS } from "./ecs";
 import { createBindGroupLayout } from "./wgpuHelpers";
 
-import { AABBComponent, SphereComponent } from "./components/collider";
+import { AABBComponent } from "./components/collider";
 import { AnimationComponent } from "./components/animation";
 import { CameraComponent } from "./components/camera";
 import { HUDComponent } from "./components/hud";
@@ -39,9 +39,8 @@ export class SceneManager {
 
         // HUD
         // TODO from scene json
-        // TODO HUDComponent needs MSAA for some reason?
         this.hud = this.ecs.createEntity();
-        const hud = HUDComponent.generate(this.assetManager, device, format, projectionBuffer, multisamples);
+        const hud = HUDComponent.generate(this.assetManager, device, format, projectionBuffer, 1);
         const hudTransform = new TransformComponent();
         const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
         this.ecs.addComponent(this.hud, hudTransform);
@@ -89,6 +88,7 @@ export class SceneManager {
                 const [meshPromise, vertPromise, fragPromise] = this.assetManager.get(
                     assets.geometry[instance.mesh], assets.shaders[instance.shader].vert, assets.shaders[instance.shader].frag
                 );
+
                 // BIND GROUP LAYOUT
                 let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
                 // TEXTURE
@@ -109,6 +109,7 @@ export class SceneManager {
                         texturePromise = this.#createProgramTexture(instance.texture, instance.s, entity, device, format);
                     }
                 }
+
                 // MESH COMPONENT
                 const cullMode = instance.cullMode ? instance.cullMode : "back";  // cull mode override
                 const mesh = await MeshComponent.assetToMesh(
@@ -116,24 +117,31 @@ export class SceneManager {
                 );
                 this.ecs.addComponent(entity, mesh);
 
+                await meshPromise;
+            }
 
-                // COLLIDER
-                // TODO dependency on mesh
-                const floats = (await meshPromise).vertex.values.float32;
-                const colliderGenerators = {
-                    aabb: AABBComponent,  // TODO other types (sphere, mesh)
-                }
-                const collider = colliderGenerators[instance.collider]?.createFromMesh(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
-                if (collider) {
-                    collider.modelTransform(transform.model);
-                    this.ecs.addComponent(entity, collider);
-                }
+            // ANIMATION
+            if (instance.animation) {
+                const animation = new AnimationComponent(instance.animation);
+                this.ecs.addComponent(entity, animation);
+            }
 
-                // ANIMATION
-                // TODO dependency on collider
-                if (instance.animation) {
-                    const animation = new AnimationComponent(instance.animation);
-                    this.ecs.addComponent(entity, animation);
+            // COLLIDER
+            if (instance.collider) {
+                // TODO manually set collider vertices
+                if (this.ecs.hasComponent(entity, "MeshComponent")) {
+                    const floats = this.ecs.getComponent(entity, "MeshComponent").vertices;
+                    const colliderGenerators = {
+                        aabb: AABBComponent,  // TODO other types (sphere, mesh)
+                    }
+                    const collider = colliderGenerators[instance.collider]?.createFromMesh(floats.data, floats.properties, instance.href, instance.ghost, instance.v);
+                    if (collider) {
+                        collider.modelTransform(transform.model);
+                        this.ecs.addComponent(entity, collider);
+                    }
+                }
+                else {
+                    console.warn("No collider vertices specified and no MeshComponent present on entity " + entity);
                 }
             }
         }
@@ -181,7 +189,7 @@ export class SceneManager {
             const fontMetadataUrl = instanceTexture.atlasMetadata;
 
             // TEXT
-            // TODO uv target range (allows multiple faces)
+            // TODO uv target range (allows multiple faces, requires multiple of same component)
             const textTexture = await TextComponent.fromUrls(
                 texture,                   // output texture
                 instanceTexture.content,  // text content
@@ -227,9 +235,7 @@ export class SceneManager {
 
     // UPDATE
     update(frame, device) {
-        // TODO reimplement adding entities at runtime
         this.ecs.updateAnimations(frame);
-        // TODO get rid of this.player
         if (this.player) this.ecs.movePlayer(this.player, device);
     }
 
