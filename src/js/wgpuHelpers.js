@@ -52,67 +52,73 @@ export function createPipeline(label, device, bindGroupLayout, vertexShaderModul
     return device.createRenderPipeline(pipelineDescriptor);
 }
 
-// TODO this sucks!
-export function createBindGroupLayout(device, label, ...entries) {
-    const BGLDescriptor = {
+export function createBindGroupLayout(device, label, resources=[]) {  // resources format: { type, visibility }
+    function createBindGroupLayoutEntry(binding, resource) {
+        const entry = {
+            binding: binding,
+            visibility: resource.visibility,
+        };
+    
+        switch (resource.type) {
+            case "buffer":
+                entry.buffer = {
+                    type: "uniform",  // storage, read-only-storage
+                };
+                break;
+            case "texture":
+                entry.texture = {
+                    multisampled: false,
+                    sampleType: "float",  // depth, sint, uint, unfilterable-float
+                    //viewDimension
+                };
+                break;
+            case "sampler":
+                entry.sampler = {
+                    type: "filtering",  // comparision, non-filtering
+                };
+                break;
+            case "externalTexture":
+                entry.externalTexture = {};
+            break;
+            case "storageTexture":
+                entry.storageTexture = {
+                    access: undefined,  // write-only
+                    format: "rgba8unorm",  // or another texture format
+                    viewDimension: "2d",  // 1d, 2d-array, cube, cube-array, 3d
+                };
+                console.warn("storageTexture Bind Group Layout handling is untested");
+                break;
+            default:
+                throw new Error(`Invalid Bind Group Layout entry type: ${resource.type}`);
+        }
+    
+        return entry;
+    }
+
+    const BglDescriptor = {
         label: label,
         entries: []
     }
     let binding = 0;
-    for (const entry of entries) {
-        if (entry === "MVP") {
-            BGLDescriptor.entries.push({
-                binding: binding++,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" },
-            });
-            BGLDescriptor.entries.push({
-                binding: binding++,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" },
-            });
-            BGLDescriptor.entries.push({
-                binding: binding++,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" },
-            });
-        }
-        else if (entry === "texture") {
-            BGLDescriptor.entries.push({
-                binding: binding++,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture: { sampleType: "float" },
-            });
-        }
-        else if (entry === "sampler") {
-            BGLDescriptor.entries.push({
-                binding: binding++,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { type: "filtering" },
-            });
-        }
-        else {
-            entry.binding = binding++;
-            BGLDescriptor.entries.push(entry);
-        }
-    }
-    return device.createBindGroupLayout(BGLDescriptor);
+
+    resources.forEach(resource => BglDescriptor.entries.push(createBindGroupLayoutEntry(binding++, resource)));
+
+    return device.createBindGroupLayout(BglDescriptor);
 }
 
-export function createBindGroup(device, label, layout, ...resources) {
+export function createBindGroup(device, label, layout, resources=[]) {
     const bgDescriptor = {
         label: label,
         layout: layout,
         entries: [],
     };
     let binding = 0;
-    for (const resource of resources) {
-        bgDescriptor.entries.push({
-            binding: binding,
-            resource: resource,
-        });
-        binding++;
-    }
+
+    resources.forEach(resource => bgDescriptor.entries.push({
+        binding: binding++,
+        resource: resource,
+    }));
+
     return device.createBindGroup(bgDescriptor);
 }
 

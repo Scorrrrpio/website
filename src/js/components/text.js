@@ -52,8 +52,13 @@ export class TextComponent {
         });
 
         // BIND GROUP and LAYOUT
-        const BGL = createBindGroupLayout(device, "Text BGL", "texture", "sampler");
-        this.BG = createBindGroup(device, "Text Bind Group", BGL, atlasTexture.createView(), sampler);
+        const BGL = createBindGroupLayout(device, "Text BGL",
+            [
+                {type: "texture", visibility: GPUShaderStage.FRAGMENT},
+                {type: "sampler", visibility: GPUShaderStage.FRAGMENT},
+            ]
+        );
+        this.BG = createBindGroup(device, "Text Bind Group", BGL, [atlasTexture.createView(), sampler]);
 
         // 4xMSAA TEXTURES
         this.msaaTexture = device.createTexture({

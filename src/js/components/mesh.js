@@ -67,14 +67,16 @@ export class MeshComponent {
             // OVERRIDE BIND GROUP
             bindGroup = createBindGroup(
                 device, "OVERRIDE Bind Group", bindGroupLayout,
-                {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP
-                (await texturePromise).createView(), sampler, {buffer: faceIDsBuffer}  // texture
+                [
+                    {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer},  // MVP
+                    (await texturePromise).createView(), sampler, {buffer: faceIDsBuffer},  // sampler
+                ]
             );
         }
         else {
             bindGroup = createBindGroup(
                 device, "Base Bind Group", bindGroupLayout,
-                {buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}  // MVP
+                [{buffer: modelBuffer}, {buffer: viewBuffer}, {buffer: projectionBuffer}]  // MVP
             );
         }
 

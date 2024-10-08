@@ -87,14 +87,29 @@ export class SceneManager {
                 );
 
                 // BIND GROUP LAYOUT
-                let bindGroupLayout = createBindGroupLayout(device, "Default Bind Group Layout", "MVP");
+                // TODO outline BGL in scene.json
+                let bindGroupLayout = createBindGroupLayout(
+                    device, "Default Bind Group Layout",
+                    [
+                        {type: "buffer", visibility: GPUShaderStage.VERTEX},
+                        {type: "buffer", visibility: GPUShaderStage.VERTEX},
+                        {type: "buffer", visibility: GPUShaderStage.VERTEX},
+                    ]
+                );
                 // TEXTURE
                 let texturePromise;
                 if (instance.texture) {
                     // Override bind group layout
                     bindGroupLayout = createBindGroupLayout(
                         device, "Texture Bind Group Layout",
-                        "MVP", "texture", "sampler", {visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform"}}
+                        [
+                            {type: "buffer", visibility: GPUShaderStage.VERTEX},
+                            {type: "buffer", visibility: GPUShaderStage.VERTEX},
+                            {type: "buffer", visibility: GPUShaderStage.VERTEX},
+                            {type: "texture", visibility: GPUShaderStage.FRAGMENT},
+                            {type: "sampler", visibility: GPUShaderStage.FRAGMENT},
+                            {type: "buffer", visibility: GPUShaderStage.FRAGMENT},
+                        ]
                     );
 
                     if (instance.texture.type === "image") {

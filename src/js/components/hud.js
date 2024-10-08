@@ -34,8 +34,10 @@ export class HUDComponent {
         const hudVBAttributes = createVBAttributes(["x", "y"]);
 
         // bind group
-        const hudBGL = createBindGroupLayout(device, "HUD BGL", { visibility: GPUShaderStage.VERTEX, buffer: {type: "uniform"}});
-        this.bindGroup = createBindGroup(device, "HUD Bind Group", hudBGL, { buffer: projectionBuffer });
+        const hudBGL = createBindGroupLayout(device, "HUD BGL",
+            [{ type: "buffer", visibility: GPUShaderStage.VERTEX}]
+        );
+        this.bindGroup = createBindGroup(device, "HUD Bind Group", hudBGL, [{ buffer: projectionBuffer }]);
 
         // pipeline
         this.pipeline = createPipeline(
