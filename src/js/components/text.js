@@ -1,6 +1,7 @@
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "../wgpuHelpers";
 
 export class TextComponent {
+    // TODO eliminate assetManager dependency?
     static async fromUrls(outputTexture, textUrl, atlasUrl, metadataUrl, fontSize, margin, aspect, assetManager, device, format) {
         const text = new TextComponent(outputTexture, textUrl, atlasUrl, metadataUrl, aspect, fontSize, margin);
         await text.initialize(assetManager, device, format);
@@ -23,11 +24,13 @@ export class TextComponent {
         const MULTISAMPLE = 4;
 
         // CONTENT
-        const [textPromise] = assetManager.get(this.textUrl);
+        const textPromise = assetManager.get(this.textUrl);
         // ASSETS
-        const [atlasPromise, metadataPromise] = assetManager.get(this.atlasUrl, this.metadataUrl);
+        const atlasPromise = assetManager.get(this.atlasUrl);
+        const metadataPromise = assetManager.get(this.metadataUrl);
         // SHADERS
-        const [vertPromise, fragPromise] = assetManager.get("shaders/text.vert.wgsl", "shaders/text.frag.wgsl");
+        const vertPromise = assetManager.get("shaders/text.vert.wgsl");
+        const fragPromise = assetManager.get("shaders/text.frag.wgsl");
 
         
         const atlasBmp = await atlasPromise

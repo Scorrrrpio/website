@@ -34,8 +34,7 @@ export class SceneManager {
     }
 
     async loadScene(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
-        const [assetPromise] = this.assetManager.get(this.url);
-        const assets = await assetPromise;
+        const assets = await this.assetManager.get(this.url);
         for (const instance of assets.entities) {
             const entity = this.ecs.createEntity();
 
@@ -82,9 +81,9 @@ export class SceneManager {
             // MESH
             if (instance.mesh) {
                 // fetch mesh components
-                const [meshPromise, vertPromise, fragPromise] = this.assetManager.get(
-                    assets.geometry[instance.mesh], assets.shaders[instance.shader].vert, assets.shaders[instance.shader].frag
-                );
+                const meshPromise = this.assetManager.get(assets.geometry[instance.mesh]);
+                const vertPromise = this.assetManager.get(assets.shaders[instance.shader].vert);
+                const fragPromise = this.assetManager.get(assets.shaders[instance.shader].frag);
 
                 // BIND GROUP LAYOUT
                 // TODO outline BGL in scene.json
@@ -113,8 +112,7 @@ export class SceneManager {
                     );
 
                     if (instance.texture.type === "image") {
-                        const [imgPromise] = await this.assetManager.get(instance.texture.url);
-                        const imgBmp = await imgPromise;
+                        const imgBmp = await this.assetManager.get(instance.texture.url);
                         texturePromise = this.#createImageTexture(imgBmp, device, format);
                     }
                     else if (instance.texture.type === "program") {

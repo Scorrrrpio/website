@@ -1,6 +1,7 @@
 import { createBindGroup, createBindGroupLayout, createPipeline, createVBAttributes } from "../wgpuHelpers";
 
 export class HUDComponent {
+    // TODO eliminate assetManager dependency
     static async generate(assetManager, device, format, projectionBuffer, multisamples) {
         const hud = new HUDComponent();
         await hud.initialize(assetManager, device, format, projectionBuffer, multisamples);
@@ -11,7 +12,8 @@ export class HUDComponent {
 
     async initialize(assetManager, device, format, projectionBuffer, multisamples) {
         // shaders
-        const [vertPromise, fragPromise] = assetManager.get("shaders/hud.vert.wgsl", "shaders/hud.frag.wgsl");
+        const vertPromise = assetManager.get("shaders/hud.vert.wgsl");
+        const fragPromise = assetManager.get("shaders/hud.frag.wgsl");
 
         // TODO read from file
         // geometry
