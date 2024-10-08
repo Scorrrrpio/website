@@ -141,8 +141,8 @@ export class Engine {
         const camera = this.sceneManager.getActiveCamera();
         const renderables = this.sceneManager.getRenderables();
         // TODO script!
-        const hud = (document.pointerLockElement === this.target) ? this.sceneManager.getHUD() : null;
-        this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.context.getCurrentTexture(), this.DEBUG);
+        const huds = (document.pointerLockElement === this.target) ? this.sceneManager.getHUD() : [];
+        this.renderEngine.render(this.sceneManager, camera, renderables, huds, this.context.getCurrentTexture(), this.DEBUG);
     }
 }
 
@@ -154,8 +154,7 @@ export class Engine {
 // don't extend
 export class TextureProgramComponent extends Engine {
     constructor(target, scene, assetManager, device, format) {
-        super(null, scene, assetManager);  // assetManager shared with root engine
-        this.target = target;
+        super(target, scene, assetManager);  // assetManager shared with root engine
         this.device = device;
         this.format = format;
     }
@@ -172,9 +171,7 @@ export class TextureProgramComponent extends Engine {
     render() {
         const camera = this.sceneManager.getActiveCamera();
         const renderables = this.sceneManager.getRenderables();
-        // TODO workaround
-        //const hud = this.sceneManager.getHUD();
-        const hud = null;
+        const hud = this.sceneManager.getHUD();
         this.renderEngine.render(this.sceneManager, camera, renderables, hud, this.target, this.DEBUG);
     }
 }

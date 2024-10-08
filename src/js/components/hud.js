@@ -18,7 +18,7 @@ export class HUDComponent {
         const crosshair = new Float32Array([
             // X,    Y
             -0.02,    0,
-            0.02,    0,
+            0.019,    0,  // 0.02 is lopsided on my display
             0, -0.02,
             0,  0.02,
         ]);

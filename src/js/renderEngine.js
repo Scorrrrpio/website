@@ -36,47 +36,49 @@ export class RenderEngine {
         });
     }
 
-	render(sceneManager, activeCamera, meshes, huds, outputTexture, debug=false) {
+	render(sceneManager, activeCamera, meshes=[], huds=[], outputTexture, debug=false) {
         // GET COMPONENTS
         const camera = sceneManager.getComponent(activeCamera, "CameraComponent");  // TODO not required
         const renderables = meshes.map((m) => sceneManager.getComponent(m, "MeshComponent"));
-        const hud = huds?.map((h) => sceneManager.getComponent(h, "HUDComponent"));
-        const hudCamera = huds?.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
+        const hud = huds.map((h) => sceneManager.getComponent(h, "HUDComponent"));
+        const hudCamera = huds.map((h) => sceneManager.getComponent(h, "CameraComponent"))[0];
 
         // 3D PASS
-        // write mvp matrices to uniform buffers
-        for (const m of meshes) {  // TODO only write what changes
-            const mesh = {
-                buffer: sceneManager.getComponent(m, "MeshComponent").modelBuffer,
-                model: sceneManager.getComponent(m, "TransformComponent").model,
+        if (renderables.length > 0) {
+            // write mvp matrices to uniform buffers
+            for (const m of meshes) {  // TODO only write what changes
+                const mesh = {
+                    buffer: sceneManager.getComponent(m, "MeshComponent").modelBuffer,
+                    model: sceneManager.getComponent(m, "TransformComponent").model,
+                }
+                this.device.queue.writeBuffer(mesh.buffer, 0, mesh.model);
             }
-            this.device.queue.writeBuffer(mesh.buffer, 0, mesh.model);
+            this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(camera.view));
+            this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(camera.projection));
+
+            // 3D pass descriptor
+            const passDescriptor = {
+                colorAttachments: [{
+                    view: this.msaaTexture.createView(),  // render to MSAA texture
+                    loadOp: "clear",
+                    clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                    storeOp: "store",
+                    resolveTarget: outputTexture.createView(),
+                }],
+                depthStencilAttachment: {
+                    view: this.depthTexture.createView(),
+                    depthLoadOp: "clear",
+                    depthClearValue: 1.0,
+                    depthStoreOp: "store",
+                },
+            };
+
+            this.#pass(renderables, passDescriptor);
         }
-        this.device.queue.writeBuffer(this.viewBuffer, 0, new Float32Array(camera.view));
-        this.device.queue.writeBuffer(this.projectionBuffer, 0, new Float32Array(camera.projection));
-
-        // 3D pass descriptor
-        const passDescriptor = {
-			colorAttachments: [{
-                view: this.msaaTexture.createView(),  // render to MSAA texture
-				loadOp: "clear",
-				clearValue: { r: 0, g: 0, b: 0, a: 1 },
-				storeOp: "store",
-                resolveTarget: outputTexture.createView(),
-			}],
-            depthStencilAttachment: {
-                view: this.depthTexture.createView(),
-                depthLoadOp: "clear",
-                depthClearValue: 1.0,
-                depthStoreOp: "store",
-            },
-		};
-
-        this.#pass(renderables, passDescriptor);
 
 
         // HUD PASS
-        if (huds) {
+        if (hud.length > 0) {
             // write HUD projection matrix to unifrom buffer
             this.device.queue.writeBuffer(this.projectionBuffer, 0, hudCamera.projection);
 

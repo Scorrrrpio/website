@@ -35,18 +35,6 @@ export class SceneManager {
 
     async loadScene(device, format, canvas, viewBuffer, projectionBuffer, topology, multisamples, debug=false) {
         const [assetPromise] = this.assetManager.get(this.url);
-
-
-        // HUD
-        // TODO from scene json
-        this.hud = this.ecs.createEntity();
-        const hud = HUDComponent.generate(this.assetManager, device, format, projectionBuffer, 1);
-        const hudTransform = new TransformComponent();
-        const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
-        this.ecs.addComponent(this.hud, hudTransform);
-        this.ecs.addComponent(this.hud, hudCam);
-        this.ecs.addComponent(this.hud, await hud)
-
         const assets = await assetPromise;
         for (const instance of assets.entities) {
             const entity = this.ecs.createEntity();
@@ -61,6 +49,15 @@ export class SceneManager {
                 camera.updateViewMatrix(transform);
                 this.ecs.addComponent(entity, camera);
                 if (!this.activeCamera) this.activeCamera = entity;
+            }
+
+            // HUD
+            if (instance.hud) {
+                // TODO from scene json
+                const hud = await HUDComponent.generate(this.assetManager, device, format, projectionBuffer, 1);
+                const hudCam = new CameraComponent(canvas.width / canvas.height, [0, 0, 0], true);
+                this.ecs.addComponent(entity, hudCam);
+                this.ecs.addComponent(entity, hud);
             }
 
             // INPUT

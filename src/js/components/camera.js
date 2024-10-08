@@ -1,20 +1,17 @@
 import { mat4 } from "gl-matrix";
 
+// TODO split into two classes? (ortho and perspective)
 export class CameraComponent {
-    // view matrix
-    view = mat4.create();
-
-    // projection matrix
-    fov = Math.PI / 6;
-    aspect = 1;
-    near = 0.01;
-    far = 1000.0;
-    projection = mat4.create();
-
-    constructor(aspect, offset=[0, 0, 0], ortho=false, maxLook, minLook) {
-        this.offset = offset;
-        // projection matrix setup
+    constructor(aspect=1, offset=[0, 0, 0], ortho=false, maxLook, minLook) {
+        this.offset = offset;  // TODO offset as TransformComponent?
+        // view matrix
+        this.view = mat4.create();
+        // projection matrix
         this.aspect = aspect;
+        this.fov = Math.PI / 6;
+        this.near = 0.01;
+        this.far = 1000.0;
+        this.projection = mat4.create();
         this.orthographic = ortho;
         this.updateProjectionMatrix();
 

@@ -20,6 +20,9 @@
     },
     "entities": [
         {
+            "hud": true
+        },
+        {
             "camera": {
                 "offset": [0, 2, 0]
             },

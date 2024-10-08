@@ -53,18 +53,21 @@ export class ECS {
 
     // START
     enableControls() {
-        const controllable = this.entitiesWith("InputComponent");
-        controllable.forEach((c) => this.getComponent(c, "InputComponent").enableControls());
+        this.entitiesWith("InputComponent").forEach(
+            (e) => this.getComponent(e, "InputComponent").enableControls()
+        );
     }
 
     disableControls() {
-        const controllable = this.entitiesWith("InputComponent");
-        controllable.forEach((c) => this.getComponent(c, "InputComponent").disableControls());
+        this.entitiesWith("InputComponent").forEach(
+            (e) => this.getComponent(e, "InputComponent").disableControls()
+        );
     }
 
     startSubEngines() {
-        const subengines = this.entitiesWith("Engine");
-        subengines.forEach((s) => this.getComponent(s, "Engine").start());
+        this.entitiesWith("Engine").forEach(
+            (e) => this.getComponent(e, "Engine").start()
+        );
     }
 
 
