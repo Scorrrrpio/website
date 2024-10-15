@@ -119,7 +119,7 @@ export class RenderEngine {
     handleResize(format) {
         const parent = this.target.parentElement;
 
-        const devicePixelRatio = window.devicePixelRatio || 1;
+        const devicePixelRatio = window.devicePixelRatio ?? 1;
         this.target.width = Math.floor(parent.clientWidth * devicePixelRatio);
         this.target.height = Math.floor(parent.clientHeight * devicePixelRatio);
 

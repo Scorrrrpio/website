@@ -49,9 +49,7 @@ export class AssetManager {
             return await createImageBitmap(img);  // convert to bmp
         }
         catch (error) {
-            if (error.name === "EncodingError") {
-                throw new AssetLoadError(`Failed to load image: ${url}`);
-            }
+            if (error.name === "EncodingError") { throw new AssetLoadError(`Failed to load image: ${url}`); }
             else { throw error; }
         };
     }

@@ -47,7 +47,7 @@ export class SceneManager {
                 const camera = new CameraComponent(canvas.width / canvas.height, instance.camera.offset, instance.camera.ortho, Math.PI / 2);
                 camera.updateViewMatrix(transform);
                 this.ecs.addComponent(entity, camera);
-                if (!this.activeCamera) this.activeCamera = entity;
+                this.activeCamera = this.activeCamera ?? entity;
             }
 
             // HUD

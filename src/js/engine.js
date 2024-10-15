@@ -12,7 +12,7 @@ export class Engine {
         this.assetManager = assetManager;
         this.frame = 0;
         // CONSTANTS
-        this.TOPOLOGY = "triangle-list";
+        this.TOPOLOGY = "triangle-list";  // TODO purpose?
         this.MULTISAMPLE = 4;
         this.DEBUG = false;
     }
@@ -26,9 +26,9 @@ export class Engine {
         // RESIZE HANDLING
         window.addEventListener("resize", () => {
             this.renderEngine.handleResize(this.format, this.target);
-            for (const e in this.sceneManager.entitiesWith("CameraComponent")) {
-                this.sceneManager.getComponent(e, "CameraComponent").updateProjectionMatrix(this.target.width / this.target.height);
-            }
+            this.sceneManager.entitiesWith("CameraComponent").forEach(
+                (e) => this.sceneManager.getComponent(e, "CameraComponent").updateProjectionMatrix(this.target.width / this.target.height)
+            );
         });
 
         await animationPromise;
@@ -39,7 +39,7 @@ export class Engine {
     async #wgpuSetup() {
         // WEBGPU SETUP
         if (!(this.target instanceof Element)) { throw new Error("Root Engine target must be a canvas element"); }
-        const devicePixelRatio = window.devicePixelRatio || 1;
+        const devicePixelRatio = window.devicePixelRatio ?? 1;
         this.target.width = this.target.clientWidth * devicePixelRatio;
         this.target.height = this.target.clientHeight * devicePixelRatio;
 
@@ -52,7 +52,7 @@ export class Engine {
     async createEngineComponents() {
         // ASSET MANAGER
         // allows for sharing
-        if (!this.assetManager) this.assetManager = new AssetManager(this.device);
+        this.assetManager = this.assetManager ?? new AssetManager(this.device);
 
         // RENDER ENGINE
         this.renderEngine = new RenderEngine(this.device, this.format, this.target, this.MULTISAMPLE);

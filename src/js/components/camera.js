@@ -17,7 +17,7 @@ export class CameraComponent {
 
         // clamp look angle
         this.maxLook = maxLook;
-        this.minLook = minLook || maxLook ? -maxLook : maxLook;
+        this.minLook = minLook ?? maxLook ? -maxLook : maxLook;
     }
 
     getEye(position=[0, 0, 0]) {

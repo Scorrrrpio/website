@@ -14,7 +14,7 @@ function readPlyHeader(lines) {
         uint: "uint32",
     }
     function normalizeType(name) {
-        return typeAlias[name] || name;
+        return typeAlias[name] ?? name;
     }
 
     const metadata = {};
@@ -44,7 +44,7 @@ function readPlyHeader(lines) {
         else if (parts[0] === "property") {
             if (parts[1] === "list") {
                 metadata.elements[element].properties.push({
-                    type: parts[1],
+                    type: "list",
                     countType: normalizeType(parts[2]),
                     listType: normalizeType(parts[3]),
                     name: parts[4],

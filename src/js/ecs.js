@@ -25,11 +25,9 @@ export class ECS {
             parentName = parentClass.constructor.name;
             parentClass = Object.getPrototypeOf(parentClass);
         }
-        parentName = parentName || name;
+        parentName = parentName ?? name;
 
-        if (!this.components[entity]) {
-            this.components[entity] = {};
-        }
+        this.components[entity] = this.components[entity] ?? {};
         this.components[entity][parentName] = component;
     }
 
